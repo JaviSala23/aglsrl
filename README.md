@@ -1,106 +1,87 @@
-# Proyecto AGL — Gestión de Tickets y Almacenaje (Versión 1)
+# Proyecto AGL — Versión 1 (Diseño General)
 
-## 📌 Descripción
+## 🎯 Objetivo
 
-Este proyecto corresponde a la primera versión de **AGL**, un sistema para la **gestión de tickets de entrada y salida de mercadería** y el **almacenaje en plantas y zonas mixtas**.
+El proyecto **AGL** busca convertirse en un sistema **integral** para la gestión de plantas procesadoras y almacenadoras de granos.
+La **Versión 1** constituye el primer paso, enfocado en establecer la **base funcional mínima** que permita:
 
-Su objetivo inicial es **definir modelos y flujos de negocio**, dejando la implementación para etapas posteriores.
+* Controlar **ingresos y egresos de mercadería** mediante tickets.
+* Registrar y administrar **almacenajes** en plantas, galpones, silos y zonas mixtas.
+* Gestionar **vehículos, choferes y transportistas**.
+* Asociar **mercaderías** a cada movimiento.
+* Dejar las bases listas para futuras integraciones comerciales y administrativas.
 
 ---
 
 ## 🚀 Alcance de la Versión 1
 
-* Registro de **Ubicaciones** (plantas con encargado y zonas mixtas sin encargado).
-* Registro de **Almacenajes** (silos, silos bolsa, galpones) y **Sub‑almacenajes**.
-* Catálogo de **Mercaderías** (especies, calidades).
-* Registro de **Vehículos, Acoplados, Conjuntos vehiculares, Choferes y Transportistas**.
-* Creación y gestión de **Tickets** (Entrada / Salida) con estados y validación.
-* Definición de **Roles y Permisos** (Auxiliar, Encargado, Administración).
-* **Geolocalización** de ubicaciones y almacenajes con soporte Google Maps.
-* Normalización de **Presentaciones y Unidades** con reglas de conversión a KG.
+### Núcleo de Datos
+
+* **Ubicaciones**: Plantas (con encargado) y Zonas Mixtas (sin encargado) con geolocalización.
+* **Almacenajes**: Silos, Silo bolsa, Galpones.
+* **Sub‑almacenajes**: Granel, bolsas (25/50), bigbags (500/1000).
+* **Mercaderías**: Catálogo de especies y calidades.
+* **Vehículos**: Tractor/camión, acoplado/semi, conjunto vehicular (con soporte de bitrén).
+* **Personas**: Choferes y transportistas.
+* **Documentación**: Opcional, con posibilidad de registrar RTO, VTV, CNRT, seguros, licencias.
+
+### Tickets
+
+* **Tipos**: Entrada / Salida.
+* **Estados automáticos**: `EN_PESAJE_ENTRADA`, `CARGA` (si salida), `DESCARGA` (si entrada), `EN_PESAJE_SALIDA`, `CERRADO`, `ANULADO`.
+* **Modo**: atributo separado `modo_valido = true/false` (true = conforme, false = **modo DARK**).
+* **Movimientos**: Presentación registrada (granel/bolsas/bigbags), unidad, cantidad, peso unitario opcional, condición de acondicionamiento.
+* **Pesajes**: Bruto, tara y neto.
+
+### Reglas Clave
+
+* Compatibilidad **Almacenaje × Presentación**.
+* Consolidación de stock en **KG** (independientemente de cómo ingresa/sale).
+* Estados avanzan automáticamente según acciones (pesajes, operaciones). El usuario no los actualiza a mano.
+* Administración define `modo_valido` y realiza el cierre o anulación de tickets.
 
 ---
 
-## 📂 Estructura de Modelos
+## 📊 Reportes Iniciales
 
-* **Ubicación → Almacenaje → Sub‑almacenaje**
-* **Mercadería** (catálogo)
-* **Vehículos** (tractor, acoplado, conjunto vehicular)
-* **Personas** (chofer, transportista)
-* **Ticket** (movimiento)
-* **Catálogos de apoyo** (presentaciones, unidades, conversiones, compatibilidad)
-
----
-
-## 🔄 Flujos de Ticket
-
-### Entrada
-
-1. Creación → `EN_PESAJE_ENTRADA`
-2. Operación → `DESCARGA`
-3. Pesaje salida → resultado `DESCARGADO`
-4. Administración → `CERRADO` o `ANULADO` + `modo_valido = true/false`
-
-### Salida
-
-1. Creación → `EN_PESAJE_ENTRADA`
-2. Operación → `CARGA`
-3. Pesaje salida → resultado `CARGADO`
-4. Administración → `CERRADO` o `ANULADO` + `modo_valido = true/false`
+* **Stock** por ubicación/almacenaje/sub‑almacenaje.
+* **Movimientos** de entrada y salida (tickets).
+* **Padrón vehicular** (estado operativo, documentación).
+* **Alertas de vencimientos** (vehículos y choferes).
+* **Consumo/producción** por presentaciones (bolsas/bigbags movidas).
 
 ---
 
-## 📊 Estados del Ticket
+## 👥 Roles y Permisos
 
-* `EN_PESAJE_ENTRADA`
-* `CARGA` (para salida)
-* `DESCARGA` (para entrada)
-* `EN_PESAJE_SALIDA`
-* `CERRADO`
-* `ANULADO`
-
-**Modo:** atributo separado `modo_valido = true/false`
-
-* `true` = conforme/documentación correcta
-* `false` = **modo DARK** (documentación pendiente u observaciones)
+* **Auxiliar**: crea tickets, registra pesajes.
+* **Encargado**: asigna almacenajes, edita y valida operaciones.
+* **Administración**: cierra/anula tickets, define `modo_valido`, gestiona documentación.
 
 ---
 
-## 🗂 Compatibilidad Almacenaje × Presentación
+## 🌐 Visión Integral
 
-| Almacenaje.tipo | GRANEL | BOLSA\_25 | BOLSA\_50 | BIGBAG\_500 | BIGBAG\_1000 |
-| --------------- | :----: | :-------: | :-------: | :---------: | :----------: |
-| SILO            |    ✓   |     –     |     –     |      –      |       –      |
-| SILO\_BOLSA     |    ✓   |     –     |     –     |      –      |       –      |
-| GALPON          |    ✓   |     ✓     |     ✓     |      ✓      |       ✓      |
+Aunque esta versión se centra en tickets y almacenajes, el sistema crecerá hacia:
 
----
-
-## ✅ Próximos Pasos
-
-* Completar catálogos iniciales (presentaciones, unidades, conversiones).
-* Registrar ubicaciones base: Planta Norte, Planta Sur, Galpón del Medio, Galpones alquilados A/B, Campo.
-* Armar plantillas de tickets (con QR) y reportes básicos.
-* Iniciar implementación con ayuda de Copilot.
+* Comercialización y liquidaciones primarias/ secundarias.
+* Emisión de remitos y cartas de porte.
+* Gestión de cuentas corrientes y reportes financieros.
+* Administración logística y trazabilidad completa.
 
 ---
 
-## 🌐 Visión del Proyecto Integral
+## ✅ Próximos Pasos (dentro de v1)
 
-El proyecto **AGL** no se limita a la gestión de tickets y almacenaje. La **Versión 1** representa únicamente la base inicial.
-
-En el futuro se prevé incorporar módulos adicionales como:
-
-* Comercialización (ventas, compras, liquidaciones primarias y secundarias).
-* Gestión de documentos oficiales (remitos, cartas de porte, retenciones).
-* Administración integral (contabilidad, cuentas corrientes, reportes financieros).
-* Logística avanzada (seguimiento de transportes, asignación de recursos).
-* Integración con sistemas externos (AFIP, ARCA, proveedores y clientes).
-
-El **alcance integral** está en definición y se irá documentando a medida que avance el ciclo de vida del proyecto.
+1. Completar catálogos iniciales (presentaciones, unidades, conversiones, compatibilidad).
+2. Registrar ubicaciones base (Planta Norte, Planta Sur, Galpón del Medio, Galpones alquilados, Campo).
+3. Modelar almacenajes reales con sectores y tramos.
+4. Definir plantillas de tickets (con QR) y reportes de stock/movimientos.
+5. Preparar implementación técnica (BD, APIs, interfaz).
 
 ---
 
-## 📖 Licencia
+## 📖 Estado del Proyecto
 
-Este proyecto se encuentra en análisis funcional. La licencia de uso se definirá en futuras versiones.
+Actualmente en **fase de análisis y diseño funcional**.
+La implementación se realizará en próximas iteraciones, con ayuda de Copilot para el código.
