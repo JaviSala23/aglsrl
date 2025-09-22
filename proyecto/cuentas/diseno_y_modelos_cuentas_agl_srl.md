@@ -25,7 +25,7 @@ Si tipo == TRANSPORTISTA (opcional, extensible):
 
 > Los **roles del ticket** (remitente comercial, origen, destinatario, destino, remitente) **NO** se modelan en `Cuenta`. Se asignan en el **Ticket** con FKs a `Cuenta`.
 
-![Diagrama de cuentas](proyecto/cuentas/bd_cuenta.png)
+![Diagrama de cuentas](bd_cuenta.png)
 
 ---
 
