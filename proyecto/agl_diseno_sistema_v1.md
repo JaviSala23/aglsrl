@@ -1,190 +1,192 @@
-# Proyecto AGL — Versión 1 (Diseño Formalizado)
+# AGL — Diseño Funcional v1.1 (MD)
 
-## 1. Objetivo General
-Sistema para **gestión de tickets de entrada/salida de mercadería** y **almacenaje** en plantas y zonas mixtas, con control de camiones, choferes, documentación y stock.
-
----
-
-## 2. Entidades Principales
-
-### Ubicación
-- **Tipos**: `PLANTA` (con encargado), `ZONA_MIXTA` (sin encargado).
-- Geodatos: dirección, lat/lng, polígono, accesos.
-
-### Almacenaje
-- Asociado a una **Ubicación**.
-- **Tipos**: `SILO`, `SILO_BOLSA`, `GALPON`.
-- Campos: código, capacidad, estado, coordenadas.
-
-### Sub‑almacenaje (dentro de Galpón)
-- **Tipos**: `GRANEL`, `BOLSA_25`, `BOLSA_50`, `BIGBAG_500`, `BIGBAG_1000`.
-- Campos: sector, cantidad unidades, peso total, lote/identificador.
-
-### Mercadería
-- Catálogo de especies y calidades.
-- **Campos**: especie (soja, maíz, girasol, trigo…), calidad/grado, observaciones.
-- Nota: la **presentación** y **unidad de medida** se registran en el **Ticket** (movimiento), no en la mercadería.
-
-### Vehículos y Choferes
-- **Vehículo Tractor/Camión**: dominio, tara declarada/verificada, estado operativo.
-- **Acoplado/Semirremolque**: dominio, tipo, tara.
-- **Conjunto Vehicular**: relación tractor + uno o varios acoplados (incluye bitrenes con hasta 3 dominios).
-- **Chofer**: nombre, DNI, licencia (opcional), vencimiento (opcional).
-- **Documentación Vehicular**: RTO, VTV, Seguro, CNRT (opcionales).
-
-### Ticket
-- **Tipos**: `ENTRADA` / `SALIDA`.
-- **Estados**:
-  - `EN_PESAJE_ENTRADA`: al registrar peso bruto al ingresar a planta.
-  - `CARGA` (si es salida) / `DESCARGA` (si es entrada).
-  - `EN_PESAJE_SALIDA`: al registrar peso de salida previo a cierre.
-  - `CERRADO`: cierre administrativo definitivo.
-  - `ANULADO`: tickets inválidos o que no prosperaron.
-- **Modo**: `modo_valido = true/false`.  
-  - `true` = operación conforme.  
-  - `false` = operación en modo **DARK** (documentación incompleta o mercadería observada).
-- **Mercadería asociada**: referencia obligatoria a catálogo de Mercadería.
-- **Movimiento (presentación registrada en el ticket)**:
-  - `presentacion_movimiento`: FK a **CatalogoPresentacion**.
-  - `unidad_medida_mov`: FK a **UnidadMedida**.
-  - `cantidad_movimiento`.
-  - `peso_unitario_opcional`.
-  - `condicion_acondicionamiento` (opcional).
-- **Almacenaje destino/origen**: FK a **Almacenaje** o **Sub‑almacenaje** según corresponda.
-- **Pesajes**: bruto, tara, neto.
-- **Vinculaciones**: vehículo tractor, acoplado, chofer, transportista.
+> **Propósito:** Documento de **diseño funcional** en Markdown (sin código) para la Versión 1.1. Incluye **Cuentas + Agenda**, **Tickets**, **Ubicaciones/Almacenajes**, **Mercaderías**, **Vehículos** y **reglas**. Sirve como base para implementación posterior.
 
 ---
 
-## 3. Catálogos Controlados
+## 1. Objetivo y Alcance de v1.1
 
-### CatalogoPresentacion
-- `GRANEL`, `BOLSA_25`, `BOLSA_50`, `BIGBAG_500`, `BIGBAG_1000`.
-
-### UnidadMedida
-- `KG`, `TN`, `BOLSAS`, `UNIDADES`.
-
-### FactorConversion
-- Ejemplo: TN→KG = 1000.
-
-### PesoUnitarioReferencia
-- BOLSA_25 = 25 kg
-- BOLSA_50 = 50 kg
-- BIGBAG_500 = 500 kg
-- BIGBAG_1000 = 1000 kg
-
-### ReglaAlmacenajePresentacion
-- `SILO` → GRANEL.
-- `SILO_BOLSA` → GRANEL.
-- `GALPON` → GRANEL, BOLSA_25, BOLSA_50, BIGBAG_500, BIGBAG_1000.
+* Establecer el **modelo de datos funcional** y las **reglas** para operar tickets de **Entrada/Salida** con trazabilidad de **Ubicaciones/Almacenajes**, **Mercaderías**, **Vehículos** y **Cuentas**.
+* Definir **Cuentas** (Cliente/Proveedor/Transportista/Cuenta Propia) y una **Agenda centralizada** (Contactos/Medios/Domicilios) reutilizable en Tickets y documentos.
+* Mantener **presentaciones/unidades** registradas **en el Ticket** (no en el catálogo de Mercaderías) y consolidar **stock en KG**.
 
 ---
 
-## 4. Stock y Conversión
-- Todo stock se consolida en **KG**.
-- Si ticket en TN → convertir con factor.
-- Si en BOLSAS/UNIDADES → `kg = cantidad × peso_unitario`.
-- El sistema guarda ambos: la **forma original del movimiento** (ej. 18 BIGBAG_500) y el **equivalente en kg**.
+## 2. Entidades y Diccionario (sin código)
+
+### 2.1 Cuentas (Agenda + Fiscal/ARCA)
+
+**Tipo de Cuenta (catálogo)**
+Valores: `CLIENTE`, `PROVEEDOR`, `TRANSPORTISTA`, `CUENTA_PROPIA`.
+
+**Cuenta**
+
+* `id` (PK)
+* `razon_social` (Obligatorio)
+* `tipo_principal` (FK → Tipo de Cuenta) (Obligatorio)
+* **Fiscal (ARCA)**: `cuit` (Opc.), `condicion_iva` (Opc.), `iibb` (Opc.), `domicilio_fiscal` (Opc.), `punto_venta` (Opc.)
+* `observaciones` (Opc.)
+
+> **AGL** debe existir como Cuenta con `tipo_principal = CUENTA_PROPIA` para poder figurar como **origen/destino/remitente/destinatario** cuando aplique.
+
+**Agenda centralizada**
+
+* **Contacto**: `id`, `cuenta_id` (FK), `nombre` (Obl.), `cargo` (Opc.), `es_principal` (bool, Opc.), `observaciones` (Opc.)
+* **MedioContacto**: `id`, `contacto_id` (FK), `tipo` ∈ {`TELEFONO`,`EMAIL`,`OTRO`}, `valor` (Obl.), `etiqueta` (Opc.)
+* **Domicilio**: `id`, `cuenta_id` (FK), `direccion` (Obl.), `etiqueta` (Opc.: fiscal/planta/depósito), `lat`/`lng` (Opc.)
+
+**Notas**
+
+* **No** se guardan roles operativos (remitente, destinatario, etc.) en la Cuenta. **Se asignan dentro del Ticket**.
 
 ---
 
-## 5. Roles y Permisos
-- **Auxiliar**: crear tickets, registrar pesajes.
-- **Encargado**: lo anterior + asignar almacenaje, editar ticket, cerrar con observaciones.
-- **Administración**: todo + carga de documentación, marcar `modo_valido`, cierre definitivo, anulación.
+### 2.2 Ubicaciones y Almacenajes
+
+**Ubicación**
+
+* `id`, `nombre`, `tipo` ∈ {`PLANTA`,`ZONA_MIXTA`}, `encargado_nombre` (si PLANTA)
+* Geodatos: `lat`/`lng`, `direccion_mapa`, `google_place_id` (opc.)
+* Polígono/Accesos (opc.): `geo_poligono`, `accesos[]` (puntos lat/lng + desc.)
+
+**Almacenaje (principal)**
+
+* `id`, `ubicacion_id` (FK), `tipo` ∈ {`SILO`,`SILO_BOLSA`,`GALPON`}, `codigo`, `capacidad_kg` (opc.), `estado` ∈ {`DISPONIBLE`,`OCUPADO`,`FUMIGACION`,`MANTENIMIENTO`,`BLOQUEADO`}
+* Geodatos: `lat`/`lng` (opc.)
+* Silo Bolsa: `geo_tramo` (polilínea, min. 2 puntos), `longitud_m` (opc.), `sentido` (opc.)
+
+**Sub‑almacenaje**
+
+* `id`, `almacenaje_id` (FK), `tipo` ∈ {`GRANEL`,`BOLSA_25`,`BOLSA_50`,`BIGBAG_500`,`BIGBAG_1000`}, `sector_codigo` (opc.), `descripcion` (opc.)
 
 ---
 
-## 6. Reportes Iniciales
-1. Stock por ubicación/almacenaje (kg + forma original).
-2. Movimientos por ticket (entrada/salida, mercadería, camión).
-3. Padrón vehicular y choferes.
-4. Alertas de vencimientos.
-5. Consumo/producción por presentación (bolsas/bigbags).
+### 2.3 Mercaderías y Movimiento
+
+**Mercadería (catálogo)**
+
+* `id`, `especie` (soja/maíz/girasol/trigo/otros), `calidad_grado` (opc.), `observaciones` (opc.)
+
+**Presentaciones y Unidades (catálogos)**
+
+* `CatalogoPresentacion`: `GRANEL`, `BOLSA_25`, `BOLSA_50`, `BIGBAG_500`, `BIGBAG_1000`
+* `UnidadMedida`: `KG`, `TN`, `BOLSAS`, `UNIDADES`
+* `FactorConversion`: pares (`TN`→`KG`=1000, etc.)
+* `PesoUnitarioReferencia`: por presentación (ej. 25/50/500/1000 kg)
+* `ReglaAlmacenajePresentacion`: compatibilidad por `SILO`/`SILO_BOLSA`/`GALPON`
+
+**Movimiento (se guarda en el Ticket)**
+
+* `presentacion_movimiento` (FK a `CatalogoPresentacion`)
+* `unidad_medida_mov` (FK a `UnidadMedida`)
+* `cantidad_movimiento` (numérico)
+* `peso_unitario_opcional` (num., para bolsas/bigbags; si no, usar referencia)
+* `condicion_acondicionamiento` (opc.: fumigado, húmedo, procesado)
+
+**Stock (unidad estándar)**
+
+* Toda afectación se consolida en **KG** (conversión desde unidad del movimiento)
 
 ---
 
-## 7. Roadmap Iteraciones
-- Iteración 1: Formalización de modelos (este documento).
-- Iteración 2: Diccionario de datos y altas iniciales de catálogos.
-- Iteración 3: Flujos de tickets con ejemplos.
-- Iteración 4: Plantillas de documentos (QR, reportes).
-- Iteración 5: Integración con CPs, remitos y liquidaciones.
+### 2.4 Vehículos y Personas
+
+* **Vehículo (Tractor/Camión)**: `id`, `dominio` (único), `tara_declarada`, `tara_verificada`, `estado_operativo` ∈ {`HABILITADO`,`OBSERVADO`,`BLOQUEADO`}, `observaciones`
+* **Acoplado/Semirremolque**: `id`, `dominio` (único), `tipo`, `tara_declarada`, `tara_verificada`, `estado_operativo`, `observaciones`
+* **ConjuntoVehicular**: `id`, `tractor_id` (FK), `acoplados[]` (FK list) — soporta **bitrén**
+* **Chofer**: `id`, `nombre` (Obl.), `dni` (opc.), `licencia` (opc.), `licencia_vto` (opc.), `celular` (opc.)
+* **Documentación Vehicular**: opcional (null permitido) — `tipo` (RTO/VTV/Seguro/CNRT/otros), `numero`, `vencimiento`, `vehiculo_id/acoplado_id`
 
 ---
 
-## 8. Diagrama Entidad–Relación (texto)
-- **Ubicación** 1—N **Almacenaje**
-- **Almacenaje** 1—N **Sub‑almacenaje**
-- **Almacenaje/Sub‑almacenaje** N—N **Ticket** (según origen/destino)
-- **Mercadería** 1—N **Ticket**
-- **Vehículo Tractor** 1—N **Ticket**
-- **Acoplado** 0..1—N **Ticket**
-- **Chofer** 1—N **Ticket**
-- **Transportista** 1—N **Ticket**
-- **Ticket** N—1 **CatalogoPresentacion** + N—1 **UnidadMedida**
-- **CatalogoPresentacion** 1—N **PesoUnitarioReferencia**
-- **UnidadMedida** N—N **FactorConversion**
-- **Almacenaje.tipo** N—N **ReglaAlmacenajePresentacion** → **CatalogoPresentacion**
+### 2.5 Ticket (movimiento)
 
-## 9. Matriz de Compatibilidad Almacenaje × Presentación
-| Almacenaje Tipo | GRANEL | BOLSA_25 | BOLSA_50 | BIGBAG_500 | BIGBAG_1000 |
-|-----------------|--------|----------|----------|------------|-------------|
-| SILO            | ✔      | ✘        | ✘        | ✘          | ✘           |
-| SILO_BOLSA      | ✔      | ✘        | ✘        | ✘          | ✘           |
-| GALPON          | ✔      | ✔        | ✔        | ✔          | ✔           |
+**Tipos**: `ENTRADA` / `SALIDA`
+**Estados automáticos**: `EN_PESAJE_ENTRADA` → `CARGA` (si SALIDA) / `DESCARGA` (si ENTRADA) → `EN_PESAJE_SALIDA` → `CERRADO` | `ANULADO`
+**Modo**: `modo_valido = true/false` (false = **modo DARK**; lo define Administración)
 
-> Esta matriz inicial define qué combinaciones son válidas al registrar movimientos en tickets. Puede extenderse en futuras iteraciones (ej.: permitir bolsas en silos especiales).
+**Vínculos principales**
 
+* `ubicacion_id` (FK Ubicación)
+* `almacenaje_id` (FK Almacenaje, obligatorio antes de `EN_PESAJE_SALIDA` en ENTRADA; en SALIDA para reserva/egreso)
+* `subalmacenaje_id` (FK Sub‑almacenaje, opc.)
+* `mercaderia_id` (FK Mercadería)
+* Vehículos/Personas: `tractor_id` (FK), `acoplado_id` (FK opc.), `conjunto_id` (opc.), `chofer_id` (FK)
+* `transportista_cuenta_id` (FK Cuenta tipo principal **sugerido**: TRANSPORTISTA)
 
-## 8. Diagrama ER (texto)
-- **Ubicación** (1) ─── (N) **Almacenaje**
-  - Ubicación(id) ↔ Almacenaje(ubicacion_id)
-- **Almacenaje** (1) ─── (N) **Sub‑almacenaje**
-  - Almacenaje(id) ↔ SubAlmacenaje(almacenaje_id)
-- **Mercadería** (1) ─── (N) **Ticket**
-  - Mercadería(id) ↔ Ticket(mercaderia_id)
-- **Vehículo (Tractor)** (1) ─── (N) **Ticket**
-  - Vehículo(id) ↔ Ticket(tractor_id)
-- **Acoplado** (0..1) ─── (N) **Ticket**
-  - Acoplado(id) ↔ Ticket(acoplado_id)
-- **ConjuntoVehicular** (0..1) ─── (N) **Ticket**
-  - ConjuntoVehicular(id) ↔ Ticket(conjunto_id)
-- **Chofer** (1) ─── (N) **Ticket**
-  - Chofer(id) ↔ Ticket(chofer_id)
-- **Transportista** (1) ─── (N) **Ticket**
-  - Transportista(id) ↔ Ticket(transportista_id)
-- **CatalogoPresentacion** (1) ─── (N) **Ticket** (presentacion_movimiento)
-- **UnidadMedida** (1) ─── (N) **Ticket** (unidad_medida_mov)
-- **Almacenaje/Sub‑almacenaje** (0..1) ─── (N) **Ticket** (origen/destino según tipo)
+**Cuentas en el Ticket (roles operativos)**
 
-> Notas:
-> - Todo **stock** se consolida por Almacenaje/Sub‑almacenaje en **KG**.
-> - El **Ticket** guarda la forma original del movimiento (presentación, unidad, cantidad, peso unitario opcional).
+* **Entrada**:
 
-## 9. Matriz de compatibilidad Almacenaje × Presentación (v1)
+  * `origen_cuenta_id` (Obl.) — puede ser **AGL (CUENTA\_PROPIA)** o tercero
+  * `remitente_comercial_primario_id` (Obl.)
+  * `remitente_comercial_secundario_id` (Opc.)
+  * `destino_ubicacion_id` (Opc., si descarga en propia) / `destino_cuenta_id` (Opc., si descarga a tercero)
+* **Salida**:
 
-| Almacenaje.tipo | GRANEL | BOLSA_25 | BOLSA_50 | BIGBAG_500 | BIGBAG_1000 |
-|---|:---:|:---:|:---:|:---:|:---:|
-| SILO | ✓ | – | – | – | – |
-| SILO_BOLSA | ✓ | – | – | – | – |
-| GALPON | ✓ | ✓ | ✓ | ✓ | ✓ |
+  * `destinatario_cuenta_id` (Obl.) — puede ser **AGL** o cliente/tercero
+  * `remitente_cuenta_id` (Opc., si corresponde)
+  * `destino_ubicacion_id` (Opc., a propia) / `destino_cuenta_id` (Opc., a tercero)
 
-**Reglas adicionales**
-- `SILO` y `SILO_BOLSA` operan **solo GRANEL**; en Silo Bolsa se puede segmentar por **tramos**.
-- `GALPON` admite **todas** las presentaciones. Se recomienda sectorización para bolsas/bigbags.
-- Para **SALIDAS**, verificar disponibilidad en la unidad seleccionada antes de pasar a `EN_PESAJE_SALIDA`.
+**Pesajes**
 
-## 10. Flujos resumidos por tipo de Ticket
-**ENTRADA**
-1) Crear → `EN_PESAJE_ENTRADA` → registrar **bruto**
-2) `DESCARGA` → asignar **Almacenaje/Sub** compatible
-3) `EN_PESAJE_SALIDA` → registrar **tara** → resultado `DESCARGADO`
-4) Administración: `modo_valido` (true/false) y **CERRADO** (o **ANULADO**)
+* `peso_bruto_kg` (opc.), `peso_tara_kg` (opc.) → `peso_neto_kg` (derivado, no negativo)
 
-**SALIDA**
-1) Crear → `EN_PESAJE_ENTRADA` → registrar **bruto** (si aplica) o iniciar en balanza
-2) `CARGA` → **reserva/egreso** en Almacenaje/Sub compatible
-3) `EN_PESAJE_SALIDA` → registrar **tara** → resultado `CARGADO`
-4) Administración: `modo_valido` (true/false) y **CERRADO** (o **ANULADO**)
+**Movimiento (datos del envío/recepción)**
+
+* `presentacion_movimiento`, `unidad_medida_mov`, `cantidad_movimiento`, `peso_unitario_opcional`, `condicion_acondicionamiento`
+
+**Derivados**
+
+* `resultado_operativo` ∈ {`CARGADO`,`DESCARGADO`} al completar `EN_PESAJE_SALIDA`
+* `equivalente_kg` para stock (conversiones según catálogos)
+
+---
+
+## 3. Reglas y Validaciones
+
+1. **Compatibilidad** Presentación × Almacenaje según `ReglaAlmacenajePresentacion`.
+2. **Stock** siempre en **KG** (conversiones TN↔KG y bolsas/bigbags por peso unitario).
+3. **Estados** avanzan **automáticamente** por acciones (pesajes, asignación, fin de operación). El usuario **no** edita estados manualmente.
+4. **Cierre** lo ejecuta **Administración** (marca `modo_valido` y pasa a `CERRADO` o `ANULADO`).
+5. **Documentación** (vehicular/licencias) es opcional a nivel de datos; su ausencia puede reflejarse con `modo_valido=false`.
+
+---
+
+## 4. Relaciones (ER textual)
+
+* Ubicación (1) — (N) Almacenaje
+* Almacenaje (1) — (N) Sub‑almacenaje
+* Mercadería (1) — (N) Ticket
+* Cuenta (1..N) — Ticket (como: origen, remitentes, destinatario, destino, transportista)
+* Vehículo Tractor (1) — (N) Ticket; Acoplado (0..1) — (N) Ticket; Conjunto (0..1) — (N) Ticket
+* Chofer (1) — (N) Ticket
+* Catálogos (Presentación/Unidad/Conversiones/Pesos) — (N) Ticket (para movimiento)
+
+---
+
+## 5. Criterios de Aceptación (extracto)
+
+1. **Crear Ticket ENTRADA** con: `origen_cuenta_id`, `remitente_comercial_primario_id`, `mercaderia_id`, vehículo/chofer, `presentacion/unidad/cantidad` ⇒ estado `EN_PESAJE_ENTRADA`.
+2. **Registrar pesaje de entrada** ⇒ `DESCARGA` (si ENTRADA) / `CARGA` (si SALIDA).
+3. **Asignar almacenaje** compatible (y stock disponible en SALIDA) ⇒ `EN_PESAJE_SALIDA`.
+4. **Registrar pesaje de salida** ⇒ fija `resultado_operativo` y `equivalente_kg`.
+5. **Cierre** por Administración ⇒ `CERRADO` (o `ANULADO`) y `modo_valido` definido (`true/false`).
+
+---
+
+## 6. Compatibilidad Almacenaje × Presentación (v1)
+
+| Almacenaje.tipo | GRANEL | BOLSA\_25 | BOLSA\_50 | BIGBAG\_500 | BIGBAG\_1000 |
+| --------------- | :----: | :-------: | :-------: | :---------: | :----------: |
+| SILO            |    ✓   |     –     |     –     |      –      |       –      |
+| SILO\_BOLSA     |    ✓   |     –     |     –     |      –      |       –      |
+| GALPON          |    ✓   |     ✓     |     ✓     |      ✓      |       ✓      |
+
+---
+
+## 7. Notas finales
+
+* Este documento **reemplaza** la versión previa de diseño para reflejar **Cuentas + Agenda** y los **roles operativos asignados dentro del Ticket**.
+* Cuando confirmes, integro estos cambios en el **ER Canvas** y preparo un **checklist** para migrar datos iniciales (catálogos y ubicaciones).
 
