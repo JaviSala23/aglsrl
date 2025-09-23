@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Gestión de Usuarios - AGL SRL{% endblock %}</title>
+    
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Animate.css para animaciones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+    
+    <!-- CSS para módulo de usuarios -->
+    {% load static %}
+    <style>
+        :root {
+            --usuarios-primary: #8e9aaf;
+            --usuarios-secondary: #b8a9c9;
+            --usuarios-light: #f4f3f7;
+            --usuarios-dark: #6c757d;
+            --usuarios-accent: #9fa8b2;
+            --usuarios-hover: #7a8394;
+        }
+        
+        .navbar-usuarios {
+            background: linear-gradient(135deg, var(--usuarios-primary), var(--usuarios-secondary)) !important;
+        }
+        
+        .btn-usuarios {
+            background: linear-gradient(135deg, var(--usuarios-primary), var(--usuarios-secondary));
+            border: none;
+            color: white;
+        }
+        
+        .btn-usuarios:hover {
+            background: linear-gradient(135deg, var(--usuarios-hover), var(--usuarios-dark));
+            color: white;
+            transform: translateY(-1px);
+        }
+        
+        .text-usuarios {
+            color: var(--usuarios-primary) !important;
+        }
+        
+        .bg-usuarios {
+            background-color: var(--usuarios-light) !important;
+        }
+        
+        .border-usuarios {
+            border-color: var(--usuarios-primary) !important;
+        }
+        
+        .dropdown-item:hover {
+            background-color: var(--usuarios-light);
+            color: var(--usuarios-dark);
+        }
+        
+        .navbar-nav .nav-link:hover {
+            background-color: rgba(255, 255, 255, 0.15);
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+        
+        .footer-usuarios {
+            background: linear-gradient(135deg, var(--usuarios-primary), var(--usuarios-secondary));
+            color: white;
+        }
+        
+        /* Estilos adicionales para elementos del módulo */
+        .user-card:hover {
+            border-left: 4px solid var(--usuarios-primary);
+        }
+        
+        .btn-outline-usuarios {
+            border-color: var(--usuarios-primary);
+            color: var(--usuarios-primary);
+        }
+        
+        .btn-outline-usuarios:hover {
+            background-color: var(--usuarios-primary);
+            border-color: var(--usuarios-primary);
+            color: white;
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="bg-light">
+    <!-- Navbar específica para usuarios -->
+    {% if user.is_authenticated %}
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-usuarios shadow-sm">
+        <div class="container-fluid">
+            <!-- Brand -->
+            <a class="navbar-brand fw-bold" href="{% url 'main:panel' %}">
+                <i class="bi bi-people-fill me-2"></i>
+                Gestión de Usuarios - AGL SRL
+            </a>
+            
+            <!-- Toggler para móviles -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarUsuarios">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <!-- Menú de navegación -->
+            <div class="collapse navbar-collapse" id="navbarUsuarios">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <!-- Panel Principal -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'main:panel' %}">
+                            <i class="bi bi-house-door me-1"></i>
+                            Panel Principal
+                        </a>
+                    </li>
+                    
+                    <!-- Usuarios -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-people me-1"></i>
+                            Usuarios
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="{% url 'main:lista_usuarios' %}">
+                                    <i class="bi bi-list me-2"></i>
+                                    Lista de Usuarios
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'main:registro' %}">
+                                    <i class="bi bi-person-plus me-2"></i>
+                                    Nuevo Usuario
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'main:lista_usuarios' %}?is_active=True">
+                                    <i class="bi bi-person-check me-2"></i>
+                                    Usuarios Activos
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'main:lista_usuarios' %}?is_staff=True">
+                                    <i class="bi bi-shield-check me-2"></i>
+                                    Personal Administrativo
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Reportes -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-bar-chart me-1"></i>
+                            Reportes
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="#">
+                                    <i class="bi bi-graph-up me-2"></i>
+                                    Estadísticas de Usuarios
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#">
+                                    <i class="bi bi-calendar-event me-2"></i>
+                                    Usuarios por Fecha
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#">
+                                    <i class="bi bi-activity me-2"></i>
+                                    Actividad de Usuarios
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                    
+                    <!-- Configuración -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-gear me-1"></i>
+                            Configuración
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li>
+                                <a class="dropdown-item" href="#">
+                                    <i class="bi bi-shield-lock me-2"></i>
+                                    Permisos y Roles
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#">
+                                    <i class="bi bi-key me-2"></i>
+                                    Política de Contraseñas
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="#">
+                                    <i class="bi bi-bell me-2"></i>
+                                    Notificaciones
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+                
+                <!-- Usuario actual -->
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown">
+                            <div class="rounded-circle bg-light text-dark d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px; font-size: 0.9rem; font-weight: bold;">
+                                {{ user.first_name|first|upper|default:user.username|first|upper }}{{ user.last_name|first|upper }}
+                            </div>
+                            {{ user.get_full_name|default:user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li>
+                                <a class="dropdown-item" href="{% url 'main:detalle_usuario' user.id %}">
+                                    <i class="bi bi-person-circle me-2"></i>
+                                    Mi Perfil
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'main:editar_usuario' user.id %}">
+                                    <i class="bi bi-pencil me-2"></i>
+                                    Editar Perfil
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'main:logout' %}">
+                                    <i class="bi bi-box-arrow-right me-2"></i>
+                                    Cerrar Sesión
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <!-- Mensajes del sistema -->
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
+            {% if message.tags == 'error' %}
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            {% elif message.tags == 'success' %}
+                <i class="bi bi-check-circle-fill me-2"></i>
+            {% elif message.tags == 'warning' %}
+                <i class="bi bi-exclamation-circle-fill me-2"></i>
+            {% else %}
+                <i class="bi bi-info-circle-fill me-2"></i>
+            {% endif %}
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- Contenido principal -->
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer-usuarios mt-5 py-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h6 class="mb-0">
+                        <i class="bi bi-people-fill me-2"></i>
+                        Gestión de Usuarios - AGL SRL
+                    </h6>
+                    <small class="opacity-75">Sistema de administración de usuarios</small>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <small class="opacity-75">
+                        © {{ "now"|date:"Y" }} AGL SRL. Módulo de Usuarios.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5.3 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

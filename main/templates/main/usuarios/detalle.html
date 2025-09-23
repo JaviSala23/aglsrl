@@ -1,0 +1,277 @@
+{% extends 'main/base_usuarios.html' %}
+{% load static %}
+
+{% block title %}{{ usuario.get_full_name|default:usuario.username }} - Usuarios - AGL SRL{% endblock %}
+
+{% block extra_css %}
+<style>
+    .user-header {
+        background: linear-gradient(135deg, #8e9aaf, #b8a9c9);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+    }
+    
+    .user-avatar-large {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+    }
+    
+    .info-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+        margin-bottom: 1.5rem;
+    }
+    
+    .info-item {
+        padding: 1rem 0;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    
+    .info-item:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.25rem;
+    }
+    
+    .info-value {
+        color: #6b7280;
+        margin-bottom: 0;
+    }
+    
+    .status-badge {
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+    
+    .status-active {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    
+    .status-inactive {
+        background-color: #fee2e2;
+        color: #dc2626;
+    }
+    
+    .btn-action {
+        padding: 0.6rem 1.2rem;
+        border-radius: 8px;
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        border: none;
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        color: white;
+    }
+    
+    .btn-danger {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        border: none;
+        color: white;
+    }
+    
+    .btn-danger:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        color: white;
+    }
+    
+    .btn-secondary {
+        background: #6b7280;
+        border: none;
+        color: white;
+    }
+    
+    .btn-secondary:hover {
+        background: #4b5563;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="user-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="user-avatar-large mx-auto mx-md-0">
+                    {{ usuario.first_name|first|upper }}{{ usuario.last_name|first|upper }}
+                </div>
+                <h1 class="h2 mb-1">{{ usuario.get_full_name|default:usuario.username }}</h1>
+                <p class="mb-0 opacity-90">@{{ usuario.username }}</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="mt-3 mt-md-0">
+                    <a href="{% url 'main:editar_usuario' usuario.id %}" class="btn-action btn-primary">
+                        <i class="bi bi-pencil"></i>
+                        Editar Usuario
+                    </a>
+                    {% if usuario != request.user %}
+                    <a href="{% url 'main:eliminar_usuario' usuario.id %}" class="btn-action btn-danger">
+                        <i class="bi bi-trash"></i>
+                        Eliminar
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row">
+        <!-- Información del usuario -->
+        <div class="col-md-8">
+            <div class="card info-card">
+                <div class="card-header bg-transparent">
+                    <h5 class="mb-0">
+                        <i class="bi bi-person-vcard me-2"></i>
+                        Información Personal
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="info-item">
+                        <div class="info-label">Nombre completo</div>
+                        <div class="info-value">{{ usuario.get_full_name|default:"No especificado" }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Nombre de usuario</div>
+                        <div class="info-value">{{ usuario.username }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Correo electrónico</div>
+                        <div class="info-value">{{ usuario.email|default:"No especificado" }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Estado</div>
+                        <div class="info-value">
+                            <span class="status-badge {% if usuario.is_active %}status-active{% else %}status-inactive{% endif %}">
+                                {% if usuario.is_active %}
+                                    <i class="bi bi-check-circle me-1"></i>Activo
+                                {% else %}
+                                    <i class="bi bi-x-circle me-1"></i>Inactivo
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Fecha de registro</div>
+                        <div class="info-value">{{ usuario.date_joined|date:"d/m/Y H:i" }}</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Último acceso</div>
+                        <div class="info-value">
+                            {% if usuario.last_login %}
+                                {{ usuario.last_login|date:"d/m/Y H:i" }}
+                            {% else %}
+                                Nunca ha iniciado sesión
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Permisos</div>
+                        <div class="info-value">
+                            {% if usuario.is_superuser %}
+                                <span class="badge bg-danger">Superusuario</span>
+                            {% elif usuario.is_staff %}
+                                <span class="badge bg-warning">Personal administrativo</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Usuario estándar</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estadísticas -->
+        <div class="col-md-4">
+            <div class="card info-card">
+                <div class="card-header bg-transparent">
+                    <h5 class="mb-0">
+                        <i class="bi bi-bar-chart me-2"></i>
+                        Estadísticas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="info-item">
+                        <div class="info-label">Tareas asignadas</div>
+                        <div class="info-value">
+                            <span class="badge bg-primary">{{ tareas_asignadas }}</span>
+                        </div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Tareas creadas</div>
+                        <div class="info-value">
+                            <span class="badge bg-success">{{ tareas_creadas }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones rápidas -->
+            <div class="card info-card">
+                <div class="card-header bg-transparent">
+                    <h5 class="mb-0">
+                        <i class="bi bi-lightning me-2"></i>
+                        Acciones Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <a href="{% url 'agenda:crear_tarea' %}?asignado_a={{ usuario.id }}" 
+                       class="btn btn-outline-success btn-sm w-100 mb-2">
+                        <i class="bi bi-plus-circle me-1"></i>
+                        Asignar nueva tarea
+                    </a>
+                    <a href="{% url 'agenda:lista_tareas' %}?asignado_a={{ usuario.id }}" 
+                       class="btn btn-outline-primary btn-sm w-100">
+                        <i class="bi bi-list-task me-1"></i>
+                        Ver tareas asignadas
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botón de regreso -->
+    <div class="row mt-4">
+        <div class="col">
+            <a href="{% url 'main:lista_usuarios' %}" class="btn-action btn-secondary">
+                <i class="bi bi-arrow-left"></i>
+                Volver a la lista
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

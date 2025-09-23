@@ -1,0 +1,276 @@
+/* 
+ * CSS personalizado para el módulo de Transportes
+ * Sistema de gestión de camiones, choferes y viajes
+ * Color primario: #198754 (Verde - siguiendo lógica de cuentas)
+ */
+
+:root {
+    /* Colores específicos para Transportes - Tema Verde (siguiendo cuentas) */
+    --transportes-primary: #198754;
+    --transportes-primary-light: #20c997;
+    --transportes-primary-dark: #146c43;
+    --transportes-secondary: #6c757d;
+    --transportes-success: #198754;
+    --transportes-info: #0dcaf0;
+    --transportes-warning: #ffc107;
+    --transportes-danger: #dc3545;
+    --transportes-light: #f8f9fa;
+    --transportes-dark: #212529;
+    
+    /* Gradientes verdes */
+    --transportes-gradient: linear-gradient(135deg, #198754, #20c997);
+    --transportes-gradient-hover: linear-gradient(135deg, #146c43, #198754);
+}
+
+/* ===========================================
+   NAVEGACIÓN ESPECÍFICA DE TRANSPORTES
+   ========================================== */
+
+/* Resaltar el dropdown de transportes en verde */
+.navbar-nav .nav-item.dropdown .nav-link.active,
+.navbar-nav .nav-item.dropdown:hover .nav-link {
+    background-color: rgba(25, 135, 84, 0.15) !important;
+    color: #ffffff !important;
+}
+
+/* Items del dropdown de transportes */
+.navbar-nav .dropdown-menu .dropdown-item:hover {
+    background-color: rgba(25, 135, 84, 0.1);
+    color: var(--transportes-primary);
+}
+
+/* ===========================================
+   BOTONES TEMA VERDE
+   ========================================== */
+
+.transportes-container .btn-primary {
+    background: var(--transportes-gradient);
+    border-color: var(--transportes-primary);
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.transportes-container .btn-primary:hover {
+    background: var(--transportes-gradient-hover);
+    border-color: var(--transportes-primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(25, 135, 84, 0.3);
+}
+
+.transportes-container .btn-outline-primary {
+    color: var(--transportes-primary);
+    border-color: var(--transportes-primary);
+}
+
+.transportes-container .btn-outline-primary:hover {
+    background-color: var(--transportes-primary);
+    border-color: var(--transportes-primary);
+    color: white;
+}
+
+/* Botón específico para operaciones de transporte */
+.btn-transportes {
+    background: var(--transportes-gradient);
+    border-color: var(--transportes-primary);
+    color: white;
+    border: none;
+}
+
+.btn-transportes:hover {
+    background: var(--transportes-gradient-hover);
+    border-color: var(--transportes-primary-dark);
+    color: white;
+}
+
+/* ===========================================
+   CARDS Y CONTENEDORES
+   ========================================== */
+
+.transportes-container .card-header {
+    background: linear-gradient(135deg, rgba(25, 135, 84, 0.05) 0%, rgba(25, 135, 84, 0.1) 100%);
+    border-bottom: 1px solid rgba(25, 135, 84, 0.1);
+}
+
+.transportes-container .card-primary .card-header {
+    background: var(--transportes-gradient);
+    color: white;
+    border-bottom: none;
+}
+
+/* ===========================================
+   BADGES DE ESTADO ESPECÍFICOS
+   ========================================== */
+
+/* Estados de camiones */
+.badge-camion-disponible {
+    background-color: var(--transportes-success);
+    color: white;
+}
+
+.badge-camion-en-viaje {
+    background-color: var(--transportes-warning);
+    color: #212529;
+}
+
+.badge-camion-mantenimiento {
+    background-color: var(--transportes-danger);
+    color: white;
+}
+
+.badge-camion-inactivo {
+    background-color: var(--transportes-secondary);
+    color: white;
+}
+
+/* Estados de choferes */
+.badge-chofer-disponible {
+    background-color: var(--transportes-success);
+    color: white;
+}
+
+.badge-chofer-en-viaje {
+    background-color: var(--transportes-warning);
+    color: #212529;
+}
+
+.badge-chofer-descanso {
+    background-color: var(--transportes-info);
+    color: white;
+}
+
+.badge-chofer-inactivo {
+    background-color: var(--transportes-secondary);
+    color: white;
+}
+
+/* Estados de viajes */
+.badge-viaje-planificado {
+    background-color: var(--transportes-info);
+    color: white;
+}
+
+.badge-viaje-en-curso {
+    background-color: var(--transportes-warning);
+    color: #212529;
+}
+
+.badge-viaje-completado {
+    background-color: var(--transportes-success);
+    color: white;
+}
+
+.badge-viaje-cancelado {
+    background-color: var(--transportes-danger);
+    color: white;
+}
+
+/* Estados de tickets */
+.badge-ticket-pendiente {
+    background-color: var(--transportes-warning);
+    color: #212529;
+}
+
+.badge-ticket-procesado {
+    background-color: var(--transportes-success);
+    color: white;
+}
+
+.badge-ticket-rechazado {
+    background-color: var(--transportes-danger);
+    color: white;
+}
+
+/* ===========================================
+   ICONOS Y ELEMENTOS VISUALES
+   ========================================== */
+
+.transportes-container .text-primary {
+    color: var(--transportes-primary) !important;
+}
+
+.transportes-container .bg-primary {
+    background-color: var(--transportes-primary) !important;
+}
+
+.transportes-container .border-primary {
+    border-color: var(--transportes-primary) !important;
+}
+
+/* ===========================================
+   DASHBOARD ESPECÍFICO
+   ========================================== */
+
+.transportes-dashboard-card {
+    border-left: 4px solid var(--transportes-primary);
+    transition: all 0.3s ease;
+}
+
+.transportes-dashboard-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(25, 135, 84, 0.15);
+}
+
+/* Indicadores de estado en dashboard */
+.status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 0.5rem;
+}
+
+.status-disponible {
+    background-color: var(--transportes-success);
+}
+
+.status-en-viaje {
+    background-color: var(--transportes-warning);
+}
+
+.status-mantenimiento {
+    background-color: var(--transportes-danger);
+}
+
+/* ===========================================
+   EFECTOS HOVER Y TRANSICIONES
+   ========================================== */
+
+.transportes-container .list-group-item:hover {
+    background-color: rgba(25, 135, 84, 0.05);
+    border-color: var(--transportes-primary);
+}
+
+.transportes-container .table-hover tbody tr:hover {
+    background-color: rgba(25, 135, 84, 0.05);
+}
+
+/* Efecto para tarjetas de vehículos */
+.vehiculo-card {
+    transition: all 0.3s ease;
+    border: 1px solid rgba(25, 135, 84, 0.1);
+}
+
+.vehiculo-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(25, 135, 84, 0.15);
+    border-color: var(--transportes-primary);
+}
+
+/* ===========================================
+   RESPONSIVE DESIGN
+   ========================================== */
+
+@media (max-width: 768px) {
+    .transportes-container .card {
+        margin-bottom: 1rem;
+    }
+    
+    .transportes-container .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+    
+    .vehiculo-card {
+        margin-bottom: 1rem;
+    }
+}

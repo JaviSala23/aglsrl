@@ -1,0 +1,456 @@
+{% extends 'agenda/base_agenda.html' %}
+{% load static %}
+
+{% block title %}Tareas - Agenda - AGL SRL{% endblock %}
+
+{% block extra_css %}
+<style>
+    .tareas-header {
+        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .task-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        border: none;
+        margin-bottom: 1rem;
+        position: relative;
+    }
+    .task-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    .task-priority-bar {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 5px;
+        border-radius: 12px 0 0 12px;
+    }
+    .priority-urgente { background: #dc3545; }
+    .priority-alta { background: #fd7e14; }
+    .priority-media { background: #0d6efd; }
+    .priority-baja { background: #6c757d; }
+    
+    .task-checkbox {
+        width: 20px;
+        height: 20px;
+        margin-right: 1rem;
+        cursor: pointer;
+    }
+    .task-title {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 0.25rem;
+    }
+    .task-completed .task-title {
+        text-decoration: line-through;
+        color: #6c757d;
+    }
+    .task-description {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+    .task-meta {
+        font-size: 0.85rem;
+        color: #495057;
+    }
+    .task-due {
+        color: #dc3545;
+        font-weight: 600;
+    }
+    .task-due.overdue {
+        background: #dc3545;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+    }
+    .progress-bar-container {
+        background: #e9ecef;
+        border-radius: 10px;
+        height: 8px;
+        margin: 0.5rem 0;
+    }
+    .progress-bar-fill {
+        background: linear-gradient(90deg, #28a745, #20c997);
+        height: 100%;
+        border-radius: 10px;
+        transition: width 0.3s ease;
+    }
+    .filter-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+    .kanban-view-btn {
+        background: linear-gradient(135deg, #6f42c1 0%, #5a2d91 100%);
+        border: none;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'main:panel' %}" class="text-decoration-none">
+                    <i class="fas fa-home"></i> Panel Principal
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'agenda:dashboard' %}" class="text-decoration-none">
+                    <i class="fas fa-calendar-alt"></i> Agenda
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">Tareas</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="tareas-header">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h2><i class="fas fa-tasks me-3"></i>Gestión de Tareas</h2>
+                <p class="mb-0">Organiza y controla todos tus pendientes</p>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex gap-2 justify-content-md-end flex-wrap">
+                    <button class="btn kanban-view-btn" onclick="toggleKanbanView()">
+                        <i class="fas fa-columns me-2"></i>Vista Kanban
+                    </button>
+                    <a href="{% url 'agenda:crear_tarea' %}" class="btn btn-light">
+                        <i class="fas fa-plus me-2"></i>Nueva Tarea
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card filter-card">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="q" class="form-label">Buscar</label>
+                    <input type="text" class="form-control" id="q" name="q" 
+                           value="{{ request.GET.q }}" 
+                           placeholder="Título o descripción...">
+                </div>
+                <div class="col-md-2">
+                    <label for="estado" class="form-label">Estado</label>
+                    <select class="form-select" id="estado" name="estado">
+                        <option value="">Todos</option>
+                        <option value="pendiente" {% if request.GET.estado == 'pendiente' %}selected{% endif %}>Pendiente</option>
+                        <option value="en_progreso" {% if request.GET.estado == 'en_progreso' %}selected{% endif %}>En Progreso</option>
+                        <option value="completada" {% if request.GET.estado == 'completada' %}selected{% endif %}>Completada</option>
+                        <option value="cancelada" {% if request.GET.estado == 'cancelada' %}selected{% endif %}>Cancelada</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="prioridad" class="form-label">Prioridad</label>
+                    <select class="form-select" id="prioridad" name="prioridad">
+                        <option value="">Todas</option>
+                        <option value="urgente" {% if request.GET.prioridad == 'urgente' %}selected{% endif %}>Urgente</option>
+                        <option value="alta" {% if request.GET.prioridad == 'alta' %}selected{% endif %}>Alta</option>
+                        <option value="media" {% if request.GET.prioridad == 'media' %}selected{% endif %}>Media</option>
+                        <option value="baja" {% if request.GET.prioridad == 'baja' %}selected{% endif %}>Baja</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="vencimiento" class="form-label">Vencimiento</label>
+                    <select class="form-select" id="vencimiento" name="vencimiento">
+                        <option value="">Todas las fechas</option>
+                        <option value="vencidas" {% if request.GET.vencimiento == 'vencidas' %}selected{% endif %}>Vencidas</option>
+                        <option value="hoy" {% if request.GET.vencimiento == 'hoy' %}selected{% endif %}>Vencen hoy</option>
+                        <option value="semana" {% if request.GET.vencimiento == 'semana' %}selected{% endif %}>Esta semana</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-warning w-100">
+                        <i class="fas fa-search me-1"></i>Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Tareas -->
+    {% if tareas %}
+        <div class="row">
+            {% for tarea in tareas %}
+                <div class="col-lg-6 col-xl-4">
+                    <div class="card task-card {% if tarea.estado == 'completada' %}task-completed{% endif %}">
+                        <div class="task-priority-bar priority-{{ tarea.prioridad }}"></div>
+                        <div class="card-body p-3">
+                            <div class="d-flex align-items-start">
+                                <input type="checkbox" class="task-checkbox" 
+                                       {% if tarea.estado == 'completada' %}checked{% endif %}
+                                       onchange="toggleTarea({{ tarea.pk }}, this)">
+                                <div class="flex-grow-1">
+                                    <h6 class="task-title">{{ tarea.titulo }}</h6>
+                                    
+                                    {% if tarea.descripcion %}
+                                        <div class="task-description">{{ tarea.descripcion|truncatewords:20 }}</div>
+                                    {% endif %}
+                                    
+                                    <!-- Progreso -->
+                                    {% if tarea.porcentaje_completado > 0 %}
+                                        <div class="progress-bar-container">
+                                            <div class="progress-bar-fill" style="width: {{ tarea.porcentaje_completado }}%"></div>
+                                        </div>
+                                        <small class="text-muted">{{ tarea.porcentaje_completado }}% completado</small>
+                                    {% endif %}
+                                    
+                                    <div class="task-meta mt-2">
+                                        <!-- Vencimiento -->
+                                        {% if tarea.fecha_vencimiento %}
+                                            <div class="{% if tarea.fecha_vencimiento < now and tarea.estado != 'completada' %}task-due overdue{% else %}task-due{% endif %}">
+                                                <i class="fas fa-calendar me-1"></i>
+                                                {% if tarea.fecha_vencimiento < now and tarea.estado != 'completada' %}
+                                                    Vencida: {{ tarea.fecha_vencimiento|date:"d/m/Y" }}
+                                                {% else %}
+                                                    Vence: {{ tarea.fecha_vencimiento|date:"d/m/Y H:i" }}
+                                                {% endif %}
+                                            </div>
+                                        {% endif %}
+                                        
+                                        <!-- Ubicación -->
+                                        {% if tarea.ubicacion %}
+                                            <div class="mt-1">
+                                                <i class="fas fa-map-marker-alt me-1"></i>{{ tarea.ubicacion }}
+                                            </div>
+                                        {% endif %}
+                                        
+                                        <!-- Contacto relacionado -->
+                                        {% if tarea.contacto_relacionado %}
+                                            <div class="mt-1">
+                                                <i class="fas fa-user me-1"></i>{{ tarea.contacto_relacionado.nombre_completo }}
+                                            </div>
+                                        {% endif %}
+                                        
+                                        <!-- Usuarios asignados -->
+                                        {% with tarea.asignaciontarea_set.all as asignaciones %}
+                                            {% if asignaciones %}
+                                                <div class="mt-2">
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-users me-1"></i>
+                                                        Asignado a: 
+                                                        {% for asignacion in asignaciones %}
+                                                            <span class="badge bg-{% if asignacion.estado == 'aceptada' %}success{% elif asignacion.estado == 'rechazada' %}danger{% else %}secondary{% endif %} me-1">
+                                                                {{ asignacion.usuario.get_full_name|default:asignacion.usuario.username }}
+                                                                {% if asignacion.estado == 'aceptada' %}
+                                                                    <i class="fas fa-check"></i>
+                                                                {% elif asignacion.estado == 'rechazada' %}
+                                                                    <i class="fas fa-times"></i>
+                                                                {% else %}
+                                                                    <i class="fas fa-clock"></i>
+                                                                {% endif %}
+                                                            </span>
+                                                        {% endfor %}
+                                                    </small>
+                                                </div>
+                                            {% endif %}
+                                        {% endwith %}
+                                    </div>
+                                    
+                                    <div class="d-flex justify-content-between align-items-center mt-3">
+                                        <div>
+                                            <span class="badge bg-{% if tarea.estado == 'completada' %}success{% elif tarea.estado == 'en_progreso' %}primary{% elif tarea.estado == 'cancelada' %}secondary{% else %}warning{% endif %}">
+                                                {{ tarea.get_estado_display }}
+                                            </span>
+                                            <span class="badge bg-{% if tarea.prioridad == 'urgente' %}danger{% elif tarea.prioridad == 'alta' %}warning{% elif tarea.prioridad == 'media' %}primary{% else %}secondary{% endif %}">
+                                                {{ tarea.get_prioridad_display }}
+                                            </span>
+                                        </div>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'agenda:detalle_tarea' tarea.pk %}" 
+                                               class="btn btn-outline-warning btn-sm">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'agenda:editar_tarea' tarea.pk %}" 
+                                               class="btn btn-outline-secondary btn-sm">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-outline-danger btn-sm"
+                                                    onclick="confirmarEliminar({{ tarea.pk }}, '{{ tarea.titulo|escapejs }}')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Paginación -->
+        {% if is_paginated %}
+            <nav aria-label="Navegación de tareas" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1">Primera</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                        </li>
+                    {% endif %}
+
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+
+    {% else %}
+        <!-- Sin tareas -->
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i class="fas fa-clipboard-list fa-5x text-muted"></i>
+            </div>
+            <h4 class="text-muted">No se encontraron tareas</h4>
+            <p class="text-muted">
+                {% if request.GET.q or request.GET.estado or request.GET.prioridad %}
+                    Prueba ajustando los filtros de búsqueda
+                {% else %}
+                    Comienza creando tu primera tarea
+                {% endif %}
+            </p>
+            <a href="{% url 'agenda:crear_tarea' %}" class="btn btn-warning btn-lg mt-3">
+                <i class="fas fa-plus me-2"></i>Crear Primera Tarea
+            </a>
+        </div>
+    {% endif %}
+
+    <!-- Mis Asignaciones Pendientes -->
+    {% if mis_asignaciones %}
+        <div class="card mt-4">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-user-check me-2"></i>
+                    Mis Asignaciones Pendientes
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for asignacion in mis_asignaciones %}
+                        {% if asignacion.estado == 'asignada' %}
+                            <div class="col-md-6 mb-3">
+                                <div class="card border-warning">
+                                    <div class="card-body">
+                                        <h6 class="card-title text-warning">
+                                            <i class="fas fa-clock me-1"></i>
+                                            {{ asignacion.tarea.titulo }}
+                                        </h6>
+                                        <p class="card-text small text-muted">
+                                            {{ asignacion.tarea.descripcion|truncatewords:15 }}
+                                        </p>
+                                        <small class="text-muted">
+                                            Asignada el {{ asignacion.fecha_asignacion|date:"d/m/Y H:i" }}
+                                        </small>
+                                        <div class="mt-2">
+                                            <a href="{% url 'agenda:responder_asignacion' asignacion.id %}" 
+                                               class="btn btn-sm btn-warning">
+                                                <i class="fas fa-reply me-1"></i>Responder
+                                            </a>
+                                            <a href="{% url 'agenda:detalle_tarea' asignacion.tarea.id %}" 
+                                               class="btn btn-sm btn-outline-info">
+                                                <i class="fas fa-eye me-1"></i>Ver Detalle
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function confirmarEliminar(tareaId, tituloTarea) {
+        Swal.fire({
+            title: '¿Eliminar tarea?',
+            text: `¿Estás seguro de que deseas eliminar "${tituloTarea}"?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = `/agenda/tareas/${tareaId}/eliminar/`;
+            }
+        });
+    }
+
+    function toggleTarea(tareaId, checkbox) {
+        fetch(`/agenda/tareas/${tareaId}/completar/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => {
+            if (response.ok) {
+                // Recargar la página para mostrar los cambios
+                location.reload();
+            } else {
+                // Revertir el checkbox si hay error
+                checkbox.checked = !checkbox.checked;
+                Toast.fire({
+                    icon: 'error',
+                    title: 'Error al actualizar la tarea'
+                });
+            }
+        })
+        .catch(error => {
+            checkbox.checked = !checkbox.checked;
+            Toast.fire({
+                icon: 'error',
+                title: 'Error de conexión'
+            });
+        });
+    }
+
+    function toggleKanbanView() {
+        Toast.fire({
+            icon: 'info',
+            title: 'Vista Kanban próximamente disponible'
+        });
+    }
+</script>
+{% endblock %}

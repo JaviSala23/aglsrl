@@ -1,0 +1,477 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Calendario - Agenda - AGL SRL{% endblock %}
+
+{% block extra_css %}
+<style>
+    .calendar-header {
+        background: linear-gradient(135deg, #6f42c1 0%, #5a2d91 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .calendar-container {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 1px;
+        background: #e9ecef;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+    .calendar-header-day {
+        background: #6f42c1;
+        color: white;
+        padding: 1rem;
+        text-align: center;
+        font-weight: 600;
+    }
+    .calendar-day {
+        background: white;
+        min-height: 120px;
+        padding: 0.5rem;
+        position: relative;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .calendar-day:hover {
+        background: #f8f9fa;
+    }
+    .calendar-day.other-month {
+        background: #f8f9fa;
+        color: #6c757d;
+    }
+    .calendar-day.today {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+    }
+    .calendar-day.selected {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+    }
+    .day-number {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    .event-item {
+        background: #007bff;
+        color: white;
+        padding: 0.25rem 0.5rem;
+        border-radius: 4px;
+        font-size: 0.75rem;
+        margin-bottom: 0.25rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .event-item:hover {
+        transform: scale(1.05);
+    }
+    .event-item.evento { background: #17a2b8; }
+    .event-item.tarea { background: #ffc107; color: #212529; }
+    .event-item.reunion { background: #28a745; }
+    .event-item.cita { background: #dc3545; }
+    
+    .calendar-nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+    .month-year {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #2c3e50;
+    }
+    .nav-btn {
+        background: #6f42c1;
+        border: none;
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .nav-btn:hover {
+        background: #5a2d91;
+        transform: translateY(-2px);
+    }
+    .view-selector {
+        display: flex;
+        gap: 0.5rem;
+    }
+    .view-btn {
+        padding: 0.5rem 1rem;
+        border: 2px solid #6f42c1;
+        background: white;
+        color: #6f42c1;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    .view-btn.active {
+        background: #6f42c1;
+        color: white;
+    }
+    .legend {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+    }
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+    }
+    .legend-color {
+        width: 20px;
+        height: 15px;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'main:panel' %}" class="text-decoration-none">
+                    <i class="fas fa-home"></i> Panel Principal
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'agenda:dashboard' %}" class="text-decoration-none">
+                    <i class="fas fa-calendar-alt"></i> Agenda
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">Calendario</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="calendar-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h2><i class="fas fa-calendar me-3"></i>Calendario de Eventos</h2>
+                <p class="mb-0">Vista completa de todos tus eventos y tareas</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="{% url 'agenda:crear_evento' %}" class="btn btn-light">
+                    <i class="fas fa-calendar-plus me-2"></i>Nuevo Evento
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendario -->
+    <div class="calendar-container">
+        <!-- Navegación del calendario -->
+        <div class="calendar-nav">
+            <div class="d-flex align-items-center gap-3">
+                <button class="nav-btn" onclick="previousMonth()">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <div class="month-year" id="current-month-year">
+                    Septiembre 2025
+                </div>
+                <button class="nav-btn" onclick="nextMonth()">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+                <button class="nav-btn" onclick="goToToday()">
+                    Hoy
+                </button>
+            </div>
+            <div class="view-selector">
+                <button class="view-btn active" onclick="setView('month')">Mes</button>
+                <button class="view-btn" onclick="setView('week')">Semana</button>
+                <button class="view-btn" onclick="setView('day')">Día</button>
+            </div>
+        </div>
+
+        <!-- Leyenda -->
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color evento"></div>
+                <span>Eventos</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color tarea"></div>
+                <span>Tareas</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color reunion"></div>
+                <span>Reuniones</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color cita"></div>
+                <span>Citas</span>
+            </div>
+        </div>
+
+        <!-- Grid del calendario -->
+        <div class="calendar-grid" id="calendar-grid">
+            <!-- Encabezados de días -->
+            <div class="calendar-header-day">Dom</div>
+            <div class="calendar-header-day">Lun</div>
+            <div class="calendar-header-day">Mar</div>
+            <div class="calendar-header-day">Mié</div>
+            <div class="calendar-header-day">Jue</div>
+            <div class="calendar-header-day">Vie</div>
+            <div class="calendar-header-day">Sáb</div>
+            
+            <!-- Los días se generarán dinámicamente con JavaScript -->
+        </div>
+    </div>
+
+    <!-- Modal para ver/crear eventos -->
+    <div class="modal fade" id="eventModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="eventModalTitle">Eventos del día</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="eventModalBody">
+                    <!-- Contenido dinámico -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                    <a href="{% url 'agenda:crear_evento' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>Nuevo Evento
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    let currentDate = new Date();
+    let selectedDate = null;
+    let events = []; // Se cargarán desde la API
+
+    const monthNames = [
+        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+
+    // Cargar eventos desde la API
+    async function loadEvents() {
+        try {
+            const response = await fetch('/agenda/api/eventos/');
+            events = await response.json();
+            renderCalendar();
+        } catch (error) {
+            console.error('Error cargando eventos:', error);
+            events = [];
+            renderCalendar();
+        }
+    }
+
+    // Renderizar el calendario
+    function renderCalendar() {
+        const grid = document.getElementById('calendar-grid');
+        const monthYear = document.getElementById('current-month-year');
+        
+        // Actualizar título
+        monthYear.textContent = `${monthNames[currentDate.getMonth()]} ${currentDate.getFullYear()}`;
+        
+        // Limpiar días existentes (mantener encabezados)
+        const existingDays = grid.querySelectorAll('.calendar-day');
+        existingDays.forEach(day => day.remove());
+        
+        // Calcular primer día del mes y días en el mes
+        const firstDay = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+        const lastDay = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+        const startDate = new Date(firstDay);
+        startDate.setDate(startDate.getDate() - firstDay.getDay());
+        
+        // Generar 42 días (6 semanas)
+        for (let i = 0; i < 42; i++) {
+            const dayDate = new Date(startDate);
+            dayDate.setDate(startDate.getDate() + i);
+            
+            const dayElement = createDayElement(dayDate);
+            grid.appendChild(dayElement);
+        }
+    }
+
+    // Crear elemento de día
+    function createDayElement(date) {
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'calendar-day';
+        
+        const today = new Date();
+        const isToday = date.toDateString() === today.toDateString();
+        const isCurrentMonth = date.getMonth() === currentDate.getMonth();
+        
+        if (isToday) {
+            dayDiv.classList.add('today');
+        }
+        if (!isCurrentMonth) {
+            dayDiv.classList.add('other-month');
+        }
+        
+        // Número del día
+        const dayNumber = document.createElement('div');
+        dayNumber.className = 'day-number';
+        dayNumber.textContent = date.getDate();
+        dayDiv.appendChild(dayNumber);
+        
+        // Eventos del día
+        const dayEvents = getEventsForDay(date);
+        dayEvents.forEach(event => {
+            const eventDiv = document.createElement('div');
+            eventDiv.className = 'event-item evento';
+            eventDiv.textContent = event.title;
+            eventDiv.title = event.description || event.title;
+            eventDiv.onclick = () => showEventDetails(event);
+            dayDiv.appendChild(eventDiv);
+        });
+        
+        // Click handler para el día
+        dayDiv.onclick = (e) => {
+            if (e.target === dayDiv || e.target === dayNumber) {
+                selectDay(date, dayDiv);
+            }
+        };
+        
+        return dayDiv;
+    }
+
+    // Obtener eventos para un día específico
+    function getEventsForDay(date) {
+        const dateStr = date.toISOString().split('T')[0];
+        return events.filter(event => {
+            const eventDate = new Date(event.start).toISOString().split('T')[0];
+            return eventDate === dateStr;
+        });
+    }
+
+    // Seleccionar día
+    function selectDay(date, dayElement) {
+        // Remover selección anterior
+        document.querySelectorAll('.calendar-day.selected').forEach(day => {
+            day.classList.remove('selected');
+        });
+        
+        // Seleccionar nuevo día
+        dayElement.classList.add('selected');
+        selectedDate = date;
+        
+        // Mostrar eventos del día
+        showDayEvents(date);
+    }
+
+    // Mostrar eventos del día en modal
+    function showDayEvents(date) {
+        const modal = new bootstrap.Modal(document.getElementById('eventModal'));
+        const title = document.getElementById('eventModalTitle');
+        const body = document.getElementById('eventModalBody');
+        
+        const dayEvents = getEventsForDay(date);
+        const formattedDate = date.toLocaleDateString('es-ES', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        
+        title.textContent = `Eventos para ${formattedDate}`;
+        
+        if (dayEvents.length === 0) {
+            body.innerHTML = '<p class="text-muted">No hay eventos programados para este día.</p>';
+        } else {
+            let eventsHtml = '<div class="list-group">';
+            dayEvents.forEach(event => {
+                const startTime = new Date(event.start).toLocaleTimeString('es-ES', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                eventsHtml += `
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">${event.title}</h6>
+                            <small>${startTime}</small>
+                        </div>
+                        <p class="mb-1">${event.description || ''}</p>
+                        <small class="text-muted">${event.location || ''}</small>
+                    </div>
+                `;
+            });
+            eventsHtml += '</div>';
+            body.innerHTML = eventsHtml;
+        }
+        
+        modal.show();
+    }
+
+    // Navegación del calendario
+    function previousMonth() {
+        currentDate.setMonth(currentDate.getMonth() - 1);
+        renderCalendar();
+    }
+
+    function nextMonth() {
+        currentDate.setMonth(currentDate.getMonth() + 1);
+        renderCalendar();
+    }
+
+    function goToToday() {
+        currentDate = new Date();
+        renderCalendar();
+    }
+
+    // Cambiar vista (placeholder para futuras implementaciones)
+    function setView(view) {
+        document.querySelectorAll('.view-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        
+        if (view !== 'month') {
+            Toast.fire({
+                icon: 'info',
+                title: `Vista ${view} próximamente disponible`
+            });
+        }
+    }
+
+    // Mostrar detalles del evento
+    function showEventDetails(event) {
+        Toast.fire({
+            icon: 'info',
+            title: event.title,
+            text: event.description || 'Sin descripción'
+        });
+    }
+
+    // Inicializar calendario
+    document.addEventListener('DOMContentLoaded', function() {
+        loadEvents();
+        
+        // Configurar atajos de teclado
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowLeft') previousMonth();
+            if (e.key === 'ArrowRight') nextMonth();
+            if (e.key === 'Escape') {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('eventModal'));
+                if (modal) modal.hide();
+            }
+        });
+    });
+</script>
+{% endblock %}

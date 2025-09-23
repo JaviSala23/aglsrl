@@ -1,0 +1,236 @@
+{% extends 'main/base_usuarios.html' %}
+{% load static %}
+
+{% block title %}Editar Usuario - AGL SRL{% endblock %}
+
+{% block extra_css %}
+<style>
+    .edit-header {
+        background: linear-gradient(135deg, #8e9aaf, #b8a9c9);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+    }
+    
+    .form-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: #374151;
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-control {
+        border-radius: 8px;
+        border: 2px solid #e5e7eb;
+        padding: 0.7rem 1rem;
+        transition: border-color 0.3s ease;
+    }
+    
+    .form-control:focus {
+        border-color: #8e9aaf;
+        box-shadow: 0 0 0 3px rgba(142, 154, 175, 0.1);
+    }
+    
+    .form-check-input {
+        border-radius: 4px;
+        border: 2px solid #e5e7eb;
+    }
+    
+    .form-check-input:checked {
+        background-color: #8e9aaf;
+        border-color: #8e9aaf;
+    }
+    
+    .btn-save {
+        background: linear-gradient(135deg, #8e9aaf, #b8a9c9);
+        border: none;
+        color: white;
+        padding: 0.7rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-save:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(142, 154, 175, 0.3);
+        color: white;
+    }
+    
+    .btn-cancel {
+        background: #6b7280;
+        border: none;
+        color: white;
+        padding: 0.7rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-cancel:hover {
+        background: #4b5563;
+        color: white;
+    }
+    
+    .help-text {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin-top: 0.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="edit-header">
+    <div class="container">
+        <h1 class="h2 mb-1">
+            <i class="bi bi-pencil-square me-3"></i>
+            Editar Usuario
+        </h1>
+        <p class="mb-0 opacity-90">Modificar información de {{ usuario.get_full_name|default:usuario.username }}</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card form-card">
+                <div class="card-body p-4">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <!-- Información básica -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.username.id_for_label }}" class="form-label">
+                                        {{ form.username.label }}
+                                    </label>
+                                    {{ form.username }}
+                                    {% if form.username.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.username.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <div class="help-text">
+                                        El nombre de usuario debe ser único en el sistema
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.email.id_for_label }}" class="form-label">
+                                        {{ form.email.label }}
+                                    </label>
+                                    {{ form.email }}
+                                    {% if form.email.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.email.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.first_name.id_for_label }}" class="form-label">
+                                        {{ form.first_name.label }}
+                                    </label>
+                                    {{ form.first_name }}
+                                    {% if form.first_name.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.first_name.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.last_name.id_for_label }}" class="form-label">
+                                        {{ form.last_name.label }}
+                                    </label>
+                                    {{ form.last_name }}
+                                    {% if form.last_name.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {% for error in form.last_name.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Permisos y estado -->
+                        <hr class="my-4">
+                        <h5 class="mb-3">Permisos y Estado</h5>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check mb-3">
+                                    {{ form.is_active }}
+                                    <label class="form-check-label ms-2" for="{{ form.is_active.id_for_label }}">
+                                        {{ form.is_active.label }}
+                                    </label>
+                                    <div class="help-text">
+                                        Los usuarios inactivos no pueden iniciar sesión
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check mb-3">
+                                    {{ form.is_staff }}
+                                    <label class="form-check-label ms-2" for="{{ form.is_staff.id_for_label }}">
+                                        {{ form.is_staff.label }}
+                                    </label>
+                                    <div class="help-text">
+                                        Permite acceso al panel de administración
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Botones de acción -->
+                        <hr class="my-4">
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'main:detalle_usuario' usuario.id %}" class="btn-cancel">
+                                <i class="bi bi-x-circle"></i>
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn-save">
+                                <i class="bi bi-check-circle"></i>
+                                Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

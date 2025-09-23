@@ -1,0 +1,189 @@
+{% extends 'cuentas/base.html' %}
+{% load static %}
+
+{% block title %}{{ cuenta.razon_social }} - AGL SRL{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-1 fw-bold text-dark">
+                        <i class="bi bi-person-circle me-2 text-primary"></i>
+                        {{ cuenta.razon_social }}
+                    </h1>
+                    <p class="text-muted mb-0">
+                        Información detallada de la cuenta
+                    </p>
+                </div>
+                <div>
+                    <a href="{% url 'cuentas:lista_cuentas' %}" class="btn btn-outline-secondary me-2">
+                        <i class="bi bi-arrow-left me-1"></i>
+                        Volver a la lista
+                    </a>
+                    <a href="{% url 'cuentas:editar_cuenta' cuenta.id_cuenta %}" class="btn btn-primary">
+                        <i class="bi bi-pencil me-1"></i>
+                        Editar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Información de la cuenta -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow">
+                <div class="card-header bg-white border-bottom-0">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="bi bi-info-circle me-2 text-primary"></i>
+                        Información Principal
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted">Razón Social</label>
+                            <p class="fs-5 mb-0">{{ cuenta.razon_social }}</p>
+                        </div>
+                        
+                        {% if cuenta.nombre_fantasia %}
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted">Nombre Fantasía</label>
+                            <p class="fs-5 mb-0">{{ cuenta.nombre_fantasia }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted">Tipo de Documento</label>
+                            <p class="mb-0">{{ cuenta.tipo_documento_idtipo_documento.descripcion }}</p>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted">Número de Documento</label>
+                            <p class="mb-0">{{ cuenta.numero_documento }}</p>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted">Tipo de Cuenta</label>
+                            <p class="mb-0">
+                                <span class="badge bg-info">{{ cuenta.tipo_cuenta_id_tipo_cuenta.descripcion }}</span>
+                            </p>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted">Situación IVA</label>
+                            <p class="mb-0">{{ cuenta.situacionIva_idsituacionIva.descripcion }}</p>
+                        </div>
+                        
+                        {% if cuenta.provincia_idprovincia %}
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted">Provincia</label>
+                            <p class="mb-0">{{ cuenta.provincia_idprovincia.nombre_provincia }}</p>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold text-muted">Estado</label>
+                            <p class="mb-0">
+                                <span class="badge bg-{% if cuenta.activo %}success{% else %}danger{% endif %}">
+                                    {% if cuenta.activo %}Activo{% else %}Inactivo{% endif %}
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Información de contacto -->
+            <div class="card border-0 shadow mb-4">
+                <div class="card-header bg-white border-bottom-0">
+                    <h6 class="mb-0 fw-bold">
+                        <i class="bi bi-telephone me-2 text-primary"></i>
+                        Contacto
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if cuenta.telefono_cuenta %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-muted">Teléfono</label>
+                        <p class="mb-0">
+                            <i class="bi bi-phone me-1"></i>
+                            {{ cuenta.telefono_cuenta }}
+                        </p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if cuenta.email_cuenta %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-muted">Email</label>
+                        <p class="mb-0">
+                            <i class="bi bi-envelope me-1"></i>
+                            <a href="mailto:{{ cuenta.email_cuenta }}">{{ cuenta.email_cuenta }}</a>
+                        </p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if not cuenta.telefono_cuenta and not cuenta.email_cuenta %}
+                    <p class="text-muted mb-0">
+                        <i class="bi bi-info-circle me-1"></i>
+                        No hay información de contacto disponible
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Fechas importantes -->
+            <div class="card border-0 shadow">
+                <div class="card-header bg-white border-bottom-0">
+                    <h6 class="mb-0 fw-bold">
+                        <i class="bi bi-calendar me-2 text-primary"></i>
+                        Fechas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-muted">Fecha de Alta</label>
+                        <p class="mb-0">
+                            <i class="bi bi-calendar-plus me-1"></i>
+                            {{ cuenta.fecha_alta|date:"d/m/Y" }}
+                        </p>
+                    </div>
+                    
+                    {% if cuenta.fecha_baja %}
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-muted">Fecha de Baja</label>
+                        <p class="mb-0 text-danger">
+                            <i class="bi bi-calendar-x me-1"></i>
+                            {{ cuenta.fecha_baja|date:"d/m/Y" }}
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    transition: box-shadow 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.175) !important;
+}
+
+@media (max-width: 768px) {
+    .card-body {
+        padding: 1.5rem 1rem !important;
+    }
+}
+</style>
+{% endblock %}

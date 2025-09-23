@@ -1,0 +1,186 @@
+/* 
+ * CSS personalizado para el módulo de Agenda
+ * Sistema de gestión de contactos, eventos y tareas
+ * Color primario: #0d6efd (Azul Bootstrap)
+ */
+
+:root {
+    /* Colores específicos para Agenda - Tema Verde (siguiendo lógica de cuentas) */
+    --agenda-primary: #198754;
+    --agenda-primary-light: #20c997;
+    --agenda-primary-dark: #146c43;
+    --agenda-secondary: #6c757d;
+    --agenda-success: #198754;
+    --agenda-info: #0dcaf0;
+    --agenda-warning: #ffc107;
+    --agenda-danger: #dc3545;
+    --agenda-light: #f8f9fa;
+    --agenda-dark: #212529;
+    
+    /* Gradientes verdes */
+    --agenda-gradient: linear-gradient(135deg, #198754, #20c997);
+    --agenda-gradient-hover: linear-gradient(135deg, #146c43, #198754);
+}
+
+/* ===========================================
+   NAVEGACIÓN ESPECÍFICA DE AGENDA
+   ========================================== */
+
+/* Resaltar el dropdown de agenda en verde */
+.navbar-nav .nav-item.dropdown .nav-link.active,
+.navbar-nav .nav-item.dropdown:hover .nav-link {
+    background-color: rgba(25, 135, 84, 0.15) !important;
+    color: #ffffff !important;
+}
+
+/* Items del dropdown de agenda */
+.navbar-nav .dropdown-menu .dropdown-item:hover {
+    background-color: rgba(25, 135, 84, 0.1);
+    color: var(--agenda-primary);
+}
+
+/* ===========================================
+   BOTONES TEMA AZUL
+   ========================================== */
+
+.agenda-container .btn-primary {
+    background: var(--agenda-gradient);
+    border-color: var(--agenda-primary);
+    border: none;
+    transition: all 0.3s ease;
+}
+
+.agenda-container .btn-primary:hover {
+    background: var(--agenda-gradient-hover);
+    border-color: var(--agenda-primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(25, 135, 84, 0.3);
+}
+
+.agenda-container .btn-outline-primary {
+    color: var(--agenda-primary);
+    border-color: var(--agenda-primary);
+}
+
+.agenda-container .btn-outline-primary:hover {
+    background-color: var(--agenda-primary);
+    border-color: var(--agenda-primary);
+    color: white;
+}
+
+/* ===========================================
+   CARDS Y CONTENEDORES
+   ========================================== */
+
+.agenda-container .card-header {
+    background: linear-gradient(135deg, rgba(25, 135, 84, 0.05) 0%, rgba(25, 135, 84, 0.1) 100%);
+    border-bottom: 1px solid rgba(25, 135, 84, 0.1);
+}
+
+.agenda-container .card-primary .card-header {
+    background: var(--agenda-gradient);
+    color: white;
+    border-bottom: none;
+}
+
+/* ===========================================
+   BADGES DE ESTADO ESPECÍFICOS
+   ========================================== */
+
+.badge-contacto-activo {
+    background-color: var(--agenda-success);
+    color: white;
+}
+
+.badge-contacto-inactivo {
+    background-color: var(--agenda-secondary);
+    color: white;
+}
+
+.badge-evento-proximo {
+    background-color: var(--agenda-primary);
+    color: white;
+}
+
+.badge-evento-en-curso {
+    background-color: var(--agenda-info);
+    color: white;
+}
+
+.badge-evento-finalizado {
+    background-color: var(--agenda-success);
+    color: white;
+}
+
+.badge-tarea-pendiente {
+    background-color: var(--agenda-warning);
+    color: #212529;
+}
+
+.badge-tarea-en-progreso {
+    background-color: var(--agenda-info);
+    color: white;
+}
+
+.badge-tarea-completada {
+    background-color: var(--agenda-success);
+    color: white;
+}
+
+/* ===========================================
+   ICONOS Y ELEMENTOS VISUALES
+   ========================================== */
+
+.agenda-container .text-primary {
+    color: var(--agenda-primary) !important;
+}
+
+.agenda-container .bg-primary {
+    background-color: var(--agenda-primary) !important;
+}
+
+.agenda-container .border-primary {
+    border-color: var(--agenda-primary) !important;
+}
+
+/* ===========================================
+   DASHBOARD ESPECÍFICO
+   ========================================== */
+
+.agenda-dashboard-card {
+    border-left: 4px solid var(--agenda-primary);
+    transition: all 0.3s ease;
+}
+
+.agenda-dashboard-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(25, 135, 84, 0.15);
+}
+
+/* ===========================================
+   EFECTOS HOVER Y TRANSICIONES
+   ========================================== */
+
+.agenda-container .list-group-item:hover {
+    background-color: rgba(25, 135, 84, 0.05);
+    border-color: var(--agenda-primary);
+}
+
+.agenda-container .table-hover tbody tr:hover {
+    background-color: rgba(25, 135, 84, 0.05);
+}
+
+/* ===========================================
+   RESPONSIVE DESIGN
+   ========================================== */
+
+@media (max-width: 768px) {
+    .agenda-container .card {
+        margin-bottom: 1rem;
+    }
+    
+    .agenda-container .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+}

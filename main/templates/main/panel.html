@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Principal - Sistema AGL SRL | Mantis</title>
+    
+    <!-- Bootstrap 5.3.2 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <style>
+        :root {
+            --mantis-primary: #00c851;
+            --mantis-secondary: #00a041;
+            --mantis-dark: #007e2e;
+            --mantis-light: #e8f5e8;
+            --mantis-gradient: linear-gradient(135deg, #00c851 0%, #00a041 100%);
+            --glass-bg: rgba(255, 255, 255, 0.9);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --shadow-card: 0 8px 32px rgba(0, 0, 0, 0.1);
+            --shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+        
+        * {
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+        }
+        
+        .background-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.05;
+            background-image: 
+                radial-gradient(circle at 25% 25%, white 2px, transparent 2px),
+                radial-gradient(circle at 75% 75%, white 2px, transparent 2px);
+            background-size: 50px 50px;
+            background-position: 0 0, 25px 25px;
+            z-index: 1;
+        }
+        
+        .main-container {
+            position: relative;
+            z-index: 2;
+            min-height: 100vh;
+            padding: 2rem 0;
+        }
+        
+        .header-section {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-card);
+            border: 1px solid var(--glass-border);
+            animation: slideDown 0.8s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .mantis-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .mantis-brand {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        
+        .mantis-logo {
+            background: var(--mantis-gradient);
+            border-radius: 16px;
+            padding: 1rem;
+            color: white;
+            font-size: 2rem;
+            box-shadow: var(--shadow-card);
+        }
+        
+        .brand-info h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            background: var(--mantis-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin: 0;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .brand-info p {
+            color: #6c757d;
+            margin: 0;
+            font-weight: 500;
+        }
+        
+        .user-info {
+            text-align: right;
+        }
+        
+        .user-welcome {
+            font-size: 1.1rem;
+            color: #495057;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .logout-btn {
+            background: #dc3545;
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .logout-btn:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+            color: white;
+            text-decoration: none;
+        }
+        
+        .modules-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .module-card {
+            border-radius: 16px;
+            padding: 1.5rem;
+            color: white;
+            text-decoration: none;
+            display: block;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            /* Default gradient - será sobrescrito por las clases específicas */
+            background: linear-gradient(135deg, #6c757d, #495057);
+        }
+        
+        .module-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+            color: white;
+            text-decoration: none;
+        }
+        
+        .module-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(255, 255, 255, 0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .module-card:hover::before {
+            opacity: 1;
+        }
+        
+        .module-icon {
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 14px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .module-icon i {
+            font-size: 1.8rem;
+        }
+        
+        .module-title {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+            color: white;
+        }
+        
+        .module-description {
+            font-size: 0.9rem;
+            margin-bottom: 1.2rem;
+            opacity: 0.9;
+            line-height: 1.5;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+        }
+        
+        .module-stats {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 1.2rem;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-number {
+            display: block;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: white;
+        }
+        
+        .stat-label {
+            display: block;
+            font-size: 0.8rem;
+            opacity: 0.8;
+            margin-top: 0.2rem;
+        }
+        
+        .module-action {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: auto;
+            padding-top: 0.8rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .action-text {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+        
+        .action-arrow {
+            font-size: 1rem;
+            transition: transform 0.3s ease;
+        }
+        
+        .module-card:hover .action-arrow {
+            transform: translateX(3px);
+        }
+        
+        /* Colores específicos para cada módulo */
+        .module-card.cuentas {
+            background: linear-gradient(135deg, #00c851 0%, #00a041 100%) !important;
+        }
+        
+        .module-card.agenda {
+            background: linear-gradient(135deg, #198754 0%, #20c997 100%) !important;
+        }
+        
+        .module-card.usuarios {
+            background: linear-gradient(135deg, #8e9aaf 0%, #b8a9c9 100%) !important;
+        }
+        
+        .module-card.tickets {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%) !important;
+        }
+        
+        .module-card.camiones {
+            background: linear-gradient(135deg, #3742fa 0%, #2f3542 100%) !important;
+        }
+        
+        .coming-soon {
+            position: relative;
+            opacity: 0.7;
+            background: linear-gradient(135deg, #6c757d, #495057) !important;
+        }
+        
+        .coming-soon::after {
+            content: 'Próximamente';
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: #ffc107;
+            color: #000;
+            padding: 0.2rem 0.6rem;
+            border-radius: 50px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .coming-soon:hover {
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        @media (max-width: 768px) {
+            .main-container {
+                padding: 1rem;
+            }
+            
+            .header-section {
+                padding: 1.5rem;
+            }
+            
+            .mantis-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .user-info {
+                text-align: center;
+            }
+            
+            .modules-grid {
+                grid-template-columns: 1fr;
+                gap: 1.5rem;
+            }
+            
+            .module-card {
+                padding: 2rem;
+            }
+            
+            .brand-info h1 {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="background-pattern"></div>
+    
+    <div class="main-container">
+        <div class="container">
+            <!-- Header -->
+            <div class="header-section">
+                <div class="mantis-header">
+                    <div class="mantis-brand">
+                        <div class="mantis-logo">
+                            <i class="bi bi-bug-fill"></i>
+                        </div>
+                        <div class="brand-info">
+                            <h1>Mantis Panel</h1>
+                            <p>Sistema de Gestión Integral - AGL SRL</p>
+                        </div>
+                    </div>
+                    
+                    <div class="user-info">
+                        <div class="user-welcome">
+                            <i class="bi bi-person-circle me-2"></i>
+                            Bienvenido, {{ usuario.get_full_name|default:usuario.username }}
+                        </div>
+                        <a href="{% url 'main:logout' %}" class="logout-btn">
+                            <i class="bi bi-box-arrow-right"></i>
+                            Cerrar Sesión
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Módulos -->
+            <div class="modules-grid">
+                <!-- Módulo de Cuentas -->
+                <a href="{% url 'cuentas:dashboard' %}" class="module-card cuentas">
+                    <div class="module-icon">
+                        <i class="bi bi-person-lines-fill"></i>
+                    </div>
+                    <h3 class="module-title">Gestión de Cuentas</h3>
+                    <p class="module-description">
+                        Administra clientes, proveedores y relaciones comerciales. 
+                        Control completo de cuentas corrientes y estados financieros.
+                    </p>
+                    <div class="module-stats">
+                        <div class="stat-item">
+                            <span class="stat-number">{{ total_cuentas }}</span>
+                            <span class="stat-label">Total</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">{{ cuentas_activas }}</span>
+                            <span class="stat-label">Activas</span>
+                        </div>
+                    </div>
+                    <div class="module-action">
+                        <span class="action-text">Acceder al módulo</span>
+                        <i class="bi bi-arrow-right action-arrow"></i>
+                    </div>
+                </a>
+                
+                <!-- Módulo de Agenda -->
+                <a href="{% url 'agenda:dashboard' %}" class="module-card agenda">
+                    <div class="module-icon">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                    <h3 class="module-title">Agenda y Contactos</h3>
+                    <p class="module-description">
+                        Gestión de contactos, eventos, tareas y agenda. 
+                        Organiza citas, reuniones y seguimiento de actividades.
+                    </p>
+                    <div class="module-stats">
+                        <div class="stat-item">
+                            <span class="stat-number">{{ total_contactos|default:0 }}</span>
+                            <span class="stat-label">Contactos</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">{{ eventos_proximos|default:0 }}</span>
+                            <span class="stat-label">Eventos</span>
+                        </div>
+                    </div>
+                    <div class="module-action">
+                        <span class="action-text">Acceder al módulo</span>
+                        <i class="bi bi-arrow-right action-arrow"></i>
+                    </div>
+                </a>
+                
+                <!-- Módulo de Usuarios -->
+                <a href="{% url 'main:lista_usuarios' %}" class="module-card usuarios">
+                    <div class="module-icon">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
+                    <h3 class="module-title">Gestión de Usuarios</h3>
+                    <p class="module-description">
+                        CRUD de usuarios, roles y permisos del sistema. 
+                        Administración de equipos, asignación de tareas y jerarquías.
+                    </p>
+                    <div class="module-stats">
+                        <div class="stat-item">
+                            <span class="stat-number">{{ total_usuarios|default:0 }}</span>
+                            <span class="stat-label">Usuarios</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">{{ usuarios_activos|default:0 }}</span>
+                            <span class="stat-label">Activos</span>
+                        </div>
+                    </div>
+                    <div class="module-action">
+                        <span class="action-text">Acceder al módulo</span>
+                        <i class="bi bi-arrow-right action-arrow"></i>
+                    </div>
+                </a>
+                
+                <!-- Módulo de Tickets -->
+                <div class="module-card tickets coming-soon">
+                    <div class="module-icon">
+                        <i class="bi bi-truck"></i>
+                    </div>
+                    <h3 class="module-title">Tickets de Operación</h3>
+                    <p class="module-description">
+                        Gestión de tickets de entrada y salida de mercaderías. 
+                        Control de vehículos, pesajes, almacenajes y trazabilidad completa.
+                    </p>
+                    <div class="module-stats">
+                        <div class="stat-item">
+                            <span class="stat-number">-</span>
+                            <span class="stat-label">Entradas</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">-</span>
+                            <span class="stat-label">Salidas</span>
+                        </div>
+                    </div>
+                    <div class="module-action">
+                        <span class="action-text">En desarrollo</span>
+                        <i class="bi bi-hourglass-split action-arrow"></i>
+                    </div>
+                </div>
+                
+                <!-- Módulo de Transportes -->
+                <a href="{% url 'transportes:dashboard' %}" class="module-card camiones">
+                    <div class="module-icon">
+                        <i class="bi bi-truck-front-fill"></i>
+                    </div>
+                    <h3 class="module-title">Gestión de Transportes</h3>
+                    <p class="module-description">
+                        Control de camiones, choferes, viajes y tickets de balanza. 
+                        Gestión completa de la logística de transporte.
+                    </p>
+                    <div class="module-stats">
+                        <div class="stat-item">
+                            <span class="stat-number">{{ total_camiones|default:0 }}</span>
+                            <span class="stat-label">Camiones</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">{{ total_choferes|default:0 }}</span>
+                            <span class="stat-label">Choferes</span>
+                        </div>
+                    </div>
+                    <div class="module-action">
+                        <span class="action-text">Acceder al módulo</span>
+                        <i class="bi bi-arrow-right action-arrow"></i>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Manejar clicks en módulos que están "próximamente"
+            document.querySelectorAll('.coming-soon').forEach(card => {
+                card.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const moduleTitle = this.querySelector('.module-title').textContent;
+                    let moduleDescription = '';
+                    
+                    if (moduleTitle.includes('Tickets')) {
+                        moduleDescription = 'Sistema de gestión de tickets de entrada y salida de mercaderías con control de pesajes, vehículos y trazabilidad completa.';
+                    } else if (moduleTitle.includes('Usuarios')) {
+                        moduleDescription = 'Sistema de gestión de usuarios, roles y permisos con administración de equipos, asignación de tareas y control de jerarquías organizacionales.';
+                    } else if (moduleTitle.includes('Vehicular')) {
+                        moduleDescription = 'Módulo para gestión de tractores, acoplados, choferes y documentación vehicular con control de habilitaciones.';
+                    } else {
+                        moduleDescription = 'Este módulo estará disponible próximamente.';
+                    }
+                    
+                    Swal.fire({
+                        title: `${moduleTitle} - En Desarrollo`,
+                        text: `${moduleDescription} Mantis está trabajando en su implementación siguiendo las especificaciones del proyecto AGL.`,
+                        icon: 'info',
+                        confirmButtonColor: '#00c851',
+                        confirmButtonText: 'Entendido',
+                        footer: '<small><strong>Mantis Development</strong> - Soluciones Tecnológicas Integrales</small>'
+                    });
+                });
+            });
+            
+            // Mostrar mensaje de bienvenida si hay mensajes
+            {% if messages %}
+                {% for message in messages %}
+                    {% if message.tags == 'success' %}
+                        Swal.fire({
+                            title: '¡Bienvenido!',
+                            text: '{{ message }}',
+                            icon: 'success',
+                            timer: 3000,
+                            showConfirmButton: false,
+                            toast: true,
+                            position: 'top-end'
+                        });
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        });
+    </script>
+</body>
+</html>

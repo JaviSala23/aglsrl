@@ -1,0 +1,303 @@
+{% extends 'agenda/base_agenda.html' %}
+{% load static %}
+
+{% block title %}Eventos - Agenda - AGL SRL{% endblock %}
+
+{% block extra_css %}
+<style>
+    .eventos-header {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .event-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        border: none;
+        margin-bottom: 1rem;
+        position: relative;
+    }
+    .event-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    .event-color-bar {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 5px;
+        border-radius: 12px 0 0 12px;
+    }
+    .event-date {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border-radius: 8px;
+        padding: 0.75rem;
+        text-align: center;
+        margin-right: 1rem;
+        min-width: 80px;
+    }
+    .event-day {
+        font-size: 1.5rem;
+        font-weight: bold;
+        line-height: 1;
+    }
+    .event-month {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+    }
+    .event-time {
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin-bottom: 0.5rem;
+    }
+    .event-title {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 0.25rem;
+    }
+    .event-location {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+    .priority-badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+    .filter-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+    .calendar-view-btn {
+        background: linear-gradient(135deg, #6f42c1 0%, #5a2d91 100%);
+        border: none;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'main:panel' %}" class="text-decoration-none">
+                    <i class="fas fa-home"></i> Panel Principal
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'agenda:dashboard' %}" class="text-decoration-none">
+                    <i class="fas fa-calendar-alt"></i> Agenda
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">Eventos</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="eventos-header">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h2><i class="fas fa-calendar-check me-3"></i>Gestión de Eventos</h2>
+                <p class="mb-0">Organiza y gestiona todos tus eventos y citas</p>
+            </div>
+            <div class="col-md-6">
+                <div class="d-flex gap-2 justify-content-md-end flex-wrap">
+                    <a href="{% url 'agenda:calendario' %}" class="btn calendar-view-btn">
+                        <i class="fas fa-calendar me-2"></i>Vista Calendario
+                    </a>
+                    <a href="{% url 'agenda:crear_evento' %}" class="btn btn-light">
+                        <i class="fas fa-calendar-plus me-2"></i>Nuevo Evento
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card filter-card">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="q" class="form-label">Buscar</label>
+                    <input type="text" class="form-control" id="q" name="q" 
+                           value="{{ request.GET.q }}" 
+                           placeholder="Título, descripción o ubicación...">
+                </div>
+                <div class="col-md-3">
+                    <label for="tipo_evento" class="form-label">Tipo de Evento</label>
+                    <select class="form-select" id="tipo_evento" name="tipo_evento">
+                        <option value="">Todos los tipos</option>
+                        <!-- Se llenarán dinámicamente desde la vista -->
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="fecha_desde" class="form-label">Desde</label>
+                    <input type="date" class="form-control" id="fecha_desde" name="fecha_desde" 
+                           value="{{ request.GET.fecha_desde }}">
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-info w-100">
+                        <i class="fas fa-search me-1"></i>Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Eventos -->
+    {% if eventos %}
+        <div class="row">
+            {% for evento in eventos %}
+                <div class="col-lg-6 col-xl-4">
+                    <div class="card event-card">
+                        <div class="event-color-bar" style="background-color: {{ evento.tipo_evento.color|default:'#17a2b8' }};"></div>
+                        <div class="card-body p-3">
+                            <div class="d-flex">
+                                <div class="event-date">
+                                    <div class="event-day">{{ evento.fecha_inicio|date:"d" }}</div>
+                                    <div class="event-month">{{ evento.fecha_inicio|date:"M" }}</div>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="event-time">
+                                        {% if evento.todo_el_dia %}
+                                            <i class="fas fa-sun me-1"></i>Todo el día
+                                        {% else %}
+                                            <i class="fas fa-clock me-1"></i>
+                                            {{ evento.fecha_inicio|date:"H:i" }} - {{ evento.fecha_fin|date:"H:i" }}
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <h6 class="event-title">{{ evento.titulo }}</h6>
+                                    
+                                    {% if evento.descripcion %}
+                                        <p class="text-muted small mb-2">{{ evento.descripcion|truncatewords:15 }}</p>
+                                    {% endif %}
+                                    
+                                    {% if evento.ubicacion %}
+                                        <div class="event-location">
+                                            <i class="fas fa-map-marker-alt me-1"></i>{{ evento.ubicacion }}
+                                        </div>
+                                    {% endif %}
+                                    
+                                    <div class="d-flex justify-content-between align-items-center mt-3">
+                                        <div>
+                                            {% if evento.tipo_evento %}
+                                                <span class="badge bg-info">{{ evento.tipo_evento.nombre }}</span>
+                                            {% endif %}
+                                            {% if evento.prioridad == 'urgente' %}
+                                                <span class="badge bg-danger priority-badge">Urgente</span>
+                                            {% elif evento.prioridad == 'alta' %}
+                                                <span class="badge bg-warning priority-badge">Alta</span>
+                                            {% elif evento.prioridad == 'media' %}
+                                                <span class="badge bg-primary priority-badge">Media</span>
+                                            {% elif evento.prioridad == 'baja' %}
+                                                <span class="badge bg-secondary priority-badge">Baja</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="btn-group btn-group-sm">
+                                            <a href="{% url 'agenda:detalle_evento' evento.pk %}" 
+                                               class="btn btn-outline-info btn-sm">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'agenda:editar_evento' evento.pk %}" 
+                                               class="btn btn-outline-secondary btn-sm">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-outline-danger btn-sm"
+                                                    onclick="confirmarEliminar({{ evento.pk }}, '{{ evento.titulo|escapejs }}')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Paginación -->
+        {% if is_paginated %}
+            <nav aria-label="Navegación de eventos" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1">Primera</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Anterior</a>
+                        </li>
+                    {% endif %}
+
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Siguiente</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">Última</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+
+    {% else %}
+        <!-- Sin eventos -->
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i class="fas fa-calendar-times fa-5x text-muted"></i>
+            </div>
+            <h4 class="text-muted">No se encontraron eventos</h4>
+            <p class="text-muted">
+                {% if request.GET.q or request.GET.tipo_evento or request.GET.fecha_desde %}
+                    Prueba ajustando los filtros de búsqueda
+                {% else %}
+                    Comienza creando tu primer evento
+                {% endif %}
+            </p>
+            <a href="{% url 'agenda:crear_evento' %}" class="btn btn-info btn-lg mt-3">
+                <i class="fas fa-calendar-plus me-2"></i>Crear Primer Evento
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function confirmarEliminar(eventoId, tituloEvento) {
+        Swal.fire({
+            title: '¿Eliminar evento?',
+            text: `¿Estás seguro de que deseas eliminar "${tituloEvento}"?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = `/agenda/eventos/${eventoId}/eliminar/`;
+            }
+        });
+    }
+</script>
+{% endblock %}

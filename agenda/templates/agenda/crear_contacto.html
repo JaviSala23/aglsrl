@@ -1,0 +1,559 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Nuevo Contacto - Agenda - AGL SRL{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-card {
+        background: linear-gradient(145deg, #fff 0%, #f8f9fa 100%);
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+    .form-header {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border-radius: 15px 15px 0 0;
+        padding: 2rem;
+        margin: -1.5rem -1.5rem 2rem -1.5rem;
+    }
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    .form-label {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+    }
+    .form-control {
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 0.75rem;
+        transition: all 0.3s ease;
+    }
+    .form-control:focus {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    }
+    .btn-success {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        border-radius: 8px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    .btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+    }
+    .btn-secondary {
+        border-radius: 8px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+    }
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+        font-weight: bold;
+    }
+    .section-title {
+        color: #495057;
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin: 2rem 0 1rem 0;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e9ecef;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'main:panel' %}" class="text-decoration-none">
+                    <i class="fas fa-home"></i> Panel Principal
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'agenda:dashboard' %}" class="text-decoration-none">
+                    <i class="fas fa-calendar-alt"></i> Agenda
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'agenda:lista_contactos' %}" class="text-decoration-none">
+                    <i class="fas fa-users"></i> Contactos
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">Nuevo Contacto</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-6">
+            <div class="card form-card">
+                <div class="card-body p-4">
+                    <!-- Header -->
+                    <div class="form-header">
+                        <h3 class="mb-2">
+                            <i class="fas fa-user-plus me-3"></i>
+                            Nuevo Contacto
+                        </h3>
+                        <p class="mb-0 opacity-75">Completa la información del contacto</p>
+                    </div>
+
+                    <!-- Formulario -->
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Información Personal -->
+                        <h5 class="section-title">
+                            <i class="fas fa-user me-2"></i>
+                            Información Personal
+                        </h5>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.nombre.id_for_label }}" class="form-label required-field">
+                                        Nombre
+                                    </label>
+                                    {{ form.nombre }}
+                                    {% if form.nombre.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.nombre.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.apellido.id_for_label }}" class="form-label required-field">
+                                        Apellido
+                                    </label>
+                                    {{ form.apellido }}
+                                    {% if form.apellido.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.apellido.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.cargo.id_for_label }}" class="form-label">
+                                        Cargo
+                                    </label>
+                                    {{ form.cargo }}
+                                    {% if form.cargo.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.cargo.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.tipo_contacto.id_for_label }}" class="form-label required-field">
+                                        <i class="fas fa-tags me-2"></i>Tipo de Contacto
+                                    </label>
+                                    {{ form.tipo_contacto }}
+                                    {% if form.tipo_contacto.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.tipo_contacto.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Selecciona cómo te relacionas con este contacto:
+                                        <strong>Cliente</strong> (personas que compran), 
+                                        <strong>Proveedor</strong> (personas que venden), 
+                                        <strong>Personal</strong> (familiares/amigos), etc.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ form.fecha_nacimiento.id_for_label }}" class="form-label">
+                                Fecha de Nacimiento
+                            </label>
+                            {{ form.fecha_nacimiento }}
+                            {% if form.fecha_nacimiento.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.fecha_nacimiento.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Información Empresarial -->
+                        <h5 class="section-title">
+                            <i class="fas fa-building me-2"></i>
+                            Información Empresarial
+                        </h5>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.cuenta_relacionada.id_for_label }}" class="form-label">
+                                        <i class="fas fa-building me-2"></i>Cuenta Relacionada
+                                    </label>
+                                    {{ form.cuenta_relacionada }}
+                                    {% if form.cuenta_relacionada.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.cuenta_relacionada.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        Si seleccionas una cuenta, la empresa se completará automáticamente
+                                    </small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.empresa.id_for_label }}" class="form-label">
+                                        <i class="fas fa-building me-2"></i>Empresa
+                                    </label>
+                                    {{ form.empresa }}
+                                    {% if form.empresa.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.empresa.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        Se completa automáticamente al seleccionar una cuenta relacionada
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Información de Contacto -->
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.telefono_principal.id_for_label }}" class="form-label">
+                                        Teléfono Principal
+                                    </label>
+                                    {{ form.telefono_principal }}
+                                    {% if form.telefono_principal.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.telefono_principal.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.telefono_secundario.id_for_label }}" class="form-label">
+                                        Teléfono Secundario
+                                    </label>
+                                    {{ form.telefono_secundario }}
+                                    {% if form.telefono_secundario.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.telefono_secundario.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.email_principal.id_for_label }}" class="form-label">
+                                        Email Principal
+                                    </label>
+                                    {{ form.email_principal }}
+                                    {% if form.email_principal.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.email_principal.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.email_secundario.id_for_label }}" class="form-label">
+                                        Email Secundario
+                                    </label>
+                                    {{ form.email_secundario }}
+                                    {% if form.email_secundario.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.email_secundario.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ form.sitio_web.id_for_label }}" class="form-label">
+                                Sitio Web
+                            </label>
+                            {{ form.sitio_web }}
+                            {% if form.sitio_web.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.sitio_web.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Dirección -->
+                        <h5 class="section-title">
+                            <i class="fas fa-map-marker-alt me-2"></i>
+                            Dirección
+                        </h5>
+
+                        <div class="form-group">
+                            <label for="{{ form.direccion.id_for_label }}" class="form-label">
+                                Dirección
+                            </label>
+                            {{ form.direccion }}
+                            {% if form.direccion.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.direccion.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="{{ form.ciudad.id_for_label }}" class="form-label">
+                                        Ciudad
+                                    </label>
+                                    {{ form.ciudad }}
+                                    {% if form.ciudad.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.ciudad.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="{{ form.provincia.id_for_label }}" class="form-label">
+                                        Provincia
+                                    </label>
+                                    {{ form.provincia }}
+                                    {% if form.provincia.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.provincia.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="{{ form.codigo_postal.id_for_label }}" class="form-label">
+                                        Código Postal
+                                    </label>
+                                    {{ form.codigo_postal }}
+                                    {% if form.codigo_postal.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.codigo_postal.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ form.pais.id_for_label }}" class="form-label">
+                                País
+                            </label>
+                            {{ form.pais }}
+                            {% if form.pais.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.pais.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Información Adicional -->
+                        <h5 class="section-title">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Información Adicional
+                        </h5>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.empresa.id_for_label }}" class="form-label">
+                                        <i class="fas fa-building me-2"></i>Empresa
+                                    </label>
+                                    {{ form.empresa }}
+                                    {% if form.empresa.errors %}
+                                        <div class="text-danger small mt-1">
+                                            {{ form.empresa.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">
+                                        Se completa automáticamente al seleccionar una cuenta relacionada
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ form.notas.id_for_label }}" class="form-label">
+                                Notas
+                            </label>
+                            {{ form.notas }}
+                            {% if form.notas.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.notas.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-end gap-3 mt-4">
+                            <a href="{% url 'agenda:lista_contactos' %}" class="btn btn-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save me-2"></i>Guardar Contacto
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Agregar clases Bootstrap a los campos del formulario
+    document.addEventListener('DOMContentLoaded', function() {
+        const formControls = document.querySelectorAll('input, select, textarea');
+        formControls.forEach(function(control) {
+            if (!control.classList.contains('btn')) {
+                control.classList.add('form-control');
+            }
+        });
+
+        // Configurar el campo de fecha
+        const fechaNacimiento = document.querySelector('input[name="fecha_nacimiento"]');
+        if (fechaNacimiento) {
+            fechaNacimiento.type = 'date';
+        }
+
+        // Placeholder para el campo de notas
+        const notasField = document.querySelector('textarea[name="notas"]');
+        if (notasField) {
+            notasField.placeholder = 'Información adicional sobre el contacto...';
+            notasField.rows = 4;
+        }
+
+        // Funcionalidad para autocompletar empresa desde cuenta relacionada
+        const cuentaSelect = document.getElementById('id_cuenta_relacionada');
+        const empresaField = document.getElementById('id_empresa');
+        
+        if (cuentaSelect && empresaField) {
+            cuentaSelect.addEventListener('change', function() {
+                const cuentaId = this.value;
+                
+                if (cuentaId) {
+                    // Hacer petición AJAX para obtener información de la cuenta
+                    fetch(`/agenda/api/cuenta/${cuentaId}/`)
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                // Autocompletar el campo empresa
+                                empresaField.value = data.nombre_empresa;
+                                empresaField.style.backgroundColor = '#e8f5e8';
+                                
+                                // Opcional: autocompletar otros campos si están vacíos
+                                const telefonoField = document.getElementById('id_telefono_principal');
+                                const emailField = document.getElementById('id_email_principal');
+                                const direccionField = document.getElementById('id_direccion');
+                                const ciudadField = document.getElementById('id_ciudad');
+                                const provinciaField = document.getElementById('id_provincia');
+                                
+                                if (telefonoField && !telefonoField.value && (data.telefono || data.celular)) {
+                                    telefonoField.value = data.telefono || data.celular;
+                                    telefonoField.style.backgroundColor = '#e8f5e8';
+                                }
+                                
+                                if (emailField && !emailField.value && data.email) {
+                                    emailField.value = data.email;
+                                    emailField.style.backgroundColor = '#e8f5e8';
+                                }
+                                
+                                if (direccionField && !direccionField.value && data.direccion) {
+                                    direccionField.value = data.direccion;
+                                    direccionField.style.backgroundColor = '#e8f5e8';
+                                }
+                                
+                                if (ciudadField && !ciudadField.value && data.localidad) {
+                                    ciudadField.value = data.localidad;
+                                    ciudadField.style.backgroundColor = '#e8f5e8';
+                                }
+                                
+                                if (provinciaField && !provinciaField.value && data.provincia) {
+                                    provinciaField.value = data.provincia;
+                                    provinciaField.style.backgroundColor = '#e8f5e8';
+                                }
+                                
+                                // Mostrar mensaje de éxito
+                                if (typeof Swal !== 'undefined') {
+                                    Swal.fire({
+                                        icon: 'success',
+                                        title: 'Información Autocompletada',
+                                        text: 'Se han rellenado los campos con la información de la cuenta seleccionada.',
+                                        timer: 3000,
+                                        showConfirmButton: false,
+                                        toast: true,
+                                        position: 'top-end'
+                                    });
+                                }
+                            } else {
+                                console.error('Error al obtener información de la cuenta:', data.error);
+                                if (typeof Swal !== 'undefined') {
+                                    Swal.fire({
+                                        icon: 'error',
+                                        title: 'Error',
+                                        text: 'No se pudo obtener la información de la cuenta seleccionada.',
+                                        timer: 3000,
+                                        showConfirmButton: false,
+                                        toast: true,
+                                        position: 'top-end'
+                                    });
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error en la petición AJAX:', error);
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'Error de conexión',
+                                    text: 'Error al conectar con el servidor.',
+                                    timer: 3000,
+                                    showConfirmButton: false,
+                                    toast: true,
+                                    position: 'top-end'
+                                });
+                            }
+                        });
+                } else {
+                    // Si no se selecciona cuenta, limpiar el campo empresa
+                    empresaField.value = '';
+                    empresaField.style.backgroundColor = '';
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

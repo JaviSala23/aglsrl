@@ -1,0 +1,638 @@
+{% extends 'cuentas/base.html' %}
+{% load static %}
+
+{% block title %}Lista de Cuentas - AGL SRL{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-1 fw-bold text-dark">
+                        <i class="bi bi-people-fill me-2 text-primary"></i>
+                        Lista de Cuentas
+                    </h1>
+                    <p class="text-muted mb-0">
+                        Gestiona todas las cuentas del sistema
+                    </p>
+                </div>
+                <div class="d-flex gap-2">
+                    <!-- Botones de exportación -->
+                    <div class="dropdown">
+                        <button class="btn btn-outline-success dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-download me-1"></i>
+                            Exportar
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                            <li>
+                                <a class="dropdown-item" href="{% url 'cuentas:exportar_cuentas_pdf' %}">
+                                    <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+                                    Exportar a PDF
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item" href="{% url 'cuentas:exportar_cuentas_excel' %}">
+                                    <i class="bi bi-file-earmark-excel text-success me-2"></i>
+                                    Exportar a Excel
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Botón Nueva Cuenta -->
+                    <a href="{% url 'cuentas:crear_cuenta' %}" class="btn btn-primary">
+                        <i class="bi bi-person-plus-fill me-1"></i>
+                        Nueva Cuenta
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Filtros -->
+    <div class="card border-0 shadow mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="q" class="form-label fw-semibold">
+                        <i class="bi bi-search me-1"></i>Buscar
+                    </label>
+                    <input type="text" 
+                           class="form-control" 
+                           id="q" 
+                           name="q" 
+                           value="{{ filtros.q }}"
+                           placeholder="Nombre, CUIT/DNI o email...">
+                </div>
+                
+                <div class="col-md-2">
+                    <label for="tipo_cuenta" class="form-label fw-semibold">
+                        <i class="bi bi-tag me-1"></i>Tipo
+                    </label>
+                    <select class="form-select" id="tipo_cuenta" name="tipo_cuenta">
+                        <option value="">Todos</option>
+                        {% for tipo in tipos_cuenta %}
+                            <option value="{{ tipo.id_tipo_cuenta }}" {% if filtros.tipo_cuenta == tipo.id_tipo_cuenta|stringformat:"s" %}selected{% endif %}>
+                                {{ tipo.descripcion }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-2">
+                    <label for="provincia" class="form-label fw-semibold">
+                        <i class="bi bi-geo-alt me-1"></i>Provincia
+                    </label>
+                    <select class="form-select" id="provincia" name="provincia">
+                        <option value="">Todas</option>
+                        {% for prov in provincias %}
+                            <option value="{{ prov.id_provincia }}" {% if filtros.provincia == prov.id_provincia|stringformat:"s" %}selected{% endif %}>
+                                {{ prov.nombre_provincia }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-2">
+                    <label for="localidad" class="form-label fw-semibold">
+                        <i class="bi bi-pin-map me-1"></i>Localidad
+                    </label>
+                    <select class="form-select" id="localidad" name="localidad">
+                        <option value="">Todas</option>
+                        {% for loc in localidades %}
+                            <option value="{{ loc.id_localidad }}" {% if filtros.localidad == loc.id_localidad|stringformat:"s" %}selected{% endif %}>
+                                {{ loc.nombre_localidad }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="col-md-2">
+                    <label for="activo" class="form-label fw-semibold">
+                        <i class="bi bi-toggle-on me-1"></i>Estado
+                    </label>
+                    <select class="form-select" id="activo" name="activo">
+                        <option value="">Todos</option>
+                        <option value="true" {% if filtros.activo == 'true' %}selected{% endif %}>Activos</option>
+                        <option value="false" {% if filtros.activo == 'false' %}selected{% endif %}>Inactivos</option>
+                    </select>
+                </div>
+                
+                <div class="col-md-1 d-flex align-items-end">
+                    <div class="btn-group w-100">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search"></i>
+                        </button>
+                        <a href="{% url 'cuentas:lista_cuentas' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-lg"></i>
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Tabla de cuentas -->
+    <div class="card border-0 shadow">
+        <div class="card-header bg-white border-bottom-0">
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold">
+                    <i class="bi bi-table me-2 text-primary"></i>
+                    Cuentas Registradas
+                    <span class="badge bg-primary ms-2">{{ page_obj.paginator.count }}</span>
+                </h5>
+                
+            </div>
+        </div>
+        <div class="card-body p-0">
+            {% if cuentas %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="tabla-cuentas" data-agl-table="true">
+                        <thead class="table-light">
+                            <tr>
+                                <th data-sortable="nombre">
+                                    <i class="bi bi-person me-1"></i>Cuenta
+                                </th>
+                                <th data-sortable="tipo">
+                                    <i class="bi bi-tag me-1"></i>Tipo
+                                </th>
+                                <th data-sortable="cuit_dni">
+                                    <i class="bi bi-card-text me-1"></i>CUIT/DNI
+                                </th>
+                                <th data-sortable="provincia">
+                                    <i class="bi bi-geo-alt me-1"></i>Provincia
+                                </th>
+                                <th data-sortable="estado">
+                                    <i class="bi bi-toggle-on me-1"></i>Estado
+                                </th>
+                                <th data-sortable="fecha">
+                                    <i class="bi bi-calendar me-1"></i>Creado
+                                </th>
+                                <th width="120">
+                                    <i class="bi bi-gear me-1"></i>Acciones
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for cuenta in cuentas %}
+                            <tr data-id="{{ cuenta.id_cuenta }}">
+                                <td data-column="nombre">
+                                    <div class="d-flex align-items-center">
+                                        <div class="bg-primary bg-opacity-10 rounded-circle p-2 me-3">
+                                            <i class="bi bi-{% if cuenta.tipo_cuenta_id_tipo_cuenta.nombre == 'Empresa' %}building{% else %}person{% endif %} text-primary"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">{{ cuenta.razon_social }}</h6>
+                                            {% if cuenta.email_cuenta %}
+                                                <small class="text-muted">
+                                                    <i class="bi bi-envelope me-1"></i>{{ cuenta.email_cuenta }}
+                                                </small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td data-column="tipo">
+                                    <span class="badge bg-{% if cuenta.tipo_cuenta_id_tipo_cuenta.nombre == 'Empresa' %}info{% else %}secondary{% endif %}">
+                                        {% if cuenta.tipo_cuenta_id_tipo_cuenta.nombre == 'Empresa' %}
+                                            <i class="bi bi-building me-1"></i>
+                                        {% else %}
+                                            <i class="bi bi-person me-1"></i>
+                                        {% endif %}
+                                        {{ cuenta.tipo_cuenta_id_tipo_cuenta.nombre }}
+                                    </span>
+                                </td>
+                                <td data-column="cuit_dni">
+                                    <code class="text-dark">{{ cuenta.cuit_dni }}</code>
+                                    {% if cuenta.tipo_documento_id %}
+                                        <br><small class="text-muted">{{ cuenta.tipo_documento_id.nombre }}</small>
+                                    {% endif %}
+                                </td>
+                                <td data-column="provincia">
+                                    {% if cuenta.provincia_idprovincia %}
+                                        <i class="bi bi-geo-alt-fill text-muted me-1"></i>
+                                        {{ cuenta.provincia_idprovincia.nombre_provincia }}
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td data-column="estado">
+                                    <span class="badge bg-{% if cuenta.activo %}success{% else %}danger{% endif %} status-badge">
+                                        <i class="bi bi-{% if cuenta.activo %}check-circle{% else %}x-circle{% endif %} me-1"></i>
+                                        {% if cuenta.activo %}Activo{% else %}Inactivo{% endif %}
+                                    </span>
+                                </td>
+                                <td data-column="fecha">
+                                    <small class="text-muted">
+                                        {{ cuenta.fecha_alta|date:"d/m/Y" }}
+                                        <br>{{ cuenta.fecha_alta|time:"H:i" }}
+                                    </small>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{% url 'cuentas:ver_cuenta' cuenta.id_cuenta %}" 
+                                           class="btn btn-outline-primary btn-sm"
+                                           data-bs-toggle="tooltip" 
+                                           title="Ver detalle">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="{% url 'cuentas:editar_cuenta' cuenta.id_cuenta %}" 
+                                           class="btn btn-outline-secondary btn-sm"
+                                           data-bs-toggle="tooltip" 
+                                           title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <button type="button" 
+                                                class="btn btn-outline-{% if cuenta.activo %}warning{% else %}success{% endif %} btn-sm toggle-estado-btn"
+                                                data-id="{{ cuenta.id_cuenta }}" 
+                                                data-nombre="{{ cuenta.razon_social }}" 
+                                                data-activo="{{ cuenta.activo|yesno:'true,false' }}"
+                                                data-bs-toggle="tooltip" 
+                                                title="{% if cuenta.activo %}Desactivar{% else %}Activar{% endif %}">
+                                            <i class="bi bi-{% if cuenta.activo %}pause{% else %}play{% endif %}"></i>
+                                        </button>
+                                        <button type="button" 
+                                                class="btn btn-outline-danger btn-sm eliminar-cuenta-btn"
+                                                data-id="{{ cuenta.id_cuenta }}" 
+                                                data-nombre="{{ cuenta.razon_social }}"
+                                                data-bs-toggle="tooltip" 
+                                                title="Eliminar">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Paginación -->
+                {% if is_paginated %}
+                <div class="card-footer bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="text-muted">
+                            Mostrando {{ page_obj.start_index }} a {{ page_obj.end_index }} de {{ page_obj.paginator.count }} cuentas
+                        </div>
+                        <nav>
+                            <ul class="pagination pagination-sm mb-0">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page=1">
+                                            <i class="bi bi-chevron-double-left"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.previous_page_number }}">
+                                            <i class="bi bi-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                                
+                                {% for num in page_obj.paginator.page_range %}
+                                    {% if page_obj.number == num %}
+                                        <li class="page-item active">
+                                            <span class="page-link">{{ num }}</span>
+                                        </li>
+                                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ num }}">{{ num }}</a>
+                                        </li>
+                                    {% endif %}
+                                {% endfor %}
+                                
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.next_page_number }}">
+                                            <i class="bi bi-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?{% for key, value in request.GET.items %}{% if key != 'page' %}{{ key }}={{ value }}&{% endif %}{% endfor %}page={{ page_obj.paginator.num_pages }}">
+                                            <i class="bi bi-chevron-double-right"></i>
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+                {% endif %}
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox display-1 text-muted mb-3"></i>
+                    <h4 class="text-muted">No se encontraron cuentas</h4>
+                    <p class="text-muted mb-4">
+                        {% if request.GET.q or request.GET.tipo_cuenta or request.GET.provincia or request.GET.activo %}
+                            No hay cuentas que coincidan con los filtros aplicados.
+                        {% else %}
+                            Aún no hay cuentas registradas en el sistema.
+                        {% endif %}
+                    </p>
+                    <div class="d-flex gap-2 justify-content-center">
+                        <a href="{% url 'cuentas:crear_cuenta' %}" class="btn btn-primary">
+                            <i class="bi bi-person-plus-fill me-1"></i>
+                            Crear primera cuenta
+                        </a>
+                        {% if request.GET.q or request.GET.tipo_cuenta or request.GET.provincia or request.GET.activo %}
+                            <a href="{% url 'cuentas:lista_cuentas' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-lg me-1"></i>
+                                Limpiar filtros
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Event listeners para botones de acción
+document.addEventListener('DOMContentLoaded', function() {
+    // Botones de toggle estado
+    document.querySelectorAll('.toggle-estado-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.dataset.id;
+            const nombre = this.dataset.nombre;
+            const estadoActual = this.dataset.activo === 'true';
+            toggleEstado(id, nombre, estadoActual);
+        });
+    });
+    
+    // Botones de eliminar
+    document.querySelectorAll('.eliminar-cuenta-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.dataset.id;
+            const nombre = this.dataset.nombre;
+            eliminarCuenta(id, nombre);
+        });
+    });
+});
+
+// Funciones para acciones de cuentas
+function toggleEstado(id, nombre, estadoActual) {
+    const accion = estadoActual ? 'desactivar' : 'activar';
+    const titulo = estadoActual ? '¿Desactivar cuenta?' : '¿Activar cuenta?';
+    const texto = `Se ${accion}á la cuenta "${nombre}"`;
+    
+    Swal.fire({
+        title: titulo,
+        text: texto,
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: estadoActual ? '#ffc107' : '#198754',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: `Sí, ${accion}`,
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Mostrar loading
+            Swal.fire({
+                title: 'Procesando...',
+                text: 'Cambiando estado de la cuenta',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Enviar petición
+            fetch(`/cuentas/cuentas/${id}/toggle-activo/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Actualizar interfaz
+                    const row = document.querySelector(`tr[data-id="${id}"]`);
+                    const statusBadge = row.querySelector('.status-badge');
+                    const actionBtn = row.querySelector(`.toggle-estado-btn[data-id="${id}"]`);
+                    
+                    if (data.activo) {
+                        statusBadge.className = 'badge bg-success status-badge';
+                        statusBadge.innerHTML = '<i class="bi bi-check-circle me-1"></i>Activo';
+                        actionBtn.className = 'btn btn-outline-warning btn-sm toggle-estado-btn';
+                        actionBtn.innerHTML = '<i class="bi bi-pause"></i>';
+                        actionBtn.title = 'Desactivar';
+                        actionBtn.dataset.activo = 'true';
+                    } else {
+                        statusBadge.className = 'badge bg-danger status-badge';
+                        statusBadge.innerHTML = '<i class="bi bi-x-circle me-1"></i>Inactivo';
+                        actionBtn.className = 'btn btn-outline-success btn-sm toggle-estado-btn';
+                        actionBtn.innerHTML = '<i class="bi bi-play"></i>';
+                        actionBtn.title = 'Activar';
+                        actionBtn.dataset.activo = 'false';
+                    }
+                    
+                    Swal.fire({
+                        title: '¡Actualizado!',
+                        text: data.message,
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire('Error', 'Ocurrió un error al cambiar el estado', 'error');
+            });
+        }
+    });
+}
+
+function eliminarCuenta(id, nombre) {
+    Swal.fire({
+        title: '¿Eliminar cuenta?',
+        html: `Se eliminará permanentemente la cuenta:<br><strong>"${nombre}"</strong><br><br>Esta acción no se puede deshacer.`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, eliminar',
+        cancelButtonText: 'Cancelar',
+        reverseButtons: true
+    }).then((result) => {
+        if (result.isConfirmed) {
+            // Mostrar loading
+            Swal.fire({
+                title: 'Eliminando...',
+                text: 'Eliminando cuenta del sistema',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+            
+            // Enviar petición
+            fetch(`/cuentas/cuentas/${id}/eliminar/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Remover fila con animación
+                    const row = document.querySelector(`tr[data-id="${id}"]`);
+                    row.style.animation = 'fadeOut 0.5s ease-out';
+                    setTimeout(() => {
+                        row.remove();
+                        
+                        // Verificar si no quedan más filas
+                        const tbody = document.querySelector('#tabla-cuentas tbody');
+                        if (tbody.children.length === 0) {
+                            location.reload();
+                        }
+                    }, 500);
+                    
+                    Swal.fire({
+                        title: '¡Eliminado!',
+                        text: data.message,
+                        icon: 'success',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+                } else {
+                    Swal.fire('Error', data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                Swal.fire('Error', 'Ocurrió un error al eliminar la cuenta', 'error');
+            });
+        }
+    });
+}
+
+function exportarCuentas() {
+    Swal.fire({
+        title: 'Exportar Cuentas',
+        text: '¿Deseas exportar todas las cuentas a CSV?',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#198754',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, exportar',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            AGL.ui.showLoading('Exportando...', 'Generando archivo CSV');
+            
+            // Simular descarga (aquí implementarías la descarga real)
+            setTimeout(() => {
+                Swal.fire({
+                    title: '¡Exportado!',
+                    text: 'El archivo CSV se ha descargado correctamente',
+                    icon: 'success',
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+            }, 2000);
+        }
+    });
+}
+
+function imprimirLista() {
+    window.print();
+}
+
+// Auto-submit formulario de filtros con debounce
+document.getElementById('q').addEventListener('input', AGL.utils.debounce(function() {
+    this.form.submit();
+}, 1000));
+
+// Filtros en cascada - Provincia -> Localidad
+document.getElementById('provincia').addEventListener('change', function() {
+    const provinciaId = this.value;
+    const localidadSelect = document.getElementById('localidad');
+    
+    // Limpiar localidades
+    localidadSelect.innerHTML = '<option value="">Todas</option>';
+    
+    if (provinciaId) {
+        // Cargar localidades de la provincia seleccionada
+        fetch(`{% url 'cuentas:ajax_localidades' %}?provincia_id=${provinciaId}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.localidades) {
+                    data.localidades.forEach(localidad => {
+                        const option = document.createElement('option');
+                        option.value = localidad.id;
+                        option.textContent = localidad.nombre;
+                        localidadSelect.appendChild(option);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error cargando localidades:', error);
+            });
+    }
+});
+
+// CSS para animación de eliminación y quitar efectos de hover
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes fadeOut {
+        from { opacity: 1; transform: translateX(0); }
+        to { opacity: 0; transform: translateX(-100%); }
+    }
+    
+    /* Eliminar efectos de hover en cards */
+    .card {
+        transition: none !important;
+        transform: none !important;
+    }
+    
+    .card:hover {
+        box-shadow: 0 .125rem .25rem rgba(0,0,0,.075) !important;
+        transform: none !important;
+    }
+    
+    /* Eliminar efectos de hover en botones */
+    .btn,
+    .btn:hover,
+    .btn:focus,
+    .btn:active,
+    .btn-primary,
+    .btn-primary:hover,
+    .btn-primary:focus,
+    .btn-primary:active {
+        transition: none !important;
+        transform: none !important;
+        box-shadow: none !important;
+    }
+    
+    /* Eliminar efectos de hover en filas de tabla */
+    .table-hover tbody tr:hover {
+        background-color: rgba(0,0,0,.025) !important;
+    }
+    
+    /* Asegurar que no hay transformaciones en elementos */
+    .card-hover-effect,
+    .shadow-hover {
+        transition: none !important;
+        transform: none !important;
+    }
+    
+    .card-hover-effect:hover,
+    .shadow-hover:hover {
+        box-shadow: 0 .125rem .25rem rgba(0,0,0,.075) !important;
+        transform: none !important;
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

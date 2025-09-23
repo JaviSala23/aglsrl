@@ -1,0 +1,220 @@
+{% extends 'transportes/base_transportes.html' %}
+{% load static %}
+
+{% block title %}{{ titulo }} - AGL SRL{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800">
+                        <i class="fas fa-truck me-2 text-primary"></i>
+                        {{ titulo }}
+                    </h1>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{% url 'transportes:dashboard' %}">Transportes</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'transportes:lista_camiones' %}">Camiones</a></li>
+                            <li class="breadcrumb-item active">{{ titulo }}</li>
+                        </ol>
+                    </nav>
+                </div>
+                <a href="{% url 'transportes:lista_camiones' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i> Volver a Lista
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario -->
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-edit me-2"></i>
+                        Información del Camión
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger" role="alert">
+                                {{ form.non_field_errors }}
+                            </div>
+                        {% endif %}
+
+                        <div class="row">
+                            <!-- Información Básica -->
+                            <div class="col-md-6 mb-4">
+                                <h6 class="text-gray-800 mb-3">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Información Básica
+                                </h6>
+                                
+                                <div class="mb-3">
+                                    <label for="{{ form.patente.id_for_label }}" class="form-label">
+                                        {{ form.patente.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.patente }}
+                                    {% if form.patente.errors %}
+                                        <div class="text-danger small">{{ form.patente.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.cuenta_asociada.id_for_label }}" class="form-label">
+                                        {{ form.cuenta_asociada.label }} <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.cuenta_asociada }}
+                                    {% if form.cuenta_asociada.errors %}
+                                        <div class="text-danger small">{{ form.cuenta_asociada.errors }}</div>
+                                    {% endif %}
+                                    <div class="form-text">Empresa/cuenta propietaria del camión</div>
+                                </div>
+                            </div>
+
+                            <!-- Acoplados y Capacidades -->
+                            <div class="col-md-6 mb-4">
+                                <h6 class="text-gray-800 mb-3">
+                                    <i class="fas fa-trailer me-1"></i>
+                                    Acoplados y Capacidades
+                                </h6>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.acoplado_1.id_for_label }}" class="form-label">
+                                        {{ form.acoplado_1.label }}
+                                    </label>
+                                    {{ form.acoplado_1 }}
+                                    {% if form.acoplado_1.errors %}
+                                        <div class="text-danger small">{{ form.acoplado_1.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.acoplado_2.id_for_label }}" class="form-label">
+                                        {{ form.acoplado_2.label }}
+                                    </label>
+                                    {{ form.acoplado_2 }}
+                                    {% if form.acoplado_2.errors %}
+                                        <div class="text-danger small">{{ form.acoplado_2.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.capacidad_carga.id_for_label }}" class="form-label">
+                                        {{ form.capacidad_carga.label }}
+                                    </label>
+                                    {{ form.capacidad_carga }}
+                                    {% if form.capacidad_carga.errors %}
+                                        <div class="text-danger small">{{ form.capacidad_carga.errors }}</div>
+                                    {% endif %}
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.tara.id_for_label }}" class="form-label">
+                                        {{ form.tara.label }}
+                                    </label>
+                                    {{ form.tara }}
+                                    {% if form.tara.errors %}
+                                        <div class="text-danger small">{{ form.tara.errors }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Documentación -->
+                        <div class="row">
+                            <div class="col-12 mb-4">
+                                <h6 class="text-gray-800 mb-3">
+                                    <i class="fas fa-file-alt me-1"></i>
+                                    Documentación
+                                </h6>
+                                
+                                <div class="row">
+                                    <div class="col-md-4 mb-3">
+                                        <label for="{{ form.fecha_vencimiento_vtv.id_for_label }}" class="form-label">
+                                            {{ form.fecha_vencimiento_vtv.label }}
+                                        </label>
+                                        {{ form.fecha_vencimiento_vtv }}
+                                        {% if form.fecha_vencimiento_vtv.errors %}
+                                            <div class="text-danger small">{{ form.fecha_vencimiento_vtv.errors }}</div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="col-md-4 mb-3">
+                                        <label for="{{ form.fecha_vencimiento_seguro.id_for_label }}" class="form-label">
+                                            {{ form.fecha_vencimiento_seguro.label }}
+                                        </label>
+                                        {{ form.fecha_vencimiento_seguro }}
+                                        {% if form.fecha_vencimiento_seguro.errors %}
+                                            <div class="text-danger small">{{ form.fecha_vencimiento_seguro.errors }}</div>
+                                        {% endif %}
+                                    </div>
+
+                                    <div class="col-md-4 mb-3">
+                                        <label for="{{ form.numero_poliza.id_for_label }}" class="form-label">
+                                            {{ form.numero_poliza.label }}
+                                        </label>
+                                        {{ form.numero_poliza }}
+                                        {% if form.numero_poliza.errors %}
+                                            <div class="text-danger small">{{ form.numero_poliza.errors }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Estado Activo -->
+                        <div class="row">
+                            <div class="col-12 mb-4">
+                                <div class="form-check">
+                                    {{ form.activo }}
+                                    <label class="form-check-label" for="{{ form.activo.id_for_label }}">
+                                        {{ form.activo.label }}
+                                    </label>
+                                </div>
+                                {% if form.activo.errors %}
+                                    <div class="text-danger small">{{ form.activo.errors }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'transportes:lista_camiones' %}" class="btn btn-secondary">
+                                        <i class="fas fa-times me-1"></i> Cancelar
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-1"></i> 
+                                        {% if camion %}Actualizar{% else %}Crear{% endif %} Camión
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Convertir patente a mayúsculas automáticamente
+    const patenteInput = document.getElementById('{{ form.patente.id_for_label }}');
+    if (patenteInput) {
+        patenteInput.addEventListener('input', function() {
+            this.value = this.value.toUpperCase();
+        });
+    }
+});
+</script>
+{% endblock %}

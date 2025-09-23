@@ -1,0 +1,527 @@
+{% extends 'cuentas/base.html' %}
+{% load static %}
+
+{% block title %}Editar {{ cuenta.razon_social }} - AGL SRL{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h2 mb-1 fw-bold text-dark">
+                        <i class="bi bi-pencil-square me-2 text-primary"></i>
+                        Editar Cuenta
+                    </h1>
+                    <p class="text-muted mb-0">
+                        Modificar información de {{ cuenta.razon_social }}
+                    </p>
+                </div>
+                <div>
+                    <a href="{% url 'cuentas:ver_cuenta' cuenta.id_cuenta %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>
+                        Volver al detalle
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Formulario -->
+    <div class="row justify-content-center">
+        <div class="col-xl-8 col-lg-10">
+            <div class="card border-0 shadow">
+                <div class="card-header bg-white border-bottom-0">
+                    <h5 class="mb-0 fw-bold">
+                        <i class="bi bi-form-select me-2 text-primary"></i>
+                        Información de la Cuenta
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form method="post" id="formEditarCuenta" data-agl-form="true" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Datos principales -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <h6 class="text-primary fw-bold mb-3">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Datos Principales
+                                </h6>
+                            </div>
+                            
+                            <div class="col-md-8">
+                                <label for="id_razon_social" class="form-label fw-semibold required">
+                                    <i class="bi bi-person me-1"></i>Razón Social
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="id_razon_social" 
+                                       name="razon_social"
+                                       value="{{ form.razon_social.value|default:cuenta.razon_social }}"
+                                       placeholder="Ingrese la razón social o nombre completo"
+                                       required>
+                                <div class="invalid-feedback">
+                                    Por favor ingrese la razón social.
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label for="id_tipo_cuenta_id_tipo_cuenta" class="form-label fw-semibold required">
+                                    <i class="bi bi-tag me-1"></i>Tipo de Cuenta
+                                </label>
+                                <select class="form-select" id="id_tipo_cuenta_id_tipo_cuenta" name="tipo_cuenta_id_tipo_cuenta" required>
+                                    <option value="">Seleccione...</option>
+                                    {% for tipo in tipos_cuenta %}
+                                        <option value="{{ tipo.id_tipo_cuenta }}" 
+                                                {% if tipo.id_tipo_cuenta == cuenta.tipo_cuenta_id_tipo_cuenta.id_tipo_cuenta %}selected{% endif %}>
+                                            {{ tipo.descripcion }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="invalid-feedback">
+                                    Por favor seleccione el tipo de cuenta.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Documentación -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <h6 class="text-primary fw-bold mb-3">
+                                    <i class="bi bi-card-text me-1"></i>
+                                    Documentación
+                                </h6>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <label for="id_tipo_documento_idtipo_documento" class="form-label fw-semibold required">
+                                    <i class="bi bi-file-text me-1"></i>Tipo de Documento
+                                </label>
+                                <select class="form-select" id="id_tipo_documento_idtipo_documento" name="tipo_documento_idtipo_documento" required>
+                                    <option value="">Seleccione...</option>
+                                    {% for tipo_doc in tipos_documento %}
+                                        <option value="{{ tipo_doc.idtipo_documento }}" 
+                                                {% if tipo_doc.idtipo_documento == cuenta.tipo_documento_idtipo_documento.idtipo_documento %}selected{% endif %}>
+                                            {{ tipo_doc.descripcion }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="invalid-feedback">
+                                    Por favor seleccione el tipo de documento.
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-8">
+                                <label for="id_numero_documento" class="form-label fw-semibold required">
+                                    <i class="bi bi-hash me-1"></i>Número de Documento
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="id_numero_documento" 
+                                       name="numero_documento"
+                                       value="{{ form.numero_documento.value|default:cuenta.numero_documento }}"
+                                       placeholder="Ingrese el número sin puntos ni guiones"
+                                       required>
+                                <div class="invalid-feedback">
+                                    Por favor ingrese el número de documento.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Clasificación -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <h6 class="text-primary fw-bold mb-3">
+                                    <i class="bi bi-tags me-1"></i>
+                                    Clasificación
+                                </h6>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="id_situacionIva_idsituacionIva" class="form-label fw-semibold required">
+                                    <i class="bi bi-receipt me-1"></i>Situación IVA
+                                </label>
+                                <select class="form-select" id="id_situacionIva_idsituacionIva" name="situacionIva_idsituacionIva" required>
+                                    <option value="">Seleccione...</option>
+                                    {% for situacion in situaciones_iva %}
+                                        <option value="{{ situacion.idsituacionIva }}" 
+                                                {% if situacion.idsituacionIva == cuenta.situacionIva_idsituacionIva.idsituacionIva %}selected{% endif %}>
+                                            {{ situacion.descripcion }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="invalid-feedback">
+                                    Por favor seleccione la situación de IVA.
+                                </div>
+                            </div>
+                            
+                            <!-- Ubicación -->
+                            <div class="col-md-3">
+                                <label for="id_pais_id" class="form-label fw-semibold">
+                                    <i class="bi bi-globe me-1"></i>País
+                                </label>
+                                <select class="form-select" id="id_pais_id" name="pais_id">
+                                    <option value="">Seleccione...</option>
+                                    {% for pais_item in paises %}
+                                        <option value="{{ pais_item.id_pais }}" 
+                                                {% if pais_item.id_pais == cuenta.pais_id.id_pais %}selected{% endif %}>
+                                            {{ pais_item.nombre }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <label for="id_provincia_idprovincia" class="form-label fw-semibold">
+                                    <i class="bi bi-map me-1"></i>Provincia
+                                </label>
+                                <select class="form-select" id="id_provincia_idprovincia" name="provincia_idprovincia">
+                                    <option value="">Seleccione...</option>
+                                    {% for provincia in provincias %}
+                                        <option value="{{ provincia.id_provincia }}" 
+                                                {% if provincia.id_provincia == cuenta.provincia_idprovincia.id_provincia %}selected{% endif %}>
+                                            {{ provincia.nombre_provincia }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <label for="id_localidad_idlocalidad" class="form-label fw-semibold">
+                                    <i class="bi bi-building me-1"></i>Localidad
+                                </label>
+                                <select class="form-select" id="id_localidad_idlocalidad" name="localidad_idlocalidad">
+                                    <option value="">Seleccione...</option>
+                                    {% for localidad_item in localidades %}
+                                        <option value="{{ localidad_item.id_localidad }}" 
+                                                {% if localidad_item.id_localidad == cuenta.localidad_idlocalidad.id_localidad %}selected{% endif %}>
+                                            {{ localidad_item.nombre_localidad }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <label for="id_direccion_cuenta" class="form-label fw-semibold required">
+                                    <i class="bi bi-house me-1"></i>Dirección
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="id_direccion_cuenta" 
+                                       name="direccion_cuenta"
+                                       value="{{ cuenta.direccion_cuenta|default:'' }}"
+                                       placeholder="Calle, número, piso, depto..."
+                                       required>
+                                <div class="invalid-feedback">
+                                    Por favor ingrese la dirección.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Contacto -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <h6 class="text-primary fw-bold mb-3">
+                                    <i class="bi bi-telephone me-1"></i>
+                                    Información de Contacto
+                                </h6>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="id_telefono_cuenta" class="form-label fw-semibold">
+                                    <i class="bi bi-phone me-1"></i>Teléfono
+                                </label>
+                                <input type="tel" 
+                                       class="form-control" 
+                                       id="id_telefono_cuenta" 
+                                       name="telefono_cuenta"
+                                       value="{{ form.telefono_cuenta.value|default:cuenta.telefono_cuenta }}"
+                                       placeholder="+54 11 1234-5678">
+                                <div class="form-text">
+                                    <small>Incluya código de área</small>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="id_email_cuenta" class="form-label fw-semibold">
+                                    <i class="bi bi-envelope me-1"></i>Email
+                                </label>
+                                <input type="email" 
+                                       class="form-control" 
+                                       id="id_email_cuenta" 
+                                       name="email_cuenta"
+                                       value="{{ form.email_cuenta.value|default:cuenta.email_cuenta }}"
+                                       placeholder="cuenta@ejemplo.com">
+                                <div class="invalid-feedback">
+                                    Por favor ingrese un email válido.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Estado -->
+                        <div class="row g-3 mb-4">
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" 
+                                           type="checkbox" 
+                                           id="id_activo" 
+                                           name="activo"
+                                           {% if cuenta.activo %}checked{% endif %}>
+                                    <label class="form-check-label fw-semibold" for="id_activo">
+                                        <i class="bi bi-toggle-on me-1"></i>
+                                        Cuenta activa
+                                    </label>
+                                    <div class="form-text">
+                                        <small>Las cuentas activas aparecen en búsquedas y reportes</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Botones de acción -->
+                        <div class="row">
+                            <div class="col-12">
+                                <hr class="my-4">
+                                <div class="d-flex gap-3 justify-content-end">
+                                    <a href="{% url 'cuentas:ver_cuenta' cuenta.id_cuenta %}" class="btn btn-outline-secondary btn-lg">
+                                        <i class="bi bi-x-lg me-1"></i>
+                                        Cancelar
+                                    </a>
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        <i class="bi bi-save me-1"></i>
+                                        <span id="btnText">Guardar Cambios</span>
+                                        <div class="spinner-border spinner-border-sm ms-2 d-none" id="btnSpinner"></div>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-focus en el primer campo
+    document.getElementById('id_razon_social').focus();
+    
+    // Manejar filtros en cascada de ubicación
+    const paisSelect = document.getElementById('id_pais_id');
+    const provinciaSelect = document.getElementById('id_provincia_idprovincia');
+    const localidadSelect = document.getElementById('id_localidad_idlocalidad');
+    
+    // Cuando cambia el país, cargar provincias
+    paisSelect.addEventListener('change', function() {
+        const paisId = this.value;
+        
+        // Limpiar y deshabilitar provincia y localidad
+        provinciaSelect.innerHTML = '<option value="">Cargando provincias...</option>';
+        provinciaSelect.disabled = true;
+        localidadSelect.innerHTML = '<option value="">Primero seleccione provincia...</option>';
+        localidadSelect.disabled = true;
+        
+        if (paisId) {
+            fetch(`{% url 'cuentas:ajax_provincias' %}?pais_id=${paisId}`)
+                .then(response => response.json())
+                .then(data => {
+                    provinciaSelect.innerHTML = '<option value="">Seleccione provincia...</option>';
+                    data.provincias.forEach(provincia => {
+                        provinciaSelect.innerHTML += `<option value="${provincia.id}">${provincia.nombre}</option>`;
+                    });
+                    provinciaSelect.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error cargando provincias:', error);
+                    provinciaSelect.innerHTML = '<option value="">Error cargando provincias</option>';
+                });
+        } else {
+            provinciaSelect.innerHTML = '<option value="">Primero seleccione país...</option>';
+            provinciaSelect.disabled = true;
+        }
+    });
+    
+    // Cuando cambia la provincia, cargar localidades
+    provinciaSelect.addEventListener('change', function() {
+        const provinciaId = this.value;
+        
+        // Limpiar y deshabilitar localidad
+        localidadSelect.innerHTML = '<option value="">Cargando localidades...</option>';
+        localidadSelect.disabled = true;
+        
+        if (provinciaId) {
+            fetch(`{% url 'cuentas:ajax_localidades' %}?provincia_id=${provinciaId}`)
+                .then(response => response.json())
+                .then(data => {
+                    localidadSelect.innerHTML = '<option value="">Seleccione localidad...</option>';
+                    data.localidades.forEach(localidad => {
+                        localidadSelect.innerHTML += `<option value="${localidad.id}">${localidad.nombre}</option>`;
+                    });
+                    localidadSelect.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error cargando localidades:', error);
+                    localidadSelect.innerHTML = '<option value="">Error cargando localidades</option>';
+                });
+        } else {
+            localidadSelect.innerHTML = '<option value="">Primero seleccione provincia...</option>';
+            localidadSelect.disabled = true;
+        }
+    });
+    
+    // Validación en tiempo real de número de documento
+    const numeroDocField = document.getElementById('id_numero_documento');
+    if (numeroDocField) {
+        numeroDocField.addEventListener('input', function() {
+            const value = this.value.replace(/\D/g, '');
+            
+            // Formatear mientras se escribe
+            if (value.length <= 8) {
+                // DNI format: XX.XXX.XXX
+                this.value = value.replace(/(\d{2})(\d{3})(\d{3})/, '$1.$2.$3');
+            } else if (value.length <= 11) {
+                // CUIT format: XX-XXXXXXXX-X
+                this.value = value.replace(/(\d{2})(\d{8})(\d{1})/, '$1-$2-$3');
+            }
+        });
+    }
+    
+    // Validación de email en tiempo real
+    const emailField = document.getElementById('id_email_cuenta');
+    if (emailField) {
+        emailField.addEventListener('blur', function() {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (this.value && !emailRegex.test(this.value)) {
+                this.classList.add('is-invalid');
+            } else if (this.value) {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            }
+        });
+    }
+    
+    // Manejo del envío del formulario
+    const form = document.getElementById('formEditarCuenta');
+    if (form) {
+        // Función para manejar el submit
+        function handleFormSubmit(e) {
+            e.preventDefault(); // Prevenir el envío automático
+            e.stopImmediatePropagation();
+            
+            // Validar formulario
+            if (!form.checkValidity()) {
+                form.classList.add('was-validated');
+                
+                // Mostrar error
+                Swal.fire({
+                    title: 'Formulario incompleto',
+                    text: 'Por favor completa todos los campos obligatorios',
+                    icon: 'warning',
+                    confirmButtonColor: '#ffc107'
+                });
+                
+                // Scroll al primer campo con error
+                const firstError = form.querySelector(':invalid');
+                if (firstError) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    firstError.focus();
+                }
+                
+                return false;
+            }
+            
+            // Mostrar confirmación
+            Swal.fire({
+                title: '¿Guardar cambios?',
+                text: 'Se actualizará la información de la cuenta',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#198754',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Sí, guardar',
+                cancelButtonText: 'Cancelar',
+                allowOutsideClick: false,
+                allowEscapeKey: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Mostrar loading en el botón
+                    const submitBtn = form.querySelector('button[type="submit"]');
+                    const btnText = document.getElementById('btnText');
+                    const btnSpinner = document.getElementById('btnSpinner');
+                    
+                    if (submitBtn) submitBtn.disabled = true;
+                    if (btnText) btnText.textContent = 'Guardando...';
+                    if (btnSpinner) btnSpinner.classList.remove('d-none');
+                    
+                    // Remover el event listener para evitar bucles
+                    form.removeEventListener('submit', handleFormSubmit);
+                    
+                    // Enviar formulario programáticamente
+                    form.submit();
+                }
+            });
+            
+            return false;
+        }
+        
+        // Agregar el event listener
+        form.addEventListener('submit', handleFormSubmit, true);
+    }
+});
+</script>
+</script>
+
+<style>
+.required::after {
+    content: ' *';
+    color: #dc3545;
+    font-weight: bold;
+}
+
+.form-control:focus,
+.form-select:focus {
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+    border-color: #0d6efd;
+}
+
+/* Eliminar efectos de hover molestos */
+.card {
+    transition: none !important;
+}
+
+.card:hover {
+    transform: none !important;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* Eliminar efectos de hover en botones */
+.btn,
+.btn:hover,
+.btn:focus,
+.btn:active {
+    transition: none !important;
+    transform: none !important;
+}
+
+.form-check-input:checked {
+    background-color: #198754;
+    border-color: #198754;
+}
+
+@media (max-width: 768px) {
+    .card-body {
+        padding: 2rem 1rem !important;
+    }
+    
+    .btn-lg {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+}
+</style>
+{% endblock %}

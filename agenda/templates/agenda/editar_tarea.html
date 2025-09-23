@@ -1,0 +1,408 @@
+{% extends 'agenda/base_agenda.html' %}
+{% load static %}
+
+{% block title %}Editar Tarea - Agenda - AGL SRL{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-card {
+        background: linear-gradient(145deg, #fff 0%, #f8f9fa 100%);
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+    }
+    .form-header {
+        background: linear-gradient(135deg, #198754 0%, #20c997 100%);
+        color: white;
+        border-radius: 15px 15px 0 0;
+        padding: 2rem;
+        margin: -1.5rem -1.5rem 2rem -1.5rem;
+    }
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+    .form-label {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 0.5rem;
+    }
+    .form-control {
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 0.75rem;
+        transition: all 0.3s ease;
+    }
+    .form-control:focus {
+        border-color: #198754;
+        box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+    }
+    .form-select {
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 0.75rem;
+        transition: all 0.3s ease;
+    }
+    .form-select:focus {
+        border-color: #198754;
+        box-shadow: 0 0 0 0.2rem rgba(25, 135, 84, 0.25);
+    }
+    .btn-success {
+        background: linear-gradient(135deg, #198754 0%, #20c997 100%);
+        border: none;
+        border-radius: 8px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        color: white;
+    }
+    .btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(25, 135, 84, 0.3);
+        color: white;
+    }
+    .btn-secondary {
+        background: #6c757d;
+        border: none;
+        border-radius: 8px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    .btn-secondary:hover {
+        background: #5a6268;
+        transform: translateY(-1px);
+    }
+    .form-text {
+        color: #6c757d;
+        font-size: 0.875rem;
+    }
+    .priority-high {
+        color: #dc3545;
+        font-weight: bold;
+    }
+    .priority-medium {
+        color: #ffc107;
+        font-weight: bold;
+    }
+    .priority-low {
+        color: #198754;
+        font-weight: bold;
+    }
+    .assignment-info {
+        background: #e3f2fd;
+        border: 1px solid #2196f3;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+    .assignment-status {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+    .status-sin_asignar {
+        background-color: #f8f9fa;
+        color: #6c757d;
+    }
+    .status-asignada {
+        background-color: #fff3cd;
+        color: #856404;
+    }
+    .status-aceptada {
+        background-color: #d4edda;
+        color: #155724;
+    }
+    .status-rechazada {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+    .user-avatar-small {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #198754 0%, #20c997 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 0.8rem;
+    }
+    .form-check {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 0.75rem;
+        transition: all 0.3s ease;
+    }
+    .form-check:hover {
+        border-color: #198754;
+        background-color: #f8f9fa;
+    }
+    .form-check-input:checked + .form-check-label {
+        color: #198754;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            <div class="card form-card">
+                <div class="card-body p-0">
+                    <div class="form-header">
+                        <h2 class="mb-2">
+                            <i class="fas fa-edit me-3"></i>
+                            Editar Tarea
+                        </h2>
+                        <p class="mb-0 opacity-90">
+                            Modificar información de la tarea "{{ tarea.titulo }}"
+                        </p>
+                    </div>
+                    
+                    <div class="px-4 pb-4">
+                        <!-- Información de asignación si existe -->
+                        {% if tarea.asignaciones.exists %}
+                        <div class="assignment-info">
+                            <h6 class="mb-2">
+                                <i class="bi bi-people-fill me-2"></i>
+                                Estado de Asignaciones
+                            </h6>
+                            {% for asignacion in tarea.asignaciones.all %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>
+                                    <strong>{{ asignacion.usuario.get_full_name|default:asignacion.usuario.username }}</strong>
+                                </span>
+                                <span class="assignment-status status-{{ asignacion.estado }}">
+                                    {% if asignacion.estado == 'asignada' %}
+                                        Pendiente de respuesta
+                                    {% elif asignacion.estado == 'aceptada' %}
+                                        Aceptada
+                                    {% elif asignacion.estado == 'rechazada' %}
+                                        Rechazada
+                                    {% endif %}
+                                </span>
+                            </div>
+                            {% if asignacion.fecha_asignacion %}
+                            <small class="text-muted">
+                                Asignado el {{ asignacion.fecha_asignacion|date:"d/m/Y H:i" }}
+                            </small>
+                            {% endif %}
+                            {% if not forloop.last %}<hr class="my-2">{% endif %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <form method="post">
+                            {% csrf_token %}
+                            
+                            <!-- Título -->
+                            <div class="form-group">
+                                <label for="{{ form.titulo.id_for_label }}" class="form-label">
+                                    <i class="fas fa-heading me-2"></i>{{ form.titulo.label }}
+                                </label>
+                                {{ form.titulo }}
+                                {% if form.titulo.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.titulo.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Descripción -->
+                            <div class="form-group">
+                                <label for="{{ form.descripcion.id_for_label }}" class="form-label">
+                                    <i class="fas fa-align-left me-2"></i>{{ form.descripcion.label }}
+                                </label>
+                                {{ form.descripcion }}
+                                {% if form.descripcion.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.descripcion.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <div class="row">
+                                <!-- Fecha de vencimiento -->
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.fecha_vencimiento.id_for_label }}" class="form-label">
+                                            <i class="fas fa-calendar-alt me-2"></i>{{ form.fecha_vencimiento.label }}
+                                        </label>
+                                        {{ form.fecha_vencimiento }}
+                                        {% if form.fecha_vencimiento.errors %}
+                                            <div class="text-danger small mt-1">
+                                                {% for error in form.fecha_vencimiento.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Prioridad -->
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.prioridad.id_for_label }}" class="form-label">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>{{ form.prioridad.label }}
+                                        </label>
+                                        {{ form.prioridad }}
+                                        {% if form.prioridad.errors %}
+                                            <div class="text-danger small mt-1">
+                                                {% for error in form.prioridad.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <!-- Estado -->
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.estado.id_for_label }}" class="form-label">
+                                            <i class="fas fa-tasks me-2"></i>{{ form.estado.label }}
+                                        </label>
+                                        {{ form.estado }}
+                                        {% if form.estado.errors %}
+                                            <div class="text-danger small mt-1">
+                                                {% for error in form.estado.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Contacto relacionado -->
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="{{ form.contacto_relacionado.id_for_label }}" class="form-label">
+                                            <i class="fas fa-user me-2"></i>{{ form.contacto_relacionado.label }}
+                                        </label>
+                                        {{ form.contacto_relacionado }}
+                                        {% if form.contacto_relacionado.errors %}
+                                            <div class="text-danger small mt-1">
+                                                {% for error in form.contacto_relacionado.errors %}
+                                                    {{ error }}
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Asignación a usuarios múltiples -->
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-users me-2"></i>Asignar a usuarios
+                                </label>
+                                <div class="row">
+                                    {% for user in form.usuarios_asignados.field.queryset %}
+                                    <div class="col-md-6 col-lg-4">
+                                        <div class="form-check mb-2">
+                                            <input class="form-check-input" type="checkbox" 
+                                                   name="usuarios_asignados" 
+                                                   value="{{ user.id }}" 
+                                                   id="user_{{ user.id }}"
+                                                   {% if user in form.usuarios_asignados.value %}checked{% endif %}>
+                                            <label class="form-check-label" for="user_{{ user.id }}">
+                                                <div class="d-flex align-items-center">
+                                                    <div class="user-avatar-small me-2">
+                                                        {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+                                                    </div>
+                                                    <div>
+                                                        <div class="fw-medium">{{ user.get_full_name|default:user.username }}</div>
+                                                        <small class="text-muted">@{{ user.username }}</small>
+                                                    </div>
+                                                </div>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <div class="form-text">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Puedes asignar esta tarea a múltiples usuarios para trabajo en equipo. 
+                                    Cada usuario recibirá una notificación y podrá aceptar o rechazar la asignación.
+                                </div>
+                                {% if form.usuarios_asignados.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.usuarios_asignados.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Botones de acción -->
+                            <hr class="my-4">
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'agenda:lista_tareas' %}" class="btn btn-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>
+                                    Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="fas fa-save me-2"></i>
+                                    Actualizar Tarea
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mostrar/ocultar comentarios de asignación según si hay usuario asignado
+    const asignadoSelect = document.getElementById('id_asignado_a');
+    const comentariosGroup = document.querySelector('label[for="id_comentarios_asignacion"]').closest('.form-group');
+    
+    function toggleComentarios() {
+        if (asignadoSelect.value) {
+            comentariosGroup.style.display = 'block';
+        } else {
+            comentariosGroup.style.display = 'none';
+        }
+    }
+    
+    // Ejecutar al cargar y al cambiar
+    toggleComentarios();
+    asignadoSelect.addEventListener('change', toggleComentarios);
+    
+    // Cambiar color de prioridad
+    const prioridadSelect = document.getElementById('id_prioridad');
+    prioridadSelect.addEventListener('change', function() {
+        prioridadSelect.className = prioridadSelect.className.replace(/priority-\w+/, '');
+        if (this.value === 'alta') {
+            prioridadSelect.classList.add('priority-high');
+        } else if (this.value === 'media') {
+            prioridadSelect.classList.add('priority-medium');
+        } else if (this.value === 'baja') {
+            prioridadSelect.classList.add('priority-low');
+        }
+    });
+    
+    // Aplicar color inicial de prioridad
+    const prioridadValue = prioridadSelect.value;
+    if (prioridadValue === 'alta') {
+        prioridadSelect.classList.add('priority-high');
+    } else if (prioridadValue === 'media') {
+        prioridadSelect.classList.add('priority-medium');
+    } else if (prioridadValue === 'baja') {
+        prioridadSelect.classList.add('priority-low');
+    }
+});
+</script>
+{% endblock %}

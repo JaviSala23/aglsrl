@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mantis - Desarrollo de Software</title>
+    
+    <!-- Bootstrap 5.3.2 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --mantis-primary: #00c851;
+            --mantis-secondary: #00a041;
+            --mantis-dark: #007e2e;
+            --mantis-light: #e8f5e8;
+            --mantis-gradient: linear-gradient(135deg, #00c851 0%, #00a041 100%);
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+        }
+        
+        .landing-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        
+        .floating-elements {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 1;
+        }
+        
+        .floating-elements::before,
+        .floating-elements::after {
+            content: '';
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            animation: float 20s infinite ease-in-out;
+        }
+        
+        .floating-elements::before {
+            top: 10%;
+            left: 10%;
+            animation-delay: 0s;
+        }
+        
+        .floating-elements::after {
+            bottom: 10%;
+            right: 10%;
+            animation-delay: 10s;
+        }
+        
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px) scale(1);
+                opacity: 0.3;
+            }
+            50% {
+                transform: translateY(-30px) scale(1.1);
+                opacity: 0.6;
+            }
+        }
+        
+        .main-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            text-align: center;
+            max-width: 600px;
+            width: 90%;
+            position: relative;
+            z-index: 2;
+            animation: slideUp 1s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .mantis-logo {
+            font-size: 3.5rem;
+            font-weight: 700;
+            background: var(--mantis-gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .mantis-tagline {
+            font-size: 1.2rem;
+            color: #6c757d;
+            margin-bottom: 2rem;
+            font-weight: 400;
+        }
+        
+        .client-info {
+            background: var(--mantis-light);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin: 2rem 0;
+            border-left: 4px solid var(--mantis-primary);
+        }
+        
+        .client-info h5 {
+            color: var(--mantis-dark);
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        .client-info p {
+            color: #6c757d;
+            margin: 0;
+            font-size: 0.95rem;
+        }
+        
+        .enter-system-btn {
+            background: var(--mantis-gradient);
+            border: none;
+            border-radius: 50px;
+            padding: 1rem 3rem;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: white;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 25px rgba(0, 200, 81, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .enter-system-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(0, 200, 81, 0.4);
+            color: white;
+        }
+        
+        .enter-system-btn:active {
+            transform: translateY(0);
+        }
+        
+        .footer-info {
+            position: absolute;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 0.9rem;
+            text-align: center;
+            z-index: 2;
+        }
+        
+        .tech-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            margin: 0.25rem;
+            font-size: 0.85rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+    </style>
+</head>
+<body>
+    <div class="landing-container">
+        <div class="floating-elements"></div>
+        
+        <div class="main-card">
+            <div class="mantis-logo">
+                <i class="bi bi-bug-fill me-2"></i>Mantis
+            </div>
+            
+            <p class="mantis-tagline">
+                Desarrollo de Software Empresarial
+            </p>
+            
+            <div class="client-info">
+                <h5>
+                    <i class="bi bi-building me-2"></i>Sistema de Gestión - AGL SRL
+                </h5>
+                <p>
+                    Plataforma integral para la administración de cuentas, 
+                    clientes y operaciones comerciales.
+                </p>
+            </div>
+            
+            <a href="{% url 'main:login' %}" class="enter-system-btn">
+                <i class="bi bi-box-arrow-in-right"></i>
+                Entrar al Sistema
+            </a>
+            
+            <div class="mt-4">
+                <div class="tech-badge">
+                    <i class="bi bi-shield-check"></i>
+                    Seguro
+                </div>
+                <div class="tech-badge">
+                    <i class="bi bi-lightning"></i>
+                    Rápido
+                </div>
+                <div class="tech-badge">
+                    <i class="bi bi-gear"></i>
+                    Eficiente
+                </div>
+            </div>
+        </div>
+        
+        <div class="footer-info">
+            <div>
+                <strong>Mantis Development</strong> - Soluciones Tecnológicas Integrales
+            </div>
+            <div class="mt-1">
+                <small>© {{ "now"|date:"Y" }} - Desarrollado con Django & Bootstrap</small>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap 5.3.2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

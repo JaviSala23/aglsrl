@@ -1,0 +1,266 @@
+{% extends 'transportes/base_transportes.html' %}
+{% load static %}
+
+{% block title %}Dashboard Transportes - AGL SRL{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800 animate__animated animate__fadeInLeft">
+            <i class="fas fa-tachometer-alt text-success me-2"></i>
+            Dashboard de Transportes
+        </h1>
+        <div class="animate__animated animate__fadeInRight">
+            <a href="{% url 'transportes:crear_camion' %}" class="btn btn-success me-2">
+                <i class="fas fa-plus me-1"></i> Nuevo Camión
+            </a>
+            <a href="{% url 'transportes:crear_viaje' %}" class="btn btn-success">
+                <i class="fas fa-route me-1"></i> Nuevo Viaje
+            </a>
+        </div>
+    </div>
+
+    <!-- Estadísticas Cards -->
+    <div class="row">
+        <!-- Camiones -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start-success shadow h-100 py-2 animate__animated animate__fadeInUp" style="animation-delay: 0.1s;">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col me-2">
+                            <div class="text-xs fw-bold text-success text-uppercase mb-1">
+                                Total Camiones
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ total_camiones }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-truck fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <a href="{% url 'transportes:lista_camiones' %}" class="text-decoration-none">
+                            <small class="text-muted">Ver todos <i class="fas fa-arrow-circle-right"></i></small>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Choferes -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start-success shadow h-100 py-2 animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col me-2">
+                            <div class="text-xs fw-bold text-success text-uppercase mb-1">
+                                Total Choferes
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ total_choferes }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-tie fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <a href="{% url 'transportes:lista_choferes' %}" class="text-decoration-none">
+                            <small class="text-muted">Ver todos <i class="fas fa-arrow-circle-right"></i></small>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Viajes Este Mes -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start-info shadow h-100 py-2 animate__animated animate__fadeInUp" style="animation-delay: 0.3s;">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col me-2">
+                            <div class="text-xs fw-bold text-info text-uppercase mb-1">
+                                Viajes Este Mes
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ viajes_mes }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-route fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <a href="{% url 'transportes:lista_viajes' %}" class="text-decoration-none">
+                            <small class="text-muted">Ver todos <i class="fas fa-arrow-circle-right"></i></small>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tickets Hoy -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start-warning shadow h-100 py-2 animate__animated animate__fadeInUp" style="animation-delay: 0.4s;">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col me-2">
+                            <div class="text-xs fw-bold text-warning text-uppercase mb-1">
+                                Tickets Hoy
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ tickets_hoy }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-weight-hanging fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <a href="{% url 'transportes:lista_tickets' %}" class="text-decoration-none">
+                            <small class="text-muted">Ver todos <i class="fas fa-arrow-circle-right"></i></small>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Row -->
+    <div class="row">
+        <!-- Viajes Recientes -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4 animate__animated animate__fadeInUp" style="animation-delay: 0.5s;">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 fw-bold text-success">
+                        <i class="fas fa-route me-2"></i>Viajes Recientes
+                    </h6>
+                    <a href="{% url 'transportes:lista_viajes' %}" class="btn btn-sm btn-outline-success">
+                        Ver todos
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if viajes_recientes %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Fecha</th>
+                                        <th>Camión</th>
+                                        <th>Destino</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for viaje in viajes_recientes %}
+                                    <tr>
+                                        <td>
+                                            <small class="text-muted">{{ viaje.fecha_programada|date:"d/m/Y" }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ viaje.camion.patente }}</span>
+                                        </td>
+                                        <td>{{ viaje.destino|truncatechars:25 }}</td>
+                                        <td>
+                                            <span class="badge {% if viaje.estado == 'completado' %}bg-success{% elif viaje.estado == 'en_curso' %}bg-primary{% else %}bg-secondary{% endif %}">
+                                                {{ viaje.get_estado_display }}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-route fa-3x text-gray-300 mb-3"></i>
+                            <p class="text-muted">No hay viajes registrados</p>
+                            <a href="{% url 'transportes:crear_viaje' %}" class="btn btn-success">
+                                <i class="fas fa-plus me-1"></i>Crear primer viaje
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Accesos Rápidos -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4 animate__animated animate__fadeInUp" style="animation-delay: 0.6s;">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold text-success">
+                        <i class="fas fa-rocket me-2"></i>Accesos Rápidos
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <a href="{% url 'transportes:crear_camion' %}" class="btn btn-outline-success btn-lg w-100 h-100 d-flex flex-column justify-content-center align-items-center">
+                                <i class="fas fa-truck fa-2x mb-2"></i>
+                                <span>Nuevo Camión</span>
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a href="{% url 'transportes:crear_chofer' %}" class="btn btn-outline-success btn-lg w-100 h-100 d-flex flex-column justify-content-center align-items-center">
+                                <i class="fas fa-user-plus fa-2x mb-2"></i>
+                                <span>Nuevo Chofer</span>
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a href="{% url 'transportes:crear_viaje' %}" class="btn btn-outline-info btn-lg w-100 h-100 d-flex flex-column justify-content-center align-items-center">
+                                <i class="fas fa-route fa-2x mb-2"></i>
+                                <span>Nuevo Viaje</span>
+                            </a>
+                        </div>
+                        <div class="col-6">
+                            <a href="{% url 'transportes:crear_ticket' %}" class="btn btn-outline-warning btn-lg w-100 h-100 d-flex flex-column justify-content-center align-items-center">
+                                <i class="fas fa-weight-hanging fa-2x mb-2"></i>
+                                <span>Ticket Balanza</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estado de la Flota -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4 animate__animated animate__fadeInUp" style="animation-delay: 0.7s;">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold text-success">
+                        <i class="fas fa-chart-bar me-2"></i>Estado de la Flota
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 text-center">
+                            <div class="mb-3">
+                                <i class="fas fa-truck fa-3x text-success mb-2"></i>
+                                <h5 class="fw-bold">{{ total_camiones }}</h5>
+                                <p class="text-muted mb-0">Total Camiones</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="mb-3">
+                                <i class="fas fa-user-tie fa-3x text-success mb-2"></i>
+                                <h5 class="fw-bold">{{ total_choferes }}</h5>
+                                <p class="text-muted mb-0">Choferes Activos</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="mb-3">
+                                <i class="fas fa-route fa-3x text-info mb-2"></i>
+                                <h5 class="fw-bold">{{ viajes_mes }}</h5>
+                                <p class="text-muted mb-0">Viajes Este Mes</p>
+                            </div>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <div class="mb-3">
+                                <i class="fas fa-weight-hanging fa-3x text-warning mb-2"></i>
+                                <h5 class="fw-bold">{{ tickets_hoy }}</h5>
+                                <p class="text-muted mb-0">Tickets Hoy</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

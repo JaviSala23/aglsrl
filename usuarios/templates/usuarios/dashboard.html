@@ -1,0 +1,346 @@
+{% extends 'usuarios/base_usuarios.html' %}
+{% load static %}
+
+{% block title %}Dashboard de Usuarios y Tareas - AGL SRL{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h1 class="h3 mb-0 text-gray-800 animate__animated animate__fadeInLeft">
+                <i class="fas fa-users text-primary me-2"></i>
+                Dashboard de Usuarios y Tareas
+            </h1>
+            <p class="text-muted mb-0">Bienvenido, {{ user.get_full_name|default:user.username }}</p>
+        </div>
+        <div class="animate__animated animate__fadeInRight">
+            <a href="{% url 'usuarios:crear_tarea' %}" class="btn btn-primary me-2">
+                <i class="fas fa-plus me-1"></i> Nueva Tarea
+            </a>
+            <a href="{% url 'usuarios:crear_proyecto' %}" class="btn btn-success">
+                <i class="fas fa-project-diagram me-1"></i> Nuevo Proyecto
+            </a>
+        </div>
+    </div>
+
+    <!-- Estadísticas Cards -->
+    <div class="row">
+        <!-- Tareas Pendientes -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start-warning shadow h-100 py-2 animate__animated animate__fadeInUp" style="animation-delay: 0.1s;">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col me-2">
+                            <div class="text-xs fw-bold text-warning text-uppercase mb-1">
+                                Tareas Pendientes
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ mis_tareas_pendientes }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <a href="{% url 'usuarios:mis_tareas' %}" class="text-decoration-none">
+                            <small class="text-muted">Ver mis tareas <i class="fas fa-arrow-circle-right"></i></small>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tareas Vencidas -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start-danger shadow h-100 py-2 animate__animated animate__fadeInUp" style="animation-delay: 0.2s;">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col me-2">
+                            <div class="text-xs fw-bold text-danger text-uppercase mb-1">
+                                Tareas Vencidas
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ mis_tareas_vencidas }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <a href="{% url 'usuarios:lista_tareas' %}?estado=PENDIENTE&vencidas=1" class="text-decoration-none">
+                            <small class="text-muted">Ver vencidas <i class="fas fa-arrow-circle-right"></i></small>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tareas Creadas -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start-info shadow h-100 py-2 animate__animated animate__fadeInUp" style="animation-delay: 0.3s;">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col me-2">
+                            <div class="text-xs fw-bold text-info text-uppercase mb-1">
+                                Tareas Creadas
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ tareas_creadas_por_mi }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-edit fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <a href="{% url 'usuarios:lista_tareas' %}?creado_por={{ user.id }}" class="text-decoration-none">
+                            <small class="text-muted">Ver creadas <i class="fas fa-arrow-circle-right"></i></small>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notificaciones -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-start-primary shadow h-100 py-2 animate__animated animate__fadeInUp" style="animation-delay: 0.4s;">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col me-2">
+                            <div class="text-xs fw-bold text-primary text-uppercase mb-1">
+                                Notificaciones
+                            </div>
+                            <div class="h5 mb-0 fw-bold text-gray-800">{{ notificaciones_no_leidas }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-bell fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                    <div class="mt-2">
+                        <a href="{% url 'usuarios:notificaciones' %}" class="text-decoration-none">
+                            <small class="text-muted">Ver todas <i class="fas fa-arrow-circle-right"></i></small>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Row -->
+    <div class="row">
+        <!-- Tareas Recientes -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4 animate__animated animate__fadeInUp" style="animation-delay: 0.5s;">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 fw-bold text-primary">
+                        <i class="fas fa-tasks me-2"></i>Tareas Recientes
+                    </h6>
+                    <a href="{% url 'usuarios:lista_tareas' %}" class="btn btn-sm btn-outline-primary">
+                        Ver todas
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if tareas_recientes %}
+                        {% for tarea in tareas_recientes %}
+                        <div class="d-flex align-items-center border-bottom py-2 {% if tarea.esta_vencida %}tarea-vencida{% endif %}">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">
+                                    <a href="{% url 'usuarios:detalle_tarea' tarea.pk %}" class="text-decoration-none">
+                                        {{ tarea.titulo }}
+                                    </a>
+                                </h6>
+                                <div class="d-flex flex-wrap gap-2 align-items-center">
+                                    <span class="badge badge-tarea-{{ tarea.estado|lower }}">
+                                        {{ tarea.get_estado_display }}
+                                    </span>
+                                    <span class="badge badge-prioridad-{{ tarea.prioridad|lower }}">
+                                        {{ tarea.get_prioridad_display }}
+                                    </span>
+                                    {% if tarea.fecha_vencimiento %}
+                                        <small class="text-muted">
+                                            <i class="fas fa-calendar-alt me-1"></i>
+                                            {{ tarea.fecha_vencimiento|date:"d/m/Y H:i" }}
+                                        </small>
+                                    {% endif %}
+                                </div>
+                                {% if tarea.asignado_a != user %}
+                                    <small class="text-muted">
+                                        <i class="fas fa-user me-1"></i>
+                                        Asignada a: {{ tarea.asignado_a.get_full_name|default:tarea.asignado_a.username }}
+                                    </small>
+                                {% endif %}
+                            </div>
+                            {% if tarea.puede_editar:user %}
+                            <div class="ms-2">
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                        <i class="fas fa-ellipsis-v"></i>
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        {% if tarea.estado == 'PENDIENTE' %}
+                                        <li><a class="dropdown-item" href="#" onclick="cambiarEstadoTarea({{ tarea.id }}, 'EN_PROGRESO')">
+                                            <i class="fas fa-play me-2"></i>Iniciar
+                                        </a></li>
+                                        {% endif %}
+                                        {% if tarea.estado in 'PENDIENTE,EN_PROGRESO' %}
+                                        <li><a class="dropdown-item" href="#" onclick="cambiarEstadoTarea({{ tarea.id }}, 'COMPLETADA')">
+                                            <i class="fas fa-check me-2"></i>Completar
+                                        </a></li>
+                                        {% endif %}
+                                        <li><a class="dropdown-item" href="{% url 'usuarios:editar_tarea' tarea.pk %}">
+                                            <i class="fas fa-edit me-2"></i>Editar
+                                        </a></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-tasks fa-3x text-gray-300 mb-3"></i>
+                            <p class="text-muted">No hay tareas recientes</p>
+                            <a href="{% url 'usuarios:crear_tarea' %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-1"></i>Crear primera tarea
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Proyectos Activos -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4 animate__animated animate__fadeInUp" style="animation-delay: 0.6s;">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 fw-bold text-primary">
+                        <i class="fas fa-project-diagram me-2"></i>Mis Proyectos Activos
+                    </h6>
+                    <a href="{% url 'usuarios:lista_proyectos' %}" class="btn btn-sm btn-outline-primary">
+                        Ver todos
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if mis_proyectos %}
+                        {% for proyecto in mis_proyectos %}
+                        <div class="d-flex align-items-center border-bottom py-3">
+                            <div class="me-3">
+                                <div class="rounded-circle d-flex align-items-center justify-content-center" 
+                                     style="width: 40px; height: 40px; background-color: {{ proyecto.color }}20; border: 2px solid {{ proyecto.color }};">
+                                    <i class="fas fa-project-diagram" style="color: {{ proyecto.color }};"></i>
+                                </div>
+                            </div>
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1">
+                                    <a href="{% url 'usuarios:detalle_proyecto' proyecto.pk %}" class="text-decoration-none">
+                                        {{ proyecto.nombre }}
+                                    </a>
+                                </h6>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-secondary">{{ proyecto.get_estado_display }}</span>
+                                    <small class="text-muted">
+                                        Progreso: {{ proyecto.progreso_porcentaje }}%
+                                    </small>
+                                </div>
+                                <div class="progress mt-1" style="height: 4px;">
+                                    <div class="progress-bar" style="width: {{ proyecto.progreso_porcentaje }}%; background-color: {{ proyecto.color }};"></div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-project-diagram fa-3x text-gray-300 mb-3"></i>
+                            <p class="text-muted">No hay proyectos activos</p>
+                            <a href="{% url 'usuarios:crear_proyecto' %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-1"></i>Crear primer proyecto
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Eventos de Hoy -->
+    {% if eventos_hoy %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4 animate__animated animate__fadeInUp" style="animation-delay: 0.7s;">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold text-primary">
+                        <i class="fas fa-calendar-alt me-2"></i>Eventos de Hoy
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for evento in eventos_hoy %}
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <div class="border rounded p-3">
+                                <h6 class="mb-2">
+                                    <a href="{% url 'usuarios:detalle_evento' evento.pk %}" class="text-decoration-none">
+                                        {{ evento.titulo }}
+                                    </a>
+                                </h6>
+                                <div class="d-flex align-items-center text-muted mb-2">
+                                    <i class="fas fa-clock me-2"></i>
+                                    {{ evento.fecha_inicio|time:"H:i" }} - {{ evento.fecha_fin|time:"H:i" }}
+                                </div>
+                                {% if evento.ubicacion %}
+                                <div class="d-flex align-items-center text-muted">
+                                    <i class="fas fa-map-marker-alt me-2"></i>
+                                    {{ evento.ubicacion }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Accesos Rápidos -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4 animate__animated animate__fadeInUp" style="animation-delay: 0.8s;">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold text-primary">
+                        <i class="fas fa-rocket me-2"></i>Accesos Rápidos
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3 col-sm-6">
+                            <a href="{% url 'usuarios:crear_tarea' %}" class="btn btn-outline-primary btn-lg w-100 h-100 d-flex flex-column justify-content-center align-items-center">
+                                <i class="fas fa-plus fa-2x mb-2"></i>
+                                <span>Nueva Tarea</span>
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <a href="{% url 'usuarios:crear_proyecto' %}" class="btn btn-outline-success btn-lg w-100 h-100 d-flex flex-column justify-content-center align-items-center">
+                                <i class="fas fa-project-diagram fa-2x mb-2"></i>
+                                <span>Nuevo Proyecto</span>
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <a href="{% url 'usuarios:agenda' %}" class="btn btn-outline-info btn-lg w-100 h-100 d-flex flex-column justify-content-center align-items-center">
+                                <i class="fas fa-calendar-alt fa-2x mb-2"></i>
+                                <span>Mi Agenda</span>
+                            </a>
+                        </div>
+                        <div class="col-md-3 col-sm-6">
+                            <a href="{% url 'usuarios:lista_equipos' %}" class="btn btn-outline-warning btn-lg w-100 h-100 d-flex flex-column justify-content-center align-items-center">
+                                <i class="fas fa-users fa-2x mb-2"></i>
+                                <span>Mis Equipos</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CSRF Token for AJAX -->
+{% csrf_token %}
+{% endblock %}

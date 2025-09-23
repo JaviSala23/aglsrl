@@ -1,0 +1,175 @@
+{% extends 'transportes/base_transportes.html' %}
+{% load static %}
+
+{% block title %}Camiones - AGL SRL{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800">
+                        <i class="fas fa-truck me-2 text-primary"></i>
+                        Gestión de Camiones
+                    </h1>
+                    <p class="text-muted mb-0">Total: {{ total_camiones }} camiones</p>
+                </div>
+                <a href="{% url 'transportes:crear_camion' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i> Nuevo Camión
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros de búsqueda -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-5">
+                            {{ form.busqueda.label_tag }}
+                            {{ form.busqueda }}
+                        </div>
+                        <div class="col-md-5">
+                            {{ form.cuenta.label_tag }}
+                            {{ form.cuenta }}
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-outline-primary me-2">
+                                <i class="fas fa-search me-1"></i> Buscar
+                            </button>
+                            <a href="{% url 'transportes:lista_camiones' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-1"></i> Limpiar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de camiones -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-body">
+                    {% if page_obj %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Patente</th>
+                                        <th>Cuenta</th>
+                                        <th>Acoplados</th>
+                                        <th>Capacidades</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for camion in page_obj %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ camion.patente }}</strong>
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <strong>{{ camion.cuenta_asociada.nombre }}</strong><br>
+                                                <small class="text-muted">{{ camion.cuenta_asociada.documento }}</small>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            {% if camion.acoplado_1 or camion.acoplado_2 %}
+                                                <div class="d-flex flex-column gap-1">
+                                                    {% if camion.acoplado_1 %}
+                                                        <span class="badge bg-primary">{{ camion.acoplado_1 }}</span>
+                                                    {% endif %}
+                                                    {% if camion.acoplado_2 %}
+                                                        <span class="badge bg-primary">{{ camion.acoplado_2 }}</span>
+                                                    {% endif %}
+                                                </div>
+                                            {% else %}
+                                                <span class="text-muted">Sin acoplados</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div>
+                                                <strong>Carga:</strong> {{ camion.capacidad_carga|default:"—" }}t<br>
+                                                <strong>Tara:</strong> {{ camion.tara|default:"—" }}t
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm" role="group">
+                                                <a href="{% url 'transportes:detalle_camion' camion.pk %}" 
+                                                   class="btn btn-outline-info" title="Ver detalles">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{% url 'transportes:editar_camion' camion.pk %}" 
+                                                   class="btn btn-outline-warning" title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Paginación -->
+                        {% if page_obj.has_other_pages %}
+                        <nav aria-label="Paginación de camiones" class="mt-4">
+                            <ul class="pagination justify-content-center">
+                                {% if page_obj.has_previous %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page=1{% if request.GET.busqueda %}&busqueda={{ request.GET.busqueda }}{% endif %}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.tipo_camion %}&tipo_camion={{ request.GET.tipo_camion }}{% endif %}">
+                                            &laquo; Primera
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.busqueda %}&busqueda={{ request.GET.busqueda }}{% endif %}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.tipo_camion %}&tipo_camion={{ request.GET.tipo_camion }}{% endif %}">
+                                            &lsaquo; Anterior
+                                        </a>
+                                    </li>
+                                {% endif %}
+
+                                <li class="page-item active">
+                                    <span class="page-link">
+                                        Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                                    </span>
+                                </li>
+
+                                {% if page_obj.has_next %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.busqueda %}&busqueda={{ request.GET.busqueda }}{% endif %}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.tipo_camion %}&tipo_camion={{ request.GET.tipo_camion }}{% endif %}">
+                                            Siguiente &rsaquo;
+                                        </a>
+                                    </li>
+                                    <li class="page-item">
+                                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.busqueda %}&busqueda={{ request.GET.busqueda }}{% endif %}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.tipo_camion %}&tipo_camion={{ request.GET.tipo_camion }}{% endif %}">
+                                            Última &raquo;
+                                        </a>
+                                    </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                        {% endif %}
+
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-truck fa-3x text-gray-300 mb-3"></i>
+                            <h5 class="text-gray-600">No se encontraron camiones</h5>
+                            <p class="text-muted">No hay camiones que coincidan con los criterios de búsqueda.</p>
+                            <a href="{% url 'transportes:crear_camion' %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-1"></i> Crear Primer Camión
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

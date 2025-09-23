@@ -1,0 +1,300 @@
+{% extends 'agenda/base_agenda.html' %}
+{% load static %}
+
+{% block title %}Contactos - Agenda - AGL SRL{% endblock %}
+
+{% block extra_css %}
+<style>
+    .contactos-header {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .contact-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        border: none;
+        margin-bottom: 1rem;
+    }
+    .contact-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    .contact-avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    .contact-name {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 0.25rem;
+    }
+    .contact-company {
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 0.5rem;
+    }
+    .contact-info {
+        font-size: 0.85rem;
+        color: #495057;
+    }
+    .favorite-star {
+        color: #ffc107;
+        font-size: 1.2rem;
+    }
+    .filter-card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        margin-bottom: 2rem;
+    }
+    .btn-outline-primary {
+        border-radius: 8px;
+    }
+    .contact-actions {
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+    .btn-sm {
+        border-radius: 6px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'main:panel' %}" class="text-decoration-none">
+                    <i class="fas fa-home"></i> Panel Principal
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'agenda:dashboard' %}" class="text-decoration-none">
+                    <i class="fas fa-calendar-alt"></i> Agenda
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">Contactos</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="contactos-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h2><i class="fas fa-users me-3"></i>Gestión de Contactos</h2>
+                <p class="mb-0">Administra todos tus contactos de manera eficiente</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="{% url 'agenda:crear_contacto' %}" class="btn btn-light btn-lg">
+                    <i class="fas fa-user-plus me-2"></i>Nuevo Contacto
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card filter-card">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="q" class="form-label">Buscar</label>
+                    <input type="text" class="form-control" id="q" name="q" 
+                           value="{{ filtros.q }}" 
+                           placeholder="Nombre, empresa, email o teléfono...">
+                </div>
+                <div class="col-md-3">
+                    <label for="tipo_contacto" class="form-label">Tipo de Contacto</label>
+                    <select class="form-select" id="tipo_contacto" name="tipo_contacto">
+                        <option value="">Todos los tipos</option>
+                        {% for tipo in tipos_contacto %}
+                            <option value="{{ tipo.id_tipo_contacto }}" 
+                                    {% if filtros.tipo_contacto == tipo.id_tipo_contacto|stringformat:"s" %}selected{% endif %}>
+                                {{ tipo.nombre }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Favoritos</label>
+                    <div class="form-check mt-2">
+                        <input class="form-check-input" type="checkbox" id="favoritos" name="favoritos" value="true"
+                               {% if filtros.favoritos == 'true' %}checked{% endif %}>
+                        <label class="form-check-label" for="favoritos">
+                            Solo favoritos
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-1"></i>Filtrar
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de Contactos -->
+    {% if contactos %}
+        <div class="row">
+            {% for contacto in contactos %}
+                <div class="col-lg-6 col-xl-4">
+                    <div class="card contact-card">
+                        <div class="card-body p-3">
+                            <div class="d-flex align-items-start">
+                                <div class="contact-avatar me-3">
+                                    {{ contacto.nombre.0|upper }}{{ contacto.apellido.0|upper }}
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <h6 class="contact-name">{{ contacto.nombre_completo }}</h6>
+                                            {% if contacto.empresa %}
+                                                <div class="contact-company">{{ contacto.empresa }}</div>
+                                            {% endif %}
+                                            {% if contacto.cargo %}
+                                                <div class="contact-company">{{ contacto.cargo }}</div>
+                                            {% endif %}
+                                        </div>
+                                        {% if contacto.favorito %}
+                                            <i class="fas fa-star favorite-star"></i>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="contact-info mt-2">
+                                        {% if contacto.telefono_principal %}
+                                            <div><i class="fas fa-phone me-1"></i> {{ contacto.telefono_principal }}</div>
+                                        {% endif %}
+                                        {% if contacto.email_principal %}
+                                            <div><i class="fas fa-envelope me-1"></i> {{ contacto.email_principal }}</div>
+                                        {% endif %}
+                                        {% if contacto.tipo_contacto %}
+                                            <div class="mt-1">
+                                                <span class="badge bg-primary">{{ contacto.tipo_contacto.nombre }}</span>
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    
+                                    <div class="contact-actions mt-3">
+                                        <a href="{% url 'agenda:detalle_contacto' contacto.pk %}" 
+                                           class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{% url 'agenda:editar_contacto' contacto.pk %}" 
+                                           class="btn btn-outline-secondary btn-sm">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="{% url 'agenda:toggle_favorito' contacto.pk %}" 
+                                           class="btn btn-outline-warning btn-sm">
+                                            <i class="fas fa-star"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-danger btn-sm"
+                                                onclick="confirmarEliminar({{ contacto.pk }}, '{{ contacto.nombre_completo|escapejs }}')">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Paginación -->
+        {% if is_paginated %}
+            <nav aria-label="Navegación de contactos" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.tipo_contacto %}&tipo_contacto={{ request.GET.tipo_contacto }}{% endif %}{% if request.GET.favoritos %}&favoritos={{ request.GET.favoritos }}{% endif %}">
+                                Primera
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.tipo_contacto %}&tipo_contacto={{ request.GET.tipo_contacto }}{% endif %}{% if request.GET.favoritos %}&favoritos={{ request.GET.favoritos }}{% endif %}">
+                                Anterior
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    <li class="page-item active">
+                        <span class="page-link">
+                            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                        </span>
+                    </li>
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.tipo_contacto %}&tipo_contacto={{ request.GET.tipo_contacto }}{% endif %}{% if request.GET.favoritos %}&favoritos={{ request.GET.favoritos }}{% endif %}">
+                                Siguiente
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.tipo_contacto %}&tipo_contacto={{ request.GET.tipo_contacto }}{% endif %}{% if request.GET.favoritos %}&favoritos={{ request.GET.favoritos }}{% endif %}">
+                                Última
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+
+    {% else %}
+        <!-- Sin contactos -->
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i class="fas fa-users fa-5x text-muted"></i>
+            </div>
+            <h4 class="text-muted">No se encontraron contactos</h4>
+            <p class="text-muted">
+                {% if filtros.q or filtros.tipo_contacto or filtros.favoritos %}
+                    Prueba ajustando los filtros de búsqueda
+                {% else %}
+                    Comienza agregando tu primer contacto
+                {% endif %}
+            </p>
+            <a href="{% url 'agenda:crear_contacto' %}" class="btn btn-primary btn-lg mt-3">
+                <i class="fas fa-user-plus me-2"></i>Crear Primer Contacto
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function confirmarEliminar(contactoId, nombreContacto) {
+        Swal.fire({
+            title: '¿Eliminar contacto?',
+            text: `¿Estás seguro de que deseas eliminar a "${nombreContacto}"?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = `/agenda/contactos/${contactoId}/eliminar/`;
+            }
+        });
+    }
+</script>
+{% endblock %}

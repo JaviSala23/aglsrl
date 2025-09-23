@@ -1,0 +1,153 @@
+{% extends 'main/base_usuarios.html' %}
+{% load static %}
+
+{% block title %}Eliminar Usuario - AGL SRL{% endblock %}
+
+{% block extra_css %}
+<style>
+    .delete-header {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+    }
+    
+    .confirm-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+        border-left: 4px solid #ef4444;
+    }
+    
+    .user-info {
+        background: #f9fafb;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+    }
+    
+    .warning-box {
+        background: #fef3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        padding: 1rem;
+        margin: 1.5rem 0;
+    }
+    
+    .btn-confirm-delete {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+        border: none;
+        color: white;
+        padding: 0.7rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-confirm-delete:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        color: white;
+    }
+    
+    .btn-cancel {
+        background: #6b7280;
+        border: none;
+        color: white;
+        padding: 0.7rem 1.5rem;
+        border-radius: 8px;
+        font-weight: 500;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-cancel:hover {
+        background: #4b5563;
+        color: white;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="delete-header">
+    <div class="container">
+        <h1 class="h2 mb-1">
+            <i class="bi bi-exclamation-triangle me-3"></i>
+            Eliminar Usuario
+        </h1>
+        <p class="mb-0 opacity-90">Esta acción no se puede deshacer</p>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card confirm-card">
+                <div class="card-body p-4">
+                    <h4 class="text-danger mb-3">
+                        <i class="bi bi-exclamation-circle me-2"></i>
+                        ¿Estás seguro de eliminar este usuario?
+                    </h4>
+                    
+                    <div class="user-info">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Nombre:</strong><br>
+                                {{ usuario.get_full_name|default:usuario.username }}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Usuario:</strong><br>
+                                @{{ usuario.username }}
+                            </div>
+                        </div>
+                        <div class="row mt-2">
+                            <div class="col-md-6">
+                                <strong>Email:</strong><br>
+                                {{ usuario.email|default:"No especificado" }}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Registro:</strong><br>
+                                {{ usuario.date_joined|date:"d/m/Y" }}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="warning-box">
+                        <h6 class="text-warning mb-2">
+                            <i class="bi bi-exclamation-triangle me-1"></i>
+                            Advertencia
+                        </h6>
+                        <ul class="mb-0 text-muted">
+                            <li>Se eliminarán todos los datos asociados al usuario</li>
+                            <li>Las tareas asignadas al usuario quedarán sin asignar</li>
+                            <li>Esta acción no se puede deshacer</li>
+                            <li>El usuario perderá acceso inmediatamente al sistema</li>
+                        </ul>
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'main:detalle_usuario' usuario.id %}" class="btn-cancel">
+                                <i class="bi bi-arrow-left"></i>
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn-confirm-delete">
+                                <i class="bi bi-trash"></i>
+                                Confirmar Eliminación
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
