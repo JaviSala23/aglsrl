@@ -1,0 +1,271 @@
+{% extends 'agenda/base_agenda.html' %}
+{% load static %}
+
+{% block title %}Agregar Comentario - {{ tarea.titulo }} - Agenda - AGL SRL{% endblock %}
+
+{% block extra_css %}
+<style>
+    .comentario-header {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .comentario-form {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        padding: 2rem;
+    }
+    .btn-enviar {
+        background: linear-gradient(135deg, #8e9aaf, #b8a9c9);
+        border: none;
+        color: white;
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    .btn-enviar:hover {
+        background: linear-gradient(135deg, #7a8399, #a294b8);
+        color: white;
+        transform: translateY(-1px);
+    }
+    .btn-cancelar {
+        background: #6c757d;
+        border: none;
+        color: white;
+        padding: 12px 30px;
+        border-radius: 8px;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-block;
+        transition: all 0.3s ease;
+    }
+    .btn-cancelar:hover {
+        background: #5a6268;
+        color: white;
+        transform: translateY(-1px);
+    }
+    .tipo-badge {
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    .tipo-progreso { background: #d1ecf1; color: #0c5460; }
+    .tipo-problema { background: #f8d7da; color: #721c24; }
+    .tipo-solucion { background: #d4edda; color: #155724; }
+    .tipo-nota { background: #e2e3e5; color: #383d41; }
+    .tipo-completado { background: #d1ecf1; color: #0c5460; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <!-- Header -->
+    <div class="comentario-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h2><i class="fas fa-comment-alt me-3"></i>Agregar Comentario</h2>
+                <p class="mb-0">Tarea: <strong>{{ tarea.titulo }}</strong></p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <span class="badge bg-{% if tarea.estado == 'completada' %}success{% elif tarea.estado == 'en_progreso' %}primary{% elif tarea.estado == 'cancelada' %}secondary{% else %}warning{% endif %} fs-6">
+                    {{ tarea.get_estado_display }}
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario -->
+    <div class="comentario-form">
+        <form method="post">
+            {% csrf_token %}
+            
+            <!-- Mostrar errores generales del formulario -->
+            {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+            
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <label for="{{ form.tipo.id_for_label }}" class="form-label">
+                        <i class="fas fa-tag me-2"></i>Tipo de Comentario <span class="text-danger">*</span>
+                    </label>
+                    {{ form.tipo }}
+                    
+                    <!-- Mostrar errores del campo tipo -->
+                    {% if form.tipo.errors %}
+                        <div class="text-danger mt-1">
+                            {{ form.tipo.errors }}
+                        </div>
+                    {% endif %}
+                    
+                    <!-- Ayuda visual para tipos -->
+                    <div class="mt-2">
+                        <small class="text-muted">
+                            <div class="d-flex flex-wrap gap-1 mt-1">
+                                <span class="tipo-badge tipo-progreso">📈 Progreso</span>
+                                <span class="tipo-badge tipo-problema">⚠️ Problema</span>
+                                <span class="tipo-badge tipo-solucion">✅ Solución</span>
+                                <span class="tipo-badge tipo-nota">📝 Nota</span>
+                                <span class="tipo-badge tipo-completado">🎯 Completado</span>
+                            </div>
+                        </small>
+                    </div>
+                </div>
+                
+                <div class="col-md-8 mb-3">
+                    <label for="{{ form.comentario.id_for_label }}" class="form-label">
+                        <i class="fas fa-comment me-2"></i>Comentario <span class="text-danger">*</span>
+                    </label>
+                    {{ form.comentario }}
+                    
+                    <!-- Mostrar errores del campo comentario -->
+                    {% if form.comentario.errors %}
+                        <div class="text-danger mt-1">
+                            {{ form.comentario.errors }}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="form-text">
+                        Describe el progreso, problemas encontrados, soluciones aplicadas o cualquier observación importante sobre la tarea.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Información de la tarea -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="bg-light p-3 rounded">
+                        <h6><i class="fas fa-info-circle me-2"></i>Información de la Tarea</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <small class="text-muted">
+                                    <strong>Creada por:</strong> {{ tarea.creado_por.get_full_name|default:tarea.creado_por.username }}<br>
+                                    <strong>Fecha de creación:</strong> {{ tarea.fecha_creacion|date:"d/m/Y H:i" }}
+                                </small>
+                            </div>
+                            <div class="col-md-6">
+                                {% if tarea.fecha_vencimiento %}
+                                <small class="text-muted">
+                                    <strong>Vencimiento:</strong> {{ tarea.fecha_vencimiento|date:"d/m/Y H:i" }}
+                                </small>
+                                {% endif %}
+                                {% if tarea.prioridad %}
+                                <br>
+                                <small class="text-muted">
+                                    <strong>Prioridad:</strong> 
+                                    <span class="badge bg-{% if tarea.prioridad == 'urgente' %}danger{% elif tarea.prioridad == 'alta' %}warning{% elif tarea.prioridad == 'media' %}primary{% else %}secondary{% endif %}">
+                                        {{ tarea.get_prioridad_display }}
+                                    </span>
+                                </small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Botones -->
+            <div class="d-flex justify-content-between mt-4">
+                <a href="{% url 'agenda:detalle_tarea' tarea.id_tarea %}" class="btn-cancelar">
+                    <i class="fas fa-arrow-left me-2"></i>Cancelar
+                </a>
+                <button type="submit" class="btn-enviar">
+                    <i class="fas fa-paper-plane me-2"></i>Agregar Comentario
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Actualizar la ayuda visual según el tipo seleccionado
+    const tipoSelect = document.getElementById('{{ form.tipo.id_for_label }}');
+    const badges = document.querySelectorAll('.tipo-badge');
+    
+    if (tipoSelect) {
+        tipoSelect.addEventListener('change', function() {
+            badges.forEach(badge => {
+                badge.style.opacity = '0.4';
+                badge.style.transform = 'scale(0.95)';
+                badge.style.transition = 'all 0.3s ease';
+            });
+            
+            const selectedType = this.value;
+            const targetBadge = document.querySelector('.tipo-' + selectedType);
+            if (targetBadge) {
+                targetBadge.style.opacity = '1';
+                targetBadge.style.transform = 'scale(1.1)';
+                targetBadge.style.fontWeight = 'bold';
+                setTimeout(() => {
+                    targetBadge.style.transform = 'scale(1)';
+                }, 200);
+            }
+        });
+        
+        // Trigger inicial si hay un valor seleccionado
+        if (tipoSelect.value) {
+            tipoSelect.dispatchEvent(new Event('change'));
+        }
+    }
+    
+    // Validación del formulario
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const tipo = document.querySelector('#id_tipo');
+            const comentario = document.querySelector('#id_comentario');
+            
+            // Limpiar errores previos
+            document.querySelectorAll('.is-invalid').forEach(el => el.classList.remove('is-invalid'));
+            document.querySelectorAll('.invalid-feedback').forEach(el => el.remove());
+            
+            let hasErrors = false;
+            
+            if (!tipo.value) {
+                tipo.classList.add('is-invalid');
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'invalid-feedback';
+                errorDiv.textContent = 'Debes seleccionar un tipo de comentario.';
+                tipo.parentNode.appendChild(errorDiv);
+                hasErrors = true;
+            }
+            
+            if (!comentario.value.trim()) {
+                comentario.classList.add('is-invalid');
+                const errorDiv = document.createElement('div');
+                errorDiv.className = 'invalid-feedback';
+                errorDiv.textContent = 'Debes escribir un comentario.';
+                comentario.parentNode.appendChild(errorDiv);
+                hasErrors = true;
+            }
+            
+            if (hasErrors) {
+                e.preventDefault();
+                // Scroll al primer error
+                document.querySelector('.is-invalid').scrollIntoView({ behavior: 'smooth', block: 'center' });
+                return false;
+            }
+        });
+    }
+    
+    // Auto-resize del textarea
+    const comentarioTextarea = document.querySelector('#id_comentario');
+    if (comentarioTextarea) {
+        comentarioTextarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+    }
+});
+</script>
+{% endblock %}

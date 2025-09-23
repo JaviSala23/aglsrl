@@ -1,6 +1,7 @@
 """
 Vistas para el módulo de agenda y contactos.
 """
+from django.http import HttpResponseBadRequest
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
@@ -8,12 +9,17 @@ from django.views.generic import ListView, DetailView, CreateView, UpdateView, T
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Q, Count
+from django.contrib.auth import get_user_model
 from django.utils import timezone
 from datetime import datetime, timedelta
 
-from .models import Contacto, TipoContacto, Evento, TipoEvento, Tarea
-from .forms import ContactoForm, EventoForm, TareaForm, RespuestaAsignacionForm
+from .models import Contacto, TipoContacto, Evento, TipoEvento, Tarea, ComentarioTarea
+from .forms import ContactoForm, EventoForm, TareaForm, RespuestaAsignacionForm, ComentarioTareaForm
 from cuentas.models import cuenta
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponseBadRequest
+from .models import ChatRoom, ChatMembership, ChatMessage
 
 
 @login_required
@@ -275,7 +281,7 @@ class ListaTareasView(LoginRequiredMixin, ListView):
         ).values_list('tarea_id', flat=True)
         
         return Tarea.objects.filter(
-            Q(creado_por=user) | Q(id__in=tareas_asignadas_ids),
+            Q(creado_por=user) | Q(id_tarea__in=tareas_asignadas_ids),
             activa=True
         ).order_by('-fecha_creacion')
     
@@ -322,11 +328,15 @@ class CrearTareaView(LoginRequiredMixin, CreateView):
         form.instance.creado_por = self.request.user
         response = super().form_valid(form)
         
+        # Obtener usuarios asignados del formulario
+        usuarios_asignados = form.cleaned_data.get('usuarios_asignados', [])
+        
         # Mensaje según si se asignó o no
-        if form.instance.asignado_a:
+        if usuarios_asignados:
+            nombres_asignados = [user.get_full_name() or user.username for user in usuarios_asignados]
             messages.success(
                 self.request, 
-                f'Tarea "{form.instance.titulo}" creada y asignada a {form.instance.asignado_a.get_full_name() or form.instance.asignado_a.username}.'
+                f'Tarea "{form.instance.titulo}" creada y asignada a: {", ".join(nombres_asignados)}.'
             )
         else:
             messages.success(self.request, f'Tarea "{form.instance.titulo}" creada exitosamente.')
@@ -356,16 +366,12 @@ def responder_asignacion_tarea_view(request, asignacion_id):
             comentarios = form.cleaned_data.get('comentarios', '')
             
             if respuesta == 'aceptar':
-                asignacion.estado = 'aceptada'
+                asignacion.aceptar(comentarios)
                 mensaje = f'Has aceptado la tarea "{asignacion.tarea.titulo}".'
             else:
-                asignacion.estado = 'rechazada'
+                asignacion.rechazar(comentarios)
                 mensaje = f'Has rechazado la tarea "{asignacion.tarea.titulo}".'
             
-            if comentarios:
-                asignacion.comentarios = comentarios
-            
-            asignacion.save()
             messages.success(request, mensaje)
             return redirect('agenda:lista_tareas')
     else:
@@ -383,6 +389,35 @@ class DetalleTareaView(LoginRequiredMixin, DetailView):
     model = Tarea
     template_name = 'agenda/detalle_tarea.html'
     login_url = 'main:login'
+    
+    def get_queryset(self):
+        """Solo mostrar tareas que el usuario creó o que le fueron asignadas."""
+        from .models import AsignacionTarea
+        user = self.request.user
+        
+        # Obtener IDs de tareas asignadas al usuario
+        tareas_asignadas_ids = AsignacionTarea.objects.filter(
+            usuario=user
+        ).values_list('tarea_id', flat=True)
+        
+        return Tarea.objects.filter(
+            Q(creado_por=user) | Q(id_tarea__in=tareas_asignadas_ids),
+            activa=True
+        )
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        tarea = self.get_object()
+        
+        # Verificar si el usuario puede comentar
+        # Puede comentar si es el creador o si está asignado a la tarea
+        puede_comentar = (
+            tarea.creado_por == self.request.user or
+            tarea.asignaciones.filter(usuario=self.request.user).exists()
+        )
+        
+        context['puede_comentar'] = puede_comentar
+        return context
 
 
 class EditarTareaView(LoginRequiredMixin, UpdateView):
@@ -455,19 +490,35 @@ def eliminar_evento_view(request, pk):
 
 
 @login_required
+@login_required
 def eliminar_tarea_view(request, pk):
-    """Eliminar tarea."""
-    tarea = get_object_or_404(Tarea, pk=pk)
+    """Eliminar tarea - Solo el creador puede eliminar."""
+    tarea = get_object_or_404(Tarea, pk=pk, creado_por=request.user)
+    titulo_tarea = tarea.titulo
     tarea.activa = False
     tarea.save()
-    messages.success(request, f'Tarea "{tarea.titulo}" eliminada.')
+    messages.success(request, f'Tarea "{titulo_tarea}" eliminada.')
     return redirect('agenda:lista_tareas')
 
 
 @login_required
 def toggle_completar_tarea_view(request, pk):
-    """Completar/reactivar tarea."""
+    """Completar/reactivar tarea - Creador o usuarios asignados."""
+    from .models import AsignacionTarea
+    
+    # Verificar que el usuario pueda modificar esta tarea
     tarea = get_object_or_404(Tarea, pk=pk)
+    
+    # Solo el creador o usuarios asignados pueden completar la tarea
+    es_creador = tarea.creado_por == request.user
+    es_asignado = AsignacionTarea.objects.filter(
+        tarea=tarea, 
+        usuario=request.user
+    ).exists()
+    
+    if not (es_creador or es_asignado):
+        messages.error(request, 'No tienes permisos para modificar esta tarea.')
+        return redirect('agenda:lista_tareas')
     
     if tarea.estado == 'completada':
         tarea.estado = 'pendiente'
@@ -542,3 +593,321 @@ def estadisticas_api_view(request):
     }
     
     return JsonResponse(data)
+
+
+class TareasKanbanView(LoginRequiredMixin, TemplateView):
+    """Vista Kanban para tareas."""
+    template_name = 'agenda/tareas_kanban.html'
+    login_url = 'main:login'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.request.user
+        from .models import AsignacionTarea
+        
+        # Obtener IDs de tareas asignadas al usuario
+        tareas_asignadas_ids = AsignacionTarea.objects.filter(
+            usuario=user
+        ).values_list('tarea_id', flat=True)
+        
+        # Obtener todas las tareas del usuario (creadas por él o asignadas a él)
+        todas_las_tareas = Tarea.objects.filter(
+            Q(creado_por=user) | Q(id_tarea__in=tareas_asignadas_ids),
+            activa=True
+        ).order_by('-fecha_creacion')
+        
+        # Organizar tareas por estado para el Kanban
+        context['tareas_pendientes'] = todas_las_tareas.filter(estado='pendiente')
+        context['tareas_en_progreso'] = todas_las_tareas.filter(estado='en_progreso')
+        context['tareas_completadas'] = todas_las_tareas.filter(estado='completada')
+        context['tareas_canceladas'] = todas_las_tareas.filter(estado='cancelada')
+        
+        # Estadísticas generales
+        context['total_tareas'] = todas_las_tareas.count()
+        context['tareas_creadas'] = Tarea.objects.filter(
+            creado_por=user, activa=True
+        ).count()
+        context['tareas_asignadas'] = AsignacionTarea.objects.filter(
+            usuario=user, tarea__activa=True
+        ).count()
+        
+        # Añadir asignaciones del usuario para mostrar en el template
+        context['mis_asignaciones'] = AsignacionTarea.objects.filter(
+            usuario=user, tarea__activa=True
+        ).select_related('tarea')
+        
+        return context
+
+
+@login_required
+@login_required
+def actualizar_estado_tarea_kanban(request, tarea_id):
+    """Vista AJAX para actualizar el estado de una tarea desde el Kanban."""
+    if request.method == 'POST':
+        try:
+            # Verificar que el usuario pueda modificar esta tarea
+            from .models import AsignacionTarea
+            tarea = get_object_or_404(Tarea, id_tarea=tarea_id)
+            
+            # Solo el creador o usuarios asignados pueden actualizar el estado
+            es_creador = tarea.creado_por == request.user
+            es_asignado = AsignacionTarea.objects.filter(
+                tarea=tarea, 
+                usuario=request.user
+            ).exists()
+            
+            if not (es_creador or es_asignado):
+                return JsonResponse({
+                    'success': False,
+                    'error': 'No tienes permisos para modificar esta tarea'
+                })
+            
+            nuevo_estado = request.POST.get('estado')
+            
+            # Validar que el estado sea válido
+            estados_validos = ['pendiente', 'en_progreso', 'completada', 'cancelada']
+            if nuevo_estado not in estados_validos:
+                return JsonResponse({
+                    'success': False,
+                    'error': 'Estado no válido'
+                })
+            
+            # Actualizar el estado
+            tarea.estado = nuevo_estado
+            
+            # Si se marca como completada, añadir fecha de completado
+            if nuevo_estado == 'completada':
+                tarea.fecha_completada = timezone.now()
+                tarea.porcentaje_completado = 100
+            elif nuevo_estado in ['pendiente', 'en_progreso']:
+                tarea.fecha_completada = None
+                if nuevo_estado == 'pendiente':
+                    tarea.porcentaje_completado = 0
+            
+            tarea.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Tarea "{tarea.titulo}" actualizada correctamente'
+            })
+            
+        except Tarea.DoesNotExist:
+            return JsonResponse({
+                'success': False,
+                'error': 'Tarea no encontrada'
+            })
+        except Exception as e:
+            return JsonResponse({
+                'success': False,
+                'error': str(e)
+            })
+    
+    return JsonResponse({
+        'success': False,
+        'error': 'Método no permitido'
+    })
+
+
+@login_required
+def agregar_comentario_tarea_view(request, tarea_id):
+    """Vista para agregar comentarios a una tarea."""
+    tarea = get_object_or_404(Tarea, id_tarea=tarea_id)
+    
+    # Verificar que el usuario tenga permisos (creador o asignado)
+    from .models import AsignacionTarea
+    es_creador = tarea.creado_por == request.user
+    es_asignado = AsignacionTarea.objects.filter(
+        tarea=tarea, 
+        usuario=request.user
+    ).exists()
+    
+    if not (es_creador or es_asignado):
+        messages.error(request, 'No tienes permisos para comentar en esta tarea.')
+        return redirect('agenda:detalle_tarea', pk=tarea_id)
+    
+    if request.method == 'POST':
+        form = ComentarioTareaForm(request.POST)
+        
+        if form.is_valid():
+            comentario = form.save(commit=False)
+            comentario.tarea = tarea
+            comentario.usuario = request.user
+            comentario.save()
+            
+            messages.success(request, 'Comentario agregado correctamente.')
+            return redirect('agenda:detalle_tarea', pk=tarea_id)
+        else:
+            messages.error(request, 'Por favor, corrige los errores en el formulario.')
+    else:
+        form = ComentarioTareaForm()
+    
+    return render(request, 'agenda/agregar_comentario.html', {
+        'form': form,
+        'tarea': tarea
+    })
+
+
+@login_required
+def chat_list_rooms(request):
+    """Listar salas en las que participa el usuario."""
+    rooms = ChatRoom.objects.filter(membresias__usuario=request.user, activo=True).distinct()
+    data = []
+    for r in rooms:
+        data.append({
+            'id': r.id,
+            'nombre': r.nombre or f'Sala {r.id}',
+            'es_grupal': r.es_grupal,
+            'miembros': [m.usuario.get_full_name() or m.usuario.username for m in r.membresias.select_related('usuario')]
+        })
+    return JsonResponse({'rooms': data})
+
+
+@login_required
+@require_POST
+def chat_create_private(request):
+    """Crear o retornar sala privada entre el usuario y `other_user_id`."""
+    other_id = request.POST.get('other_user_id')
+    if not other_id:
+        return HttpResponseBadRequest('Falta other_user_id')
+    try:
+        other = request.user.__class__.objects.get(pk=other_id)
+    except Exception:
+        return HttpResponseBadRequest('Usuario destino no encontrado')
+
+    # Buscar sala privada existente entre ambos
+    salas = ChatRoom.objects.filter(es_grupal=False, membresias__usuario=request.user).distinct()
+    for s in salas:
+        if s.membresias.filter(usuario=other).exists():
+            return JsonResponse({'room_id': s.id})
+
+    # Crear nueva sala privada
+    sala = ChatRoom.objects.create(es_grupal=False, creado_por=request.user)
+    ChatMembership.objects.create(sala=sala, usuario=request.user)
+    ChatMembership.objects.create(sala=sala, usuario=other)
+    return JsonResponse({'room_id': sala.id})
+
+
+@login_required
+@require_POST
+def chat_add_members(request, room_id):
+    """Agregar miembros a una sala existente (user_ids = '1,2,3')."""
+    sala = get_object_or_404(ChatRoom, pk=room_id, activo=True)
+    # debe ser miembro para poder agregar
+    if not sala.membresias.filter(usuario=request.user).exists():
+        return JsonResponse({'error': 'No tienes acceso a esta sala'}, status=403)
+
+    ids = request.POST.get('user_ids', '').strip()
+    if not ids:
+        return HttpResponseBadRequest('Falta user_ids')
+    try:
+        id_list = [int(x) for x in ids.split(',') if x.strip()]
+    except ValueError:
+        return HttpResponseBadRequest('IDs inválidos')
+
+    User = get_user_model()
+    added = []
+    for uid in id_list:
+        try:
+            u = User.objects.get(pk=uid, is_active=True)
+        except User.DoesNotExist:
+            continue
+        # evitar duplicados
+        if sala.membresias.filter(usuario=u).exists():
+            continue
+        ChatMembership.objects.create(sala=sala, usuario=u)
+        added.append({'id': u.id, 'nombre': u.get_full_name() or u.username})
+
+    return JsonResponse({'added': added})
+
+
+@login_required
+@require_POST
+def chat_close_room(request, room_id):
+    """Cerrar (desactivar) una sala. Solo el creador puede cerrarla."""
+    sala = get_object_or_404(ChatRoom, pk=room_id, activo=True)
+    if sala.creado_por != request.user:
+        return JsonResponse({'error': 'Solo el creador puede cerrar la sala'}, status=403)
+    sala.activo = False
+    sala.save()
+    return JsonResponse({'closed': True})
+@login_required
+def chat_search_users(request):
+    """Buscar usuarios por nombre/username para crear salas privadas."""
+    q = request.GET.get('q', '').strip()
+    if not q:
+        return JsonResponse({'users': []})
+    User = get_user_model()
+    usuarios = User.objects.filter(
+        Q(username__icontains=q) | Q(first_name__icontains=q) | Q(last_name__icontains=q),
+        is_active=True
+    ).exclude(pk=request.user.pk)[:10]
+    data = []
+    for u in usuarios:
+        data.append({'id': u.id, 'username': u.username, 'nombre': u.get_full_name() or u.username})
+    return JsonResponse({'users': data})
+
+
+@login_required
+def chat_get_messages(request, room_id):
+    """Obtener últimos mensajes de una sala (limit 50)."""
+    sala = get_object_or_404(ChatRoom, pk=room_id, activo=True)
+    if not sala.membresias.filter(usuario=request.user).exists():
+        return JsonResponse({'error': 'No tienes acceso a esta sala'}, status=403)
+    msgs = sala.mensajes.all().order_by('fecha_creacion')[:200]
+    data = []
+    for m in msgs:
+        data.append({
+            'id': m.id,
+            'usuario': m.usuario.get_full_name() or m.usuario.username,
+            'usuario_id': m.usuario.id,
+            'mensaje': m.mensaje,
+            'fecha': m.fecha_creacion.isoformat()
+        })
+    return JsonResponse({'messages': data})
+
+
+@login_required
+def chat_unread_count(request):
+    """Devuelve la cantidad total de mensajes sin leer para las salas en las que participa el usuario."""
+    # Mensajes en salas donde el usuario es miembro y que no fueron escritos por el usuario
+    count = ChatMessage.objects.filter(sala__membresias__usuario=request.user, leido=False).exclude(usuario=request.user).distinct().count()
+    return JsonResponse({'unread_count': count})
+
+
+
+@login_required
+@require_POST
+def chat_mark_read(request):
+    """Marca como leídos los mensajes especificados por ids (message_ids = '1,2,3')."""
+    ids = request.POST.get('message_ids', '').strip()
+    if not ids:
+        return HttpResponseBadRequest('Falta message_ids')
+    try:
+        id_list = [int(x) for x in ids.split(',') if x.strip()]
+    except ValueError:
+        return HttpResponseBadRequest('IDs inválidos')
+
+    msgs = ChatMessage.objects.filter(id__in=id_list)
+    # Asegurar que el usuario sea miembro de las salas de esos mensajes
+    msgs = msgs.filter(sala__membresias__usuario=request.user).exclude(usuario=request.user)
+    updated = msgs.update(leido=True)
+    return JsonResponse({'marked': updated})
+
+
+@login_required
+@require_POST
+def chat_send_message(request, room_id):
+    sala = get_object_or_404(ChatRoom, pk=room_id, activo=True)
+    if not sala.membresias.filter(usuario=request.user).exists():
+        return JsonResponse({'error': 'No tienes acceso a esta sala'}, status=403)
+    text = request.POST.get('mensaje', '').strip()
+    if not text:
+        return HttpResponseBadRequest('Mensaje vacío')
+    msg = ChatMessage.objects.create(sala=sala, usuario=request.user, mensaje=text)
+    return JsonResponse({
+        'id': msg.id,
+        'usuario': msg.usuario.get_full_name() or msg.usuario.username,
+        'usuario_id': msg.usuario.id,
+        'mensaje': msg.mensaje,
+        'fecha': msg.fecha_creacion.isoformat()
+    })

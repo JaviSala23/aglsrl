@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'agenda/base_agenda.html' %}
 {% load static %}
 
 {% block title %}Nuevo Evento - Agenda - AGL SRL{% endblock %}
@@ -60,6 +60,45 @@
         content: " *";
         color: #dc3545;
         font-weight: bold;
+    }
+    
+    .usuarios-checkbox-container {
+        max-height: 200px;
+        overflow-y: auto;
+    }
+    
+    .usuarios-checkbox-container ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .usuarios-checkbox-container li {
+        padding: 8px 12px;
+        margin: 4px 0;
+        border-radius: 6px;
+        transition: background-color 0.2s ease;
+    }
+    
+    .usuarios-checkbox-container li:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .usuarios-checkbox-container label {
+        display: flex;
+        align-items: center;
+        margin: 0;
+        cursor: pointer;
+        font-weight: 500;
+    }
+    
+    .usuarios-checkbox-container input[type="checkbox"] {
+        margin-right: 10px;
+        transform: scale(1.2);
+    }
+    
+    .help-text {
+        font-size: 0.875rem;
     }
 </style>
 {% endblock %}
@@ -232,18 +271,44 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="{{ form.contactos_relacionados.id_for_label }}" class="form-label">
+                            <label for="{{ form.contactos.id_for_label }}" class="form-label">
                                 Contactos Relacionados
                             </label>
-                            {{ form.contactos_relacionados }}
-                            {% if form.contactos_relacionados.errors %}
+                            {{ form.contactos }}
+                            {% if form.contactos.errors %}
                                 <div class="text-danger small mt-1">
-                                    {{ form.contactos_relacionados.errors.0 }}
+                                    {{ form.contactos.errors.0 }}
                                 </div>
                             {% endif %}
                             <small class="form-text text-muted">
                                 Mantén presionado Ctrl para seleccionar múltiples contactos
                             </small>
+                        </div>
+
+                        <!-- Asignación de Usuarios -->
+                        <h5 class="section-title">
+                            <i class="fas fa-users me-2"></i>
+                            Usuarios Invitados
+                        </h5>
+                        
+                        <div class="form-group">
+                            <label for="{{ form.usuarios_asignados.id_for_label }}" class="form-label">
+                                Invitar Usuarios
+                            </label>
+                            <div class="help-text mb-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Selecciona los usuarios que participarán en este evento. Recibirán una invitación.
+                                </small>
+                            </div>
+                            <div class="usuarios-checkbox-container p-3 border rounded bg-light">
+                                {{ form.usuarios_asignados }}
+                            </div>
+                            {% if form.usuarios_asignados.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ form.usuarios_asignados.errors.0 }}
+                                </div>
+                            {% endif %}
                         </div>
 
                         <!-- Recordatorios -->
@@ -353,7 +418,7 @@
         }
 
         // Configurar select múltiple
-        const contactosField = document.querySelector('select[name="contactos_relacionados"]');
+        const contactosField = document.querySelector('select[name="contactos"]');
         if (contactosField) {
             contactosField.multiple = true;
             contactosField.size = 5;

@@ -188,6 +188,8 @@
     
     <!-- Custom JS -->
     <script src="{% static 'cuentas/js/custom.js' %}"></script>
+    <link rel="stylesheet" href="{% static 'agenda/css/chat.css' %}">
+    <script src="{% static 'agenda/js/chat.js' %}"></script>
     
     <script>
         // Add animation to cards
@@ -210,5 +212,6 @@
     </script>
     
     {% block extra_js %}{% endblock %}
+    {% include 'agenda/_chat_floating.html' %}
 </body>
 </html>

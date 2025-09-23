@@ -1,0 +1,460 @@
+{% extends 'agenda/base_agenda.html' %}
+{% load static %}
+
+{% block title %}{{ tarea.titulo }} - Detalle de Tarea - Agenda - AGL SRL{% endblock %}
+
+{% block extra_css %}
+<style>
+    .tarea-header {
+        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .tarea-content {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .info-section {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .priority-badge {
+        font-size: 0.875rem;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+    }
+    .status-badge {
+        font-size: 0.875rem;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-weight: 600;
+    }
+    .progress-container {
+        background: #e9ecef;
+        border-radius: 10px;
+        height: 20px;
+        overflow: hidden;
+        margin: 1rem 0;
+    }
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+        border-radius: 10px;
+        transition: width 0.3s ease;
+    }
+    .asignacion-card {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="{% url 'main:panel' %}" class="text-decoration-none">
+                    <i class="fas fa-home"></i> Panel Principal
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'agenda:dashboard' %}" class="text-decoration-none">
+                    <i class="fas fa-calendar-alt"></i> Agenda
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="{% url 'agenda:lista_tareas' %}" class="text-decoration-none">
+                    <i class="fas fa-tasks"></i> Tareas
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">{{ tarea.titulo|truncatechars:30 }}</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="tarea-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h2><i class="fas fa-clipboard-check me-3"></i>{{ tarea.titulo }}</h2>
+                <p class="mb-0">Creada por {{ tarea.creado_por.get_full_name|default:tarea.creado_por.username }} el {{ tarea.fecha_creacion|date:"d/m/Y H:i" }}</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="d-flex gap-2 justify-content-md-end flex-wrap">
+                    {% if user == tarea.creado_por %}
+                        <a href="{% url 'agenda:editar_tarea' tarea.id_tarea %}" class="btn btn-light">
+                            <i class="fas fa-edit me-2"></i>Editar
+                        </a>
+                    {% endif %}
+                    <a href="{% url 'agenda:lista_tareas' %}" class="btn btn-outline-light">
+                        <i class="fas fa-arrow-left me-2"></i>Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información Principal -->
+        <div class="col-lg-8">
+            <div class="tarea-content">
+                <!-- Estado y Prioridad -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-2">Estado</h6>
+                        <span class="status-badge bg-{% if tarea.estado == 'completada' %}success{% elif tarea.estado == 'en_progreso' %}primary{% elif tarea.estado == 'cancelada' %}secondary{% else %}warning{% endif %}">
+                            {{ tarea.get_estado_display }}
+                        </span>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-2">Prioridad</h6>
+                        <span class="priority-badge bg-{% if tarea.prioridad == 'urgente' %}danger{% elif tarea.prioridad == 'alta' %}warning{% elif tarea.prioridad == 'media' %}primary{% else %}secondary{% endif %}">
+                            {{ tarea.get_prioridad_display }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Progreso -->
+                {% if tarea.porcentaje_completado > 0 %}
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-2">Progreso</h6>
+                        <div class="progress-container">
+                            <div class="progress-fill" style="width: {{ tarea.porcentaje_completado }}%"></div>
+                        </div>
+                        <small class="text-muted">{{ tarea.porcentaje_completado }}% completado</small>
+                    </div>
+                {% endif %}
+
+                <!-- Descripción -->
+                {% if tarea.descripcion %}
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-2">Descripción</h6>
+                        <div class="text-dark">{{ tarea.descripcion|linebreaks }}</div>
+                    </div>
+                {% endif %}
+
+                <!-- Fechas -->
+                <div class="info-section">
+                    <h6 class="text-primary mb-3"><i class="fas fa-calendar me-2"></i>Información de Fechas</h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>Fecha de Creación:</strong><br>
+                            <span class="text-muted">{{ tarea.fecha_creacion|date:"d/m/Y H:i" }}</span>
+                        </div>
+                        {% if tarea.fecha_vencimiento %}
+                            <div class="col-md-6">
+                                <strong>Fecha de Vencimiento:</strong><br>
+                                <span class="{% if tarea.fecha_vencimiento < now and tarea.estado != 'completada' %}text-danger{% else %}text-muted{% endif %}">
+                                    {{ tarea.fecha_vencimiento|date:"d/m/Y H:i" }}
+                                    {% if tarea.fecha_vencimiento < now and tarea.estado != 'completada' %}
+                                        <i class="fas fa-exclamation-triangle ms-1"></i>
+                                    {% endif %}
+                                </span>
+                            </div>
+                        {% endif %}
+                        {% if tarea.fecha_completada %}
+                            <div class="col-md-6 mt-2">
+                                <strong>Fecha de Completado:</strong><br>
+                                <span class="text-success">{{ tarea.fecha_completada|date:"d/m/Y H:i" }}</span>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Relaciones -->
+                {% if tarea.contacto_relacionado or tarea.cuenta_relacionada or tarea.evento_relacionado %}
+                    <div class="info-section">
+                        <h6 class="text-primary mb-3"><i class="fas fa-link me-2"></i>Relaciones</h6>
+                        <div class="row">
+                            {% if tarea.contacto_relacionado %}
+                                <div class="col-md-4">
+                                    <strong>Contacto:</strong><br>
+                                    <a href="{% url 'agenda:detalle_contacto' tarea.contacto_relacionado.id_contacto %}" class="text-decoration-none">
+                                        <i class="fas fa-user me-1"></i>{{ tarea.contacto_relacionado.nombre_completo }}
+                                    </a>
+                                </div>
+                            {% endif %}
+                            {% if tarea.cuenta_relacionada %}
+                                <div class="col-md-4">
+                                    <strong>Cuenta:</strong><br>
+                                    <a href="{% url 'cuentas:ver_cuenta' tarea.cuenta_relacionada.id_cuenta %}" class="text-decoration-none">
+                                        <i class="fas fa-building me-1"></i>{{ tarea.cuenta_relacionada.razon_social }}
+                                    </a>
+                                </div>
+                            {% endif %}
+                            {% if tarea.evento_relacionado %}
+                                <div class="col-md-4">
+                                    <strong>Evento:</strong><br>
+                                    <a href="{% url 'agenda:detalle_evento' tarea.evento_relacionado.id_evento %}" class="text-decoration-none">
+                                        <i class="fas fa-calendar-check me-1"></i>{{ tarea.evento_relacionado.titulo }}
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Ubicación -->
+                {% if tarea.ubicacion %}
+                    <div class="info-section">
+                        <h6 class="text-primary mb-2"><i class="fas fa-map-marker-alt me-2"></i>Ubicación</h6>
+                        <p class="mb-0">{{ tarea.ubicacion }}</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Asignaciones -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-info text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-users me-2"></i>
+                        Usuarios Asignados
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% with tarea.asignaciones.all as asignaciones %}
+                        {% if asignaciones %}
+                            {% for asignacion in asignaciones %}
+                                <div class="asignacion-card">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <strong>{{ asignacion.usuario.get_full_name|default:asignacion.usuario.username }}</strong>
+                                            <br>
+                                            <small class="text-muted">
+                                                Asignado el {{ asignacion.fecha_asignacion|date:"d/m/Y H:i" }}
+                                            </small>
+                                            {% if asignacion.fecha_respuesta %}
+                                                <br>
+                                                <small class="text-info">
+                                                    <i class="fas fa-reply me-1"></i>
+                                                    Respondido el {{ asignacion.fecha_respuesta|date:"d/m/Y H:i" }}
+                                                </small>
+                                            {% endif %}
+                                            {% if asignacion.comentarios %}
+                                                <br>
+                                                <div class="mt-1 p-2 bg-info bg-opacity-10 rounded">
+                                                    <i class="fas fa-info-circle me-1"></i>
+                                                    <strong>Instrucciones:</strong>
+                                                    <br>
+                                                    <small class="text-dark">{{ asignacion.comentarios }}</small>
+                                                </div>
+                                            {% endif %}
+                                            {% if asignacion.comentarios_respuesta %}
+                                                <br>
+                                                <div class="mt-1 p-2 bg-{% if asignacion.estado == 'aceptada' %}success{% else %}danger{% endif %} bg-opacity-10 rounded">
+                                                    <i class="fas fa-comment me-1"></i>
+                                                    <strong>Respuesta del usuario:</strong>
+                                                    <br>
+                                                    <small class="text-dark">{{ asignacion.comentarios_respuesta }}</small>
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                        <div>
+                                            <span class="badge bg-{% if asignacion.estado == 'aceptada' %}success{% elif asignacion.estado == 'rechazada' %}danger{% else %}secondary{% endif %}">
+                                                {% if asignacion.estado == 'aceptada' %}
+                                                    <i class="fas fa-check me-1"></i>Aceptada
+                                                {% elif asignacion.estado == 'rechazada' %}
+                                                    <i class="fas fa-times me-1"></i>Rechazada
+                                                {% else %}
+                                                    <i class="fas fa-clock me-1"></i>Pendiente
+                                                {% endif %}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    {% if user.is_authenticated and user.id == asignacion.usuario_id and asignacion.estado == 'asignada' %}
+                                        <div class="mt-2">
+                                            <a href="{% url 'agenda:responder_asignacion' asignacion.id %}" class="btn btn-warning btn-sm">
+                                                <i class="fas fa-reply me-1"></i>Responder
+                                            </a>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted mb-0">No hay usuarios asignados a esta tarea.</p>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+
+            <!-- Acciones Rápidas -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0">
+                        <i class="fas fa-bolt me-2"></i>
+                        Acciones Rápidas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        {% if user == tarea.creado_por %}
+                            <a href="{% url 'agenda:editar_tarea' tarea.id_tarea %}" class="btn btn-primary btn-sm">
+                                <i class="fas fa-edit me-2"></i>Editar Tarea
+                            </a>
+                        {% endif %}
+                        
+                        {% if tarea.estado != 'completada' and tarea.estado != 'cancelada' %}
+                            <button class="btn btn-success btn-sm" onclick="completarTarea({{ tarea.id_tarea }})">
+                                <i class="fas fa-check me-2"></i>Marcar como Completada
+                            </button>
+                        {% endif %}
+                        
+                        {% if tarea.contacto_relacionado %}
+                            <a href="{% url 'agenda:detalle_contacto' tarea.contacto_relacionado.id_contacto %}" class="btn btn-outline-info btn-sm">
+                                <i class="fas fa-user me-2"></i>Ver Contacto
+                            </a>
+                        {% endif %}
+                        
+                        {% if tarea.evento_relacionado %}
+                            <a href="{% url 'agenda:detalle_evento' tarea.evento_relacionado.id_evento %}" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-calendar-check me-2"></i>Ver Evento
+                            </a>
+                        {% endif %}
+                        
+                        <a href="{% url 'agenda:lista_tareas' %}" class="btn btn-outline-warning btn-sm">
+                            <i class="fas fa-arrow-left me-2"></i>Volver a Tareas
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Comentarios de la Tarea -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-secondary text-white d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">
+                        <i class="fas fa-comments me-2"></i>
+                        Comentarios y Notas ({{ tarea.comentarios.count }})
+                    </h6>
+                    {% if puede_comentar %}
+                        <a href="{% url 'agenda:agregar_comentario_tarea' tarea.id_tarea %}" class="btn btn-light btn-sm">
+                            <i class="fas fa-plus me-1"></i>Agregar Comentario
+                        </a>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% with comentarios=tarea.comentarios.all %}
+                        {% if comentarios %}
+                            {% for comentario in comentarios %}
+                                <div class="comentario-item mb-3 p-3 border rounded">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <span class="badge bg-{% if comentario.tipo == 'progreso' %}info{% elif comentario.tipo == 'problema' %}danger{% elif comentario.tipo == 'solucion' %}success{% elif comentario.tipo == 'completado' %}primary{% else %}secondary{% endif %} me-2">
+                                                    {% if comentario.tipo == 'progreso' %}📈
+                                                    {% elif comentario.tipo == 'problema' %}⚠️
+                                                    {% elif comentario.tipo == 'solucion' %}✅
+                                                    {% elif comentario.tipo == 'completado' %}🎯
+                                                    {% else %}📝
+                                                    {% endif %}
+                                                    {{ comentario.get_tipo_display }}
+                                                </span>
+                                                <strong>{{ comentario.usuario.get_full_name|default:comentario.usuario.username }}</strong>
+                                            </div>
+                                            <p class="mb-1">{{ comentario.comentario }}</p>
+                                        </div>
+                                        <div class="text-end">
+                                            <small class="text-muted">
+                                                {{ comentario.fecha_creacion|date:"d/m/Y H:i" }}
+                                            </small>
+                                            {% if comentario.fecha_modificacion != comentario.fecha_creacion %}
+                                                <br>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-edit"></i> Editado: {{ comentario.fecha_modificacion|date:"d/m/Y H:i" }}
+                                                </small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-4">
+                                <i class="fas fa-comment-slash fa-3x text-muted mb-3"></i>
+                                <h6 class="text-muted">No hay comentarios aún</h6>
+                                <p class="text-muted">{% if puede_comentar %}Sé el primero en agregar un comentario sobre esta tarea.{% else %}Aún no hay comentarios sobre esta tarea.{% endif %}</p>
+                                {% if puede_comentar %}
+                                    <a href="{% url 'agenda:agregar_comentario_tarea' tarea.id_tarea %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-plus me-2"></i>Agregar Primer Comentario
+                                    </a>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function completarTarea(tareaId) {
+        Swal.fire({
+            title: '¿Completar tarea?',
+            text: '¿Estás seguro de que deseas marcar esta tarea como completada?',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#28a745',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, completar',
+            cancelButtonText: 'Cancelar',
+            reverseButtons: true
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`/agenda/tareas/${tareaId}/completar/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'Content-Type': 'application/json',
+                    },
+                })
+                .then(response => {
+                    if (response.ok) {
+                        Swal.fire({
+                            title: '¡Completada!',
+                            text: 'La tarea ha sido marcada como completada.',
+                            icon: 'success',
+                            timer: 1500,
+                            showConfirmButton: false
+                        }).then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'No se pudo completar la tarea.'
+                        });
+                    }
+                })
+                .catch(error => {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error de conexión',
+                        text: 'Hubo un problema al procesar la solicitud.'
+                    });
+                });
+            }
+        });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,76 @@
+#chat-floating {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 1400;
+    font-size: 0.9rem;
+}
+
+#chat-floating .chat-toggle {
+    background: #0d6efd;
+    color: white;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 6px 18px rgba(13,110,253,0.25);
+}
+
+#chat-floating .chat-panel {
+    width: 360px;
+    max-width: calc(100vw - 40px);
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+    overflow: hidden;
+    margin-top: 10px;
+}
+
+#chat-floating .chat-header {
+    background: #f8f9fa;
+    padding: 8px 10px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+#chat-floating .chat-header .btn {
+    margin-left: 6px;
+}
+
+#chat-floating .chat-header .controls {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+#chat-floating .chat-rooms {
+    max-height: 180px;
+    overflow: auto;
+    border-bottom: 1px solid #e9ecef;
+}
+
+#chat-floating .chat-messages {
+    padding: 10px;
+}
+
+#chat-floating .chat-room {
+    cursor: pointer;
+}
+
+#chat-unread-count {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+}
+
+/* Responsive: smaller screens */
+@media (max-width: 576px) {
+    #chat-floating { right: 10px; bottom: 10px; }
+    #chat-floating .chat-panel { width: 95vw; }
+    #chat-floating .chat-toggle { width: 48px; height: 48px; }
+}
+
+/* Avoid overlapping with fixed footers or toolbars by increasing bottom offset when such element exists */
+body.footer-fixed #chat-floating { bottom: 80px; }

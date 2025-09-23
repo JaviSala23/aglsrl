@@ -1,0 +1,43 @@
+{% load static %}
+<div id="chat-floating" class="chat-floating">
+    <div class="chat-toggle" id="chatToggle">
+        <i class="fas fa-comments"></i>
+        <span id="chat-unread-count" class="badge bg-danger" style="display:none;">0</span>
+    </div>
+
+    <div class="chat-panel d-none" id="chatPanel">
+        <div class="chat-header d-flex justify-content-between align-items-center">
+            <strong>Chat</strong>
+            <div>
+                <button class="btn btn-sm btn-outline-secondary" id="chatNewPrivate">Nuevo privado</button>
+                <button class="btn btn-sm btn-outline-secondary" id="chatAddMembersBtn" style="display:none;">Agregar miembros</button>
+                <button class="btn btn-sm btn-outline-danger" id="chatCloseRoomBtn" style="display:none;">Cerrar sala</button>
+                <button class="btn btn-sm btn-close" id="chatClose">×</button>
+            </div>
+        </div>
+
+        <div class="p-2">
+            <input type="text" id="chatUserSearch" class="form-control form-control-sm mb-2" placeholder="Buscar usuario por nombre o usuario...">
+            <div id="chatSearchResults" class="mb-2"></div>
+            <div id="chatAddMembersArea" class="mb-2 d-none">
+                <small class="text-muted">Selecciona usuarios y pulsa "Agregar"</small>
+                <div id="chatAddMembersList" style="max-height:140px; overflow:auto; border:1px solid #eee; margin-top:6px;"></div>
+                <div class="mt-2 d-flex gap-2">
+                    <button id="chatConfirmAddMembers" class="btn btn-sm btn-primary">Agregar</button>
+                    <button id="chatCancelAddMembers" class="btn btn-sm btn-secondary">Cancelar</button>
+                </div>
+            </div>
+        </div>
+        <div class="chat-rooms p-2" id="chatRooms">
+            <small class="text-muted">Cargando salas...</small>
+        </div>
+
+        <div class="chat-messages p-2 d-none" id="chatMessages">
+            <div id="chatMessageList" style="max-height:240px; overflow:auto;"></div>
+            <div class="mt-2 d-flex gap-2">
+                <input type="text" id="chatInput" class="form-control form-control-sm" placeholder="Escribe un mensaje...">
+                <button id="chatSend" class="btn btn-sm btn-primary">Enviar</button>
+            </div>
+        </div>
+    </div>
+</div>

@@ -127,9 +127,9 @@
             </div>
             <div class="col-md-6">
                 <div class="d-flex gap-2 justify-content-md-end flex-wrap">
-                    <button class="btn kanban-view-btn" onclick="toggleKanbanView()">
+                    <a href="{% url 'agenda:tareas_kanban' %}" class="btn kanban-view-btn">
                         <i class="fas fa-columns me-2"></i>Vista Kanban
-                    </button>
+                    </a>
                     <a href="{% url 'agenda:crear_tarea' %}" class="btn btn-light">
                         <i class="fas fa-plus me-2"></i>Nueva Tarea
                     </a>
@@ -197,7 +197,7 @@
                             <div class="d-flex align-items-start">
                                 <input type="checkbox" class="task-checkbox" 
                                        {% if tarea.estado == 'completada' %}checked{% endif %}
-                                       onchange="toggleTarea({{ tarea.pk }}, this)">
+                                       onchange="toggleTarea({{ tarea.id_tarea }}, this)">
                                 <div class="flex-grow-1">
                                     <h6 class="task-title">{{ tarea.titulo }}</h6>
                                     
@@ -241,25 +241,61 @@
                                         {% endif %}
                                         
                                         <!-- Usuarios asignados -->
-                                        {% with tarea.asignaciontarea_set.all as asignaciones %}
+                                        {% with tarea.asignaciones.all as asignaciones %}
                                             {% if asignaciones %}
                                                 <div class="mt-2">
-                                                    <small class="text-muted">
+                                                    <small class="text-muted mb-1 d-block">
                                                         <i class="fas fa-users me-1"></i>
-                                                        Asignado a: 
-                                                        {% for asignacion in asignaciones %}
-                                                            <span class="badge bg-{% if asignacion.estado == 'aceptada' %}success{% elif asignacion.estado == 'rechazada' %}danger{% else %}secondary{% endif %} me-1">
-                                                                {{ asignacion.usuario.get_full_name|default:asignacion.usuario.username }}
-                                                                {% if asignacion.estado == 'aceptada' %}
-                                                                    <i class="fas fa-check"></i>
-                                                                {% elif asignacion.estado == 'rechazada' %}
-                                                                    <i class="fas fa-times"></i>
-                                                                {% else %}
-                                                                    <i class="fas fa-clock"></i>
-                                                                {% endif %}
-                                                            </span>
-                                                        {% endfor %}
+                                                        <strong>Asignaciones:</strong>
                                                     </small>
+                                                    {% for asignacion in asignaciones %}
+                                                        <div class="mb-2 p-2 border rounded" style="background-color: #f8f9fa;">
+                                                            <div class="d-flex justify-content-between align-items-start">
+                                                                <div class="flex-grow-1">
+                                                                    <span class="badge bg-{% if asignacion.estado == 'aceptada' %}success{% elif asignacion.estado == 'rechazada' %}danger{% else %}secondary{% endif %} me-2">
+                                                                        {{ asignacion.usuario.get_full_name|default:asignacion.usuario.username }}
+                                                                        {% if asignacion.estado == 'aceptada' %}
+                                                                            <i class="fas fa-check ms-1"></i>
+                                                                        {% elif asignacion.estado == 'rechazada' %}
+                                                                            <i class="fas fa-times ms-1"></i>
+                                                                        {% else %}
+                                                                            <i class="fas fa-clock ms-1"></i>
+                                                                        {% endif %}
+                                                                    </span>
+                                                                    <small class="text-muted">
+                                                                        {% if asignacion.estado == 'aceptada' %}
+                                                                            Aceptada
+                                                                        {% elif asignacion.estado == 'rechazada' %}
+                                                                            Rechazada
+                                                                        {% else %}
+                                                                            Pendiente
+                                                                        {% endif %}
+                                                                    </small>
+                                                                </div>
+                                                                {% if asignacion.fecha_respuesta %}
+                                                                    <small class="text-muted">
+                                                                        {{ asignacion.fecha_respuesta|date:"d/m/Y H:i" }}
+                                                                    </small>
+                                                                {% endif %}
+                                                            </div>
+                                                            {% if asignacion.comentarios %}
+                                                                <div class="mt-1">
+                                                                    <small class="text-primary">
+                                                                        <i class="fas fa-info-circle me-1"></i>
+                                                                        <strong>Instrucciones:</strong> {{ asignacion.comentarios }}
+                                                                    </small>
+                                                                </div>
+                                                            {% endif %}
+                                                            {% if asignacion.comentarios_respuesta %}
+                                                                <div class="mt-1">
+                                                                    <small class="text-{% if asignacion.estado == 'aceptada' %}success{% else %}danger{% endif %}">
+                                                                        <i class="fas fa-comment me-1"></i>
+                                                                        <strong>Respuesta:</strong> {{ asignacion.comentarios_respuesta }}
+                                                                    </small>
+                                                                </div>
+                                                            {% endif %}
+                                                        </div>
+                                                    {% endfor %}
                                                 </div>
                                             {% endif %}
                                         {% endwith %}
@@ -275,18 +311,25 @@
                                             </span>
                                         </div>
                                         <div class="btn-group btn-group-sm">
-                                            <a href="{% url 'agenda:detalle_tarea' tarea.pk %}" 
+                                            <!-- Ver - Todos pueden ver -->
+                                            <a href="{% url 'agenda:detalle_tarea' tarea.id_tarea %}" 
                                                class="btn btn-outline-warning btn-sm">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="{% url 'agenda:editar_tarea' tarea.pk %}" 
-                                               class="btn btn-outline-secondary btn-sm">
-                                                <i class="fas fa-edit"></i>
-                                            </a>
-                                            <button type="button" class="btn btn-outline-danger btn-sm"
-                                                    onclick="confirmarEliminar({{ tarea.pk }}, '{{ tarea.titulo|escapejs }}')">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
+                                            
+                                            <!-- Editar - Solo el creador -->
+                                            {% if tarea.creado_por == user %}
+                                                <a href="{% url 'agenda:editar_tarea' tarea.id_tarea %}" 
+                                                   class="btn btn-outline-secondary btn-sm">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                
+                                                <!-- Eliminar - Solo el creador -->
+                                                <button type="button" class="btn btn-outline-danger btn-sm"
+                                                        onclick="confirmarEliminar({{ tarea.id_tarea }}, '{{ tarea.titulo|escapejs }}')">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            {% endif %}
                                         </div>
                                     </div>
                                 </div>
@@ -379,7 +422,7 @@
                                                class="btn btn-sm btn-warning">
                                                 <i class="fas fa-reply me-1"></i>Responder
                                             </a>
-                                            <a href="{% url 'agenda:detalle_tarea' asignacion.tarea.id %}" 
+                                            <a href="{% url 'agenda:detalle_tarea' asignacion.tarea.id_tarea %}" 
                                                class="btn btn-sm btn-outline-info">
                                                 <i class="fas fa-eye me-1"></i>Ver Detalle
                                             </a>
@@ -443,13 +486,6 @@
                 icon: 'error',
                 title: 'Error de conexión'
             });
-        });
-    }
-
-    function toggleKanbanView() {
-        Toast.fire({
-            icon: 'info',
-            title: 'Vista Kanban próximamente disponible'
         });
     }
 </script>

@@ -171,6 +171,48 @@
 }
 
 /* ===========================================
+   COMENTARIOS DE TAREAS
+   ========================================== */
+
+.comentario-item {
+    background-color: rgba(248, 249, 250, 0.5);
+    border: 1px solid #e9ecef;
+    transition: all 0.2s ease;
+}
+
+.comentario-item:hover {
+    background-color: rgba(248, 249, 250, 0.8);
+    border-color: var(--agenda-primary);
+    box-shadow: 0 2px 4px rgba(25, 135, 84, 0.1);
+}
+
+.comentario-item .badge {
+    font-size: 0.85em;
+    padding: 0.4em 0.6em;
+}
+
+/* Estilos específicos por tipo de comentario */
+.comentario-item .badge.bg-info {
+    background-color: #0dcaf0 !important;
+}
+
+.comentario-item .badge.bg-danger {
+    background-color: #dc3545 !important;
+}
+
+.comentario-item .badge.bg-success {
+    background-color: #198754 !important;
+}
+
+.comentario-item .badge.bg-primary {
+    background-color: #0d6efd !important;
+}
+
+.comentario-item .badge.bg-secondary {
+    background-color: #6c757d !important;
+}
+
+/* ===========================================
    RESPONSIVE DESIGN
    ========================================== */
 
@@ -182,5 +224,18 @@
     .agenda-container .btn {
         width: 100%;
         margin-bottom: 0.5rem;
+    }
+    
+    .comentario-item {
+        margin-bottom: 1rem !important;
+    }
+    
+    .comentario-item .d-flex {
+        flex-direction: column;
+    }
+    
+    .comentario-item .text-end {
+        text-align: left !important;
+        margin-top: 0.5rem;
     }
 }

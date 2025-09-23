@@ -72,39 +72,6 @@
                             <i class="bi bi-person-plus-fill me-1"></i>Nueva Cuenta
                         </a>
                     </li>
-                    
-                    <!-- Agenda Dropdown -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-calendar-event me-1"></i>Agenda
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{% url 'agenda:dashboard' %}">
-                                <i class="bi bi-speedometer2 me-2"></i>Dashboard Agenda
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{% url 'agenda:lista_contactos' %}">
-                                <i class="bi bi-person-lines-fill me-2"></i>Ver Contactos
-                            </a></li>
-                            <li><a class="dropdown-item" href="{% url 'agenda:crear_contacto' %}">
-                                <i class="bi bi-person-plus me-2"></i>Nuevo Contacto
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{% url 'agenda:lista_eventos' %}">
-                                <i class="bi bi-calendar-check me-2"></i>Ver Eventos
-                            </a></li>
-                            <li><a class="dropdown-item" href="{% url 'agenda:crear_evento' %}">
-                                <i class="bi bi-calendar-plus me-2"></i>Nuevo Evento
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{% url 'agenda:lista_tareas' %}">
-                                <i class="bi bi-list-task me-2"></i>Ver Tareas
-                            </a></li>
-                            <li><a class="dropdown-item" href="{% url 'agenda:crear_tarea' %}">
-                                <i class="bi bi-plus-square me-2"></i>Nueva Tarea
-                            </a></li>
-                        </ul>
-                    </li>
                 </ul>
                 
                 <!-- User menu -->
@@ -180,6 +147,9 @@
     <script src="{% static 'cuentas/js/custom.js' %}"></script>
     
     {% block extra_js %}{% endblock %}
+    <link rel="stylesheet" href="{% static 'agenda/css/chat.css' %}">
+    <script src="{% static 'agenda/js/chat.js' %}"></script>
+    {% include 'agenda/_chat_floating.html' %}
     
     <script>
         // Configuración global de SweetAlert2

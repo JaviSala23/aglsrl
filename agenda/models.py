@@ -451,3 +451,147 @@ class AsignacionTarea(models.Model):
         if comentarios:
             self.comentarios_respuesta = comentarios
         self.save()
+
+
+class AsignacionEvento(models.Model):
+    """Modelo para asignar eventos a múltiples usuarios."""
+    
+    ESTADO_CHOICES = [
+        ('asignado', 'Asignado'),
+        ('aceptado', 'Aceptado'),
+        ('rechazado', 'Rechazado'),
+    ]
+    
+    evento = models.ForeignKey(Evento, on_delete=models.CASCADE, related_name='asignaciones')
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    estado = models.CharField(max_length=10, choices=ESTADO_CHOICES, default='asignado')
+    fecha_asignacion = models.DateTimeField(auto_now_add=True)
+    fecha_respuesta = models.DateTimeField(null=True, blank=True)
+    comentarios = models.TextField(blank=True, help_text='Comentarios del usuario sobre la asignación')
+    
+    class Meta:
+        unique_together = ('evento', 'usuario')
+        verbose_name = 'Asignación de Evento'
+        verbose_name_plural = 'Asignaciones de Eventos'
+        ordering = ['-fecha_asignacion']
+    
+    def __str__(self):
+        return f"{self.evento.titulo} - {self.usuario.username} ({self.estado})"
+    
+    def aceptar(self, comentarios=''):
+        """El usuario acepta la asignación."""
+        from django.utils import timezone
+        self.estado = 'aceptado'
+        self.fecha_respuesta = timezone.now()
+        if comentarios:
+            self.comentarios = comentarios
+        self.save()
+    
+    def rechazar(self, comentarios=''):
+        """El usuario rechaza la asignación."""
+        from django.utils import timezone
+        self.estado = 'rechazado'
+        self.fecha_respuesta = timezone.now()
+        if comentarios:
+            self.comentarios = comentarios
+        self.save()
+
+
+class ComentarioTarea(models.Model):
+    """Modelo para comentarios y notas sobre tareas."""
+    
+    TIPO_CHOICES = [
+        ('progreso', 'Progreso'),
+        ('problema', 'Problema'),
+        ('solucion', 'Solución'),
+        ('nota', 'Nota General'),
+        ('completado', 'Completado'),
+    ]
+    
+    tarea = models.ForeignKey(
+        Tarea, 
+        on_delete=models.CASCADE, 
+        related_name='comentarios'
+    )
+    usuario = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.CASCADE
+    )
+    tipo = models.CharField(
+        max_length=15, 
+        choices=TIPO_CHOICES, 
+        default='nota'
+    )
+    comentario = models.TextField(
+        help_text='Comentario sobre la tarea'
+    )
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
+    activo = models.BooleanField(default=True)
+    
+    class Meta:
+        verbose_name = 'Comentario de Tarea'
+        verbose_name_plural = 'Comentarios de Tareas'
+        ordering = ['-fecha_creacion']
+    
+    def __str__(self):
+        return f"{self.tarea.titulo} - {self.get_tipo_display()} ({self.usuario.username})"
+
+
+# Chat models: salas, membresías y mensajes
+class ChatRoom(models.Model):
+    """Sala de chat - puede ser privada (entre 2 usuarios) o grupal."""
+    nombre = models.CharField(max_length=150, blank=True)
+    es_grupal = models.BooleanField(default=False)
+    creado_por = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name='chat_rooms_creadas'
+    )
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = 'Sala de Chat'
+        verbose_name_plural = 'Salas de Chat'
+
+    def __str__(self):
+        if self.nombre:
+            return self.nombre
+        return f"Sala {self.id} ({'Grupal' if self.es_grupal else 'Privada'})"
+
+    def miembros(self):
+        return [m.usuario for m in self.membresias.select_related('usuario').all()]
+
+
+class ChatMembership(models.Model):
+    """Membresía de usuario en una sala de chat."""
+    sala = models.ForeignKey(ChatRoom, on_delete=models.CASCADE, related_name='membresias')
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    fecha_ingreso = models.DateTimeField(auto_now_add=True)
+    activo = models.BooleanField(default=True)
+
+    class Meta:
+        unique_together = ('sala', 'usuario')
+        verbose_name = 'Membresía de Chat'
+        verbose_name_plural = 'Membresías de Chat'
+
+    def __str__(self):
+        return f"{self.sala} <- {self.usuario.username}"
+
+
+class ChatMessage(models.Model):
+    """Mensaje dentro de una sala de chat."""
+    sala = models.ForeignKey(ChatRoom, on_delete=models.CASCADE, related_name='mensajes')
+    usuario = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    mensaje = models.TextField()
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    leido = models.BooleanField(default=False)
+
+    class Meta:
+        ordering = ['fecha_creacion']
+        verbose_name = 'Mensaje de Chat'
+        verbose_name_plural = 'Mensajes de Chat'
+
+    def __str__(self):
+        return f"{self.usuario.username}: {self.mensaje[:30]}"

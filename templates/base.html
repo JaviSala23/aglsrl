@@ -197,6 +197,9 @@
     <script src="{% static 'cuentas/js/custom.js' %}"></script>
     
     {% block extra_js %}{% endblock %}
+        <link rel="stylesheet" href="{% static 'agenda/css/chat.css' %}">
+        <script src="{% static 'agenda/js/chat.js' %}"></script>
+        {% include 'agenda/_chat_floating.html' %}
     
     <script>
         // Configuración global de SweetAlert2

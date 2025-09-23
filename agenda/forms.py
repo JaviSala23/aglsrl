@@ -3,7 +3,7 @@ Formularios para el módulo de agenda.
 """
 from django import forms
 from django.contrib.auth.models import User
-from .models import Contacto, TipoContacto, Evento, TipoEvento, Tarea
+from .models import Contacto, TipoContacto, Evento, TipoEvento, Tarea, ComentarioTarea
 from cuentas.models import cuenta
 
 
@@ -156,6 +156,17 @@ class ContactoForm(forms.ModelForm):
 class EventoForm(forms.ModelForm):
     """Formulario para crear y editar eventos."""
     
+    # Campo personalizado para múltiples usuarios
+    usuarios_asignados = forms.ModelMultipleChoiceField(
+        queryset=User.objects.filter(is_active=True),
+        widget=forms.CheckboxSelectMultiple(attrs={
+            'class': 'form-check-input'
+        }),
+        required=False,
+        label='Invitar usuarios',
+        help_text='Selecciona los usuarios que participarán en este evento'
+    )
+    
     class Meta:
         model = Evento
         fields = [
@@ -230,6 +241,47 @@ class EventoForm(forms.ModelForm):
         
         # Filtrar tipos de evento activos
         self.fields['tipo_evento'].queryset = TipoEvento.objects.filter(activo=True).order_by('nombre')
+        
+        # Si estamos editando, cargar usuarios asignados
+        if self.instance.pk:
+            from .models import AsignacionEvento
+            usuarios_asignados = AsignacionEvento.objects.filter(
+                evento=self.instance
+            ).values_list('usuario', flat=True)
+            self.fields['usuarios_asignados'].initial = usuarios_asignados
+
+    def save(self, commit=True):
+        instance = super().save(commit)
+        
+        if commit:
+            usuarios_seleccionados = self.cleaned_data.get('usuarios_asignados', [])
+            
+            if usuarios_seleccionados:
+                from .models import AsignacionEvento
+                from django.utils import timezone
+                
+                # Eliminar asignaciones existentes que no están en la nueva selección
+                AsignacionEvento.objects.filter(evento=instance).exclude(
+                    usuario__in=usuarios_seleccionados
+                ).delete()
+                
+                # Crear nuevas asignaciones
+                for usuario in usuarios_seleccionados:
+                    AsignacionEvento.objects.get_or_create(
+                        evento=instance,
+                        usuario=usuario,
+                        defaults={
+                            'estado': 'asignado',
+                            'fecha_asignacion': timezone.now(),
+                            'comentarios': f'Evento asignado desde el formulario el {timezone.now().strftime("%d/%m/%Y %H:%M")}'
+                        }
+                    )
+            else:
+                # Si no hay usuarios seleccionados, eliminar todas las asignaciones
+                from .models import AsignacionEvento
+                AsignacionEvento.objects.filter(evento=instance).delete()
+                
+        return instance
 
 
 class TareaForm(forms.ModelForm):
@@ -297,7 +349,11 @@ class TareaForm(forms.ModelForm):
         
         # Si estamos editando, cargar usuarios asignados
         if self.instance.pk:
-            self.fields['usuarios_asignados'].initial = self.instance.usuarios_asignados
+            from .models import AsignacionTarea
+            asignaciones_actuales = AsignacionTarea.objects.filter(
+                tarea=self.instance
+            ).values_list('usuario', flat=True)
+            self.fields['usuarios_asignados'].initial = asignaciones_actuales
         
     def save(self, commit=True):
         instance = super().save(commit=False)
@@ -362,3 +418,35 @@ class RespuestaAsignacionForm(forms.Form):
         required=False,
         label='Comentarios'
     )
+
+
+class ComentarioTareaForm(forms.ModelForm):
+    """Formulario para agregar comentarios a las tareas."""
+    
+    class Meta:
+        model = ComentarioTarea
+        fields = ['tipo', 'comentario']
+        labels = {
+            'tipo': 'Tipo de Comentario',
+            'comentario': 'Comentario'
+        }
+        
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Configurar el campo tipo
+        self.fields['tipo'].widget = forms.Select(
+            choices=[('', 'Selecciona un tipo...')] + list(ComentarioTarea.TIPO_CHOICES),
+            attrs={'class': 'form-select'}
+        )
+        
+        # Configurar el campo comentario
+        self.fields['comentario'].widget = forms.Textarea(attrs={
+            'class': 'form-control',
+            'placeholder': 'Escribe tu comentario sobre la tarea...',
+            'rows': 4
+        })
+        
+        # Hacer los campos requeridos
+        self.fields['tipo'].required = True
+        self.fields['comentario'].required = True

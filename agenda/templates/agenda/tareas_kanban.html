@@ -1,0 +1,738 @@
+{% extends "agenda/base_agenda.html" %}
+{% load static %}
+
+{% block title %}Vista Kanban - Tareas{% endblock %}
+
+{% block extra_css %}
+<style>
+    .kanban-board {
+        display: flex;
+        gap: 20px;
+        overflow-x: auto;
+        padding: 20px 0;
+        min-height: 70vh;
+    }
+    
+    .kanban-column {
+        min-width: 280px;
+        background: #f8f9fa;
+        border-radius: 12px;
+        border: 2px solid #e9ecef;
+        padding: 15px;
+        flex: 1;
+    }
+    
+    .kanban-column h4 {
+        margin: 0 0 15px 0;
+        padding: 10px;
+        border-radius: 8px;
+        text-align: center;
+        font-weight: 600;
+        font-size: 1rem;
+    }
+    
+    .column-pendiente h4 {
+        background: linear-gradient(135deg, #ffc107, #ffeb3b);
+        color: #030303;
+    }
+    
+    .column-en_progreso h4 {
+        background: linear-gradient(135deg, #17a2b8, #20c997);
+        color: rgb(0, 0, 0);
+    }
+    
+    .column-completada h4 {
+        background: linear-gradient(135deg, #28a745, #20c997);
+        color: rgb(0, 0, 0);
+    }
+    
+    .column-cancelada h4 {
+        background: linear-gradient(135deg, #dc3545, #fd7e14);
+        color: rgb(0, 0, 0);
+    }
+    
+    .kanban-task {
+        background: rgb(255, 255, 255);
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        cursor: grab;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    
+    .kanban-task:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .kanban-task.dragging {
+        opacity: 0.7;
+        transform: rotate(5deg);
+        cursor: grabbing;
+    }
+    
+    .kanban-task h6 {
+        margin: 0 0 8px 0;
+        font-weight: 600;
+        color: #495057;
+        font-size: 0.95rem;
+    }
+    
+    .kanban-task-info {
+        font-size: 0.85rem;
+        color: #6c757d;
+        margin-bottom: 8px;
+    }
+    
+    .kanban-task-date {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+    
+    .kanban-task-priority {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+    }
+    
+    .priority-alta { background-color: #dc3545; }
+    .priority-media { background-color: #ffc107; }
+    .priority-baja { background-color: #28a745; }
+    
+    .kanban-stats {
+        display: flex;
+        justify-content: space-around;
+        margin-bottom: 20px;
+        gap: 15px;
+    }
+    
+    .stat-card {
+        background: linear-gradient(135deg, #8e9aaf, #b8a9c9);
+        color: white;
+        padding: 15px;
+        border-radius: 12px;
+        text-align: center;
+        flex: 1;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .stat-card h5 {
+        margin: 0;
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: black !important;
+    }
+    
+    .kanban-stats .stat-card h5 {
+        color: #ffffff !important;
+    }
+    
+    .stat-card p {
+        margin: 5px 0 0 0;
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    
+    .column-counter {
+        background: rgba(255,255,255,0.9);
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        font-weight: 600;
+        margin-left: 8px;
+    }
+    
+    .drop-zone {
+        min-height: 50px;
+        border: 2px dashed transparent;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+    
+    .drop-zone.drag-over {
+        border-color: #007bff;
+        background: rgba(0,123,255,0.1);
+    }
+    
+    .btn-back {
+        background: linear-gradient(135deg, #8e9aaf, #b8a9c9);
+        border: none;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 8px;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-back:hover {
+        background: linear-gradient(135deg, #7a8399, #a294b8);
+        color: white;
+        transform: translateY(-1px);
+    }
+    
+    @media (max-width: 768px) {
+        .kanban-board {
+            flex-direction: column;
+        }
+        
+        .kanban-column {
+            min-width: auto;
+        }
+        
+        .kanban-stats {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% csrf_token %}
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="fas fa-columns me-2"></i>Vista Kanban - Tareas</h2>
+        <a href="{% url 'agenda:lista_tareas' %}" class="btn-back">
+            <i class="fas fa-arrow-left"></i>
+            Volver a Lista
+        </a>
+    </div>
+    
+    <!-- Estadísticas -->
+    <div class="kanban-stats">
+        <div class="stat-card">
+            <h5>{{ total_tareas }}</h5>
+            <p>Total Tareas</p>
+        </div>
+        <div class="stat-card">
+            <h5>{{ tareas_creadas }}</h5>
+            <p>Creadas por Mí</p>
+        </div>
+        <div class="stat-card">
+            <h5>{{ tareas_asignadas }}</h5>
+            <p>Asignadas a Mí</p>
+        </div>
+        <div class="stat-card">
+            <h5>{{ tareas_completadas|length }}</h5>
+            <p>Completadas</p>
+        </div>
+    </div>
+    
+    <!-- Tablero Kanban -->
+    <div class="kanban-board">
+        <!-- Columna Pendientes -->
+        <div class="kanban-column column-pendiente">
+            <h4>
+                <i class="fas fa-clock me-2"></i>Pendientes
+                <span class="column-counter">{{ tareas_pendientes|length }}</span>
+            </h4>
+            <div class="drop-zone" data-estado="pendiente">
+                {% for tarea in tareas_pendientes %}
+                <div class="kanban-task" draggable="true" data-tarea-id="{{ tarea.id_tarea }}">
+                    <div class="kanban-task-priority priority-{{ tarea.prioridad }}"></div>
+                    <h6>{{ tarea.titulo }}</h6>
+                    {% if tarea.descripcion %}
+                    <div class="kanban-task-info">
+                        {{ tarea.descripcion|truncatechars:80 }}
+                    </div>
+                    {% endif %}
+                                    {% if asignacion.comentarios_respuesta %}
+                                        <div style="background: {% if asignacion.estado == 'aceptada' %}#d4edda{% else %}#f8d7da{% endif %}; padding: 3px 6px; border-radius: 4px; margin-bottom: 3px;">
+                                            <small class="text-{% if asignacion.estado == 'aceptada' %}success{% else %}danger{% endif %}">�� {{ asignacion.comentarios_respuesta|truncatechars:30 }}</small>
+                                        </div>
+                                    {% endif %}
+                    <div class="kanban-task-date">
+                        <i class="fas fa-calendar-alt me-1"></i>
+                        {% if tarea.fecha_vencimiento %}
+                            {{ tarea.fecha_vencimiento|date:"d/m/Y" }}
+                        {% else %}
+                            Sin fecha límite
+                        {% endif %}
+                                    {% if asignacion.comentarios_respuesta %}
+                                        <div style="background: {% if asignacion.estado == 'aceptada' %}#d4edda{% else %}#f8d7da{% endif %}; padding: 3px 6px; border-radius: 4px; margin-bottom: 3px;">
+                                            <small class="text-{% if asignacion.estado == 'aceptada' %}success{% else %}danger{% endif %}">�� {{ asignacion.comentarios_respuesta|truncatechars:30 }}</small>
+                                        </div>
+                                    {% endif %}
+                    </div>
+                    
+                    <!-- Asignaciones -->
+                    {% with tarea.asignaciones.all as asignaciones %}
+                        {% if asignaciones %}
+                            <div class="mt-2" style="font-size: 0.75rem;">
+                                {% for asignacion in asignaciones %}
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <span class="badge bg-{% if asignacion.estado == 'aceptada' %}success{% elif asignacion.estado == 'rechazada' %}danger{% else %}warning{% endif %}" 
+                                    {% if asignacion.comentarios_respuesta %}
+                                        <div style="background: {% if asignacion.estado == 'aceptada' %}#d4edda{% else %}#f8d7da{% endif %}; padding: 3px 6px; border-radius: 4px; margin-bottom: 3px;">
+                                            <small class="text-{% if asignacion.estado == 'aceptada' %}success{% else %}danger{% endif %}">�� {{ asignacion.comentarios_respuesta|truncatechars:30 }}</small>
+                                        </div>
+                                    {% endif %}
+                                              style="font-size: 0.7rem;">
+                                            {{ asignacion.usuario.get_full_name|default:asignacion.usuario.username|truncatechars:10 }}
+                                            {% if asignacion.estado == 'aceptada' %}
+                                                ✓
+                                            {% elif asignacion.estado == 'rechazada' %}
+                                                ✗
+                                            {% else %}
+                                                ⏳
+                                            {% endif %}
+                                    {% if asignacion.comentarios_respuesta %}
+                                        <div style="background: {% if asignacion.estado == 'aceptada' %}#d4edda{% else %}#f8d7da{% endif %}; padding: 3px 6px; border-radius: 4px; margin-bottom: 3px;">
+                                            <small class="text-{% if asignacion.estado == 'aceptada' %}success{% else %}danger{% endif %}">�� {{ asignacion.comentarios_respuesta|truncatechars:30 }}</small>
+                                        </div>
+                                    {% endif %}
+                                        </span>
+                                    </div>
+                                    {% if asignacion.comentarios %}
+                                        <div style="background: #e3f2fd; padding: 3px 6px; border-radius: 4px; margin-bottom: 3px;">
+                                            <small class="text-primary">📋 {{ asignacion.comentarios|truncatechars:30 }}</small>
+                                        </div>
+                                    {% endif %}
+                                    {% if asignacion.comentarios_respuesta %}
+                                        <div style="background: {% if asignacion.estado == 'aceptada' %}#d4edda{% else %}#f8d7da{% endif %}; padding: 3px 6px; border-radius: 4px; margin-bottom: 3px;">
+                                            <small class="text-{% if asignacion.estado == 'aceptada' %}success{% else %}danger{% endif %}">�� {{ asignacion.comentarios_respuesta|truncatechars:30 }}</small>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                                    {% if asignacion.comentarios_respuesta %}
+                                        <div style="background: {% if asignacion.estado == 'aceptada' %}#d4edda{% else %}#f8d7da{% endif %}; padding: 3px 6px; border-radius: 4px; margin-bottom: 3px;">
+                                            <small class="text-{% if asignacion.estado == 'aceptada' %}success{% else %}danger{% endif %}">�� {{ asignacion.comentarios_respuesta|truncatechars:30 }}</small>
+                                        </div>
+                                    {% endif %}
+                    {% endwith %}
+                    
+                    {% if tarea.porcentaje_completado > 0 %}
+                    <div class="mt-2">
+                        <div class="progress" style="height: 4px;">
+                            <div class="progress-bar bg-info" style="width: {{ tarea.porcentaje_completado }}%"></div>
+                        </div>
+                        <small class="text-muted">{{ tarea.porcentaje_completado }}% completado</small>
+                    </div>
+                    {% endif %}
+                                    {% if asignacion.comentarios_respuesta %}
+                                        <div style="background: {% if asignacion.estado == 'aceptada' %}#d4edda{% else %}#f8d7da{% endif %}; padding: 3px 6px; border-radius: 4px; margin-bottom: 3px;">
+                                            <small class="text-{% if asignacion.estado == 'aceptada' %}success{% else %}danger{% endif %}">�� {{ asignacion.comentarios_respuesta|truncatechars:30 }}</small>
+                                        </div>
+                                    {% endif %}
+                </div>
+                {% empty %}
+                <p class="text-muted text-center py-3">No hay tareas pendientes</p>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Columna En Progreso -->
+        <div class="kanban-column column-en_progreso">
+            <h4>
+                <i class="fas fa-play-circle me-2"></i>En Progreso
+                <span class="column-counter">{{ tareas_en_progreso|length }}</span>
+            </h4>
+            <div class="drop-zone" data-estado="en_progreso">
+                {% for tarea in tareas_en_progreso %}
+                <div class="kanban-task" draggable="true" data-tarea-id="{{ tarea.id_tarea }}">
+                    <div class="kanban-task-priority priority-{{ tarea.prioridad }}"></div>
+                    <h6>{{ tarea.titulo }}</h6>
+                    {% if tarea.descripcion %}
+                    <div class="kanban-task-info">
+                        {{ tarea.descripcion|truncatechars:80 }}
+                    </div>
+                    {% endif %}
+                                    {% if asignacion.comentarios_respuesta %}
+                                        <div style="background: {% if asignacion.estado == 'aceptada' %}#d4edda{% else %}#f8d7da{% endif %}; padding: 3px 6px; border-radius: 4px; margin-bottom: 3px;">
+                                            <small class="text-{% if asignacion.estado == 'aceptada' %}success{% else %}danger{% endif %}">�� {{ asignacion.comentarios_respuesta|truncatechars:30 }}</small>
+                                        </div>
+                                    {% endif %}
+                    <div class="kanban-task-date">
+                        <i class="fas fa-calendar-alt me-1"></i>
+                        {% if tarea.fecha_vencimiento %}
+                            {{ tarea.fecha_vencimiento|date:"d/m/Y" }}
+                        {% else %}
+                            Sin fecha límite
+                        {% endif %}
+                                    {% if asignacion.comentarios_respuesta %}
+                                        <div style="background: {% if asignacion.estado == 'aceptada' %}#d4edda{% else %}#f8d7da{% endif %}; padding: 3px 6px; border-radius: 4px; margin-bottom: 3px;">
+                                            <small class="text-{% if asignacion.estado == 'aceptada' %}success{% else %}danger{% endif %}">�� {{ asignacion.comentarios_respuesta|truncatechars:30 }}</small>
+                                        </div>
+                                    {% endif %}
+                    </div>
+                    
+                    <!-- Asignaciones -->
+                    {% with tarea.asignaciones.all as asignaciones %}
+                        {% if asignaciones %}
+                            <div class="mt-2" style="font-size: 0.75rem;">
+                                {% for asignacion in asignaciones %}
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <span class="badge bg-{% if asignacion.estado == 'aceptada' %}success{% elif asignacion.estado == 'rechazada' %}danger{% else %}warning{% endif %}" 
+                                    {% if asignacion.comentarios_respuesta %}
+                                        <div style="background: {% if asignacion.estado == 'aceptada' %}#d4edda{% else %}#f8d7da{% endif %}; padding: 3px 6px; border-radius: 4px; margin-bottom: 3px;">
+                                            <small class="text-{% if asignacion.estado == 'aceptada' %}success{% else %}danger{% endif %}">�� {{ asignacion.comentarios_respuesta|truncatechars:30 }}</small>
+                                        </div>
+                                    {% endif %}
+                                              style="font-size: 0.7rem;">
+                                            {{ asignacion.usuario.get_full_name|default:asignacion.usuario.username|truncatechars:10 }}
+                                            {% if asignacion.estado == 'aceptada' %}
+                                                ✓
+                                            {% elif asignacion.estado == 'rechazada' %}
+                                                ✗
+                                            {% else %}
+                                                ⏳
+                                            {% endif %}
+                                    {% if asignacion.comentarios_respuesta %}
+                                        <div style="background: {% if asignacion.estado == 'aceptada' %}#d4edda{% else %}#f8d7da{% endif %}; padding: 3px 6px; border-radius: 4px; margin-bottom: 3px;">
+                                            <small class="text-{% if asignacion.estado == 'aceptada' %}success{% else %}danger{% endif %}">�� {{ asignacion.comentarios_respuesta|truncatechars:30 }}</small>
+                                        </div>
+                                    {% endif %}
+                                        </span>
+                                    </div>
+                                    {% if asignacion.comentarios %}
+                                        <div style="background: #e3f2fd; padding: 3px 6px; border-radius: 4px; margin-bottom: 3px;">
+                                            <small class="text-primary">📋 {{ asignacion.comentarios|truncatechars:30 }}</small>
+                                        </div>
+                                    {% endif %}
+                                    {% if asignacion.comentarios_respuesta %}
+                                        <div style="background: {% if asignacion.estado == 'aceptada' %}#d4edda{% else %}#f8d7da{% endif %}; padding: 3px 6px; border-radius: 4px; margin-bottom: 3px;">
+                                            <small class="text-{% if asignacion.estado == 'aceptada' %}success{% else %}danger{% endif %}">�� {{ asignacion.comentarios_respuesta|truncatechars:30 }}</small>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                                    {% if asignacion.comentarios_respuesta %}
+                                        <div style="background: {% if asignacion.estado == 'aceptada' %}#d4edda{% else %}#f8d7da{% endif %}; padding: 3px 6px; border-radius: 4px; margin-bottom: 3px;">
+                                            <small class="text-{% if asignacion.estado == 'aceptada' %}success{% else %}danger{% endif %}">�� {{ asignacion.comentarios_respuesta|truncatechars:30 }}</small>
+                                        </div>
+                                    {% endif %}
+                    {% endwith %}
+                    
+                    {% if tarea.porcentaje_completado > 0 %}
+                    <div class="mt-2">
+                        <div class="progress" style="height: 4px;">
+                            <div class="progress-bar bg-warning" style="width: {{ tarea.porcentaje_completado }}%"></div>
+                        </div>
+                        <small class="text-muted">{{ tarea.porcentaje_completado }}% completado</small>
+                    </div>
+                    {% endif %}
+                                    {% if asignacion.comentarios_respuesta %}
+                                        <div style="background: {% if asignacion.estado == 'aceptada' %}#d4edda{% else %}#f8d7da{% endif %}; padding: 3px 6px; border-radius: 4px; margin-bottom: 3px;">
+                                            <small class="text-{% if asignacion.estado == 'aceptada' %}success{% else %}danger{% endif %}">�� {{ asignacion.comentarios_respuesta|truncatechars:30 }}</small>
+                                        </div>
+                                    {% endif %}
+                </div>
+                {% empty %}
+                <p class="text-muted text-center py-3">No hay tareas en progreso</p>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Columna Completadas -->
+        <div class="kanban-column column-completada">
+            <h4>
+                <i class="fas fa-check-circle me-2"></i>Completadas
+                <span class="column-counter">{{ tareas_completadas|length }}</span>
+            </h4>
+            <div class="drop-zone" data-estado="completada">
+                {% for tarea in tareas_completadas %}
+                <div class="kanban-task" draggable="true" data-tarea-id="{{ tarea.id_tarea }}">
+                    <div class="kanban-task-priority priority-{{ tarea.prioridad }}"></div>
+                    <h6>{{ tarea.titulo }}</h6>
+                    {% if tarea.descripcion %}
+                    <div class="kanban-task-info">
+                        {{ tarea.descripcion|truncatechars:80 }}
+                    </div>
+                    {% endif %}
+                                    {% if asignacion.comentarios_respuesta %}
+                                        <div style="background: {% if asignacion.estado == 'aceptada' %}#d4edda{% else %}#f8d7da{% endif %}; padding: 3px 6px; border-radius: 4px; margin-bottom: 3px;">
+                                            <small class="text-{% if asignacion.estado == 'aceptada' %}success{% else %}danger{% endif %}">�� {{ asignacion.comentarios_respuesta|truncatechars:30 }}</small>
+                                        </div>
+                                    {% endif %}
+                    <div class="kanban-task-date">
+                        <i class="fas fa-check me-1"></i>
+                        {% if tarea.fecha_completada %}
+                            Completada: {{ tarea.fecha_completada|date:"d/m/Y" }}
+                        {% else %}
+                            Completada
+                        {% endif %}
+                                    {% if asignacion.comentarios_respuesta %}
+                                        <div style="background: {% if asignacion.estado == 'aceptada' %}#d4edda{% else %}#f8d7da{% endif %}; padding: 3px 6px; border-radius: 4px; margin-bottom: 3px;">
+                                            <small class="text-{% if asignacion.estado == 'aceptada' %}success{% else %}danger{% endif %}">�� {{ asignacion.comentarios_respuesta|truncatechars:30 }}</small>
+                                        </div>
+                                    {% endif %}
+                    </div>
+                    
+                    <!-- Asignaciones -->
+                    {% with tarea.asignaciones.all as asignaciones %}
+                        {% if asignaciones %}
+                            <div class="mt-2" style="font-size: 0.75rem;">
+                                {% for asignacion in asignaciones %}
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <span class="badge bg-{% if asignacion.estado == 'aceptada' %}success{% elif asignacion.estado == 'rechazada' %}danger{% else %}warning{% endif %}" 
+                                    {% if asignacion.comentarios_respuesta %}
+                                        <div style="background: {% if asignacion.estado == 'aceptada' %}#d4edda{% else %}#f8d7da{% endif %}; padding: 3px 6px; border-radius: 4px; margin-bottom: 3px;">
+                                            <small class="text-{% if asignacion.estado == 'aceptada' %}success{% else %}danger{% endif %}">�� {{ asignacion.comentarios_respuesta|truncatechars:30 }}</small>
+                                        </div>
+                                    {% endif %}
+                                              style="font-size: 0.7rem;">
+                                            {{ asignacion.usuario.get_full_name|default:asignacion.usuario.username|truncatechars:10 }}
+                                            {% if asignacion.estado == 'aceptada' %}
+                                                ✓
+                                            {% elif asignacion.estado == 'rechazada' %}
+                                                ✗
+                                            {% else %}
+                                                ⏳
+                                            {% endif %}
+                                    {% if asignacion.comentarios_respuesta %}
+                                        <div style="background: {% if asignacion.estado == 'aceptada' %}#d4edda{% else %}#f8d7da{% endif %}; padding: 3px 6px; border-radius: 4px; margin-bottom: 3px;">
+                                            <small class="text-{% if asignacion.estado == 'aceptada' %}success{% else %}danger{% endif %}">�� {{ asignacion.comentarios_respuesta|truncatechars:30 }}</small>
+                                        </div>
+                                    {% endif %}
+                                        </span>
+                                    </div>
+                                    {% if asignacion.comentarios %}
+                                        <div style="background: #e3f2fd; padding: 3px 6px; border-radius: 4px; margin-bottom: 3px;">
+                                            <small class="text-primary">📋 {{ asignacion.comentarios|truncatechars:30 }}</small>
+                                        </div>
+                                    {% endif %}
+                                    {% if asignacion.comentarios_respuesta %}
+                                        <div style="background: {% if asignacion.estado == 'aceptada' %}#d4edda{% else %}#f8d7da{% endif %}; padding: 3px 6px; border-radius: 4px; margin-bottom: 3px;">
+                                            <small class="text-{% if asignacion.estado == 'aceptada' %}success{% else %}danger{% endif %}">�� {{ asignacion.comentarios_respuesta|truncatechars:30 }}</small>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                                    {% if asignacion.comentarios_respuesta %}
+                                        <div style="background: {% if asignacion.estado == 'aceptada' %}#d4edda{% else %}#f8d7da{% endif %}; padding: 3px 6px; border-radius: 4px; margin-bottom: 3px;">
+                                            <small class="text-{% if asignacion.estado == 'aceptada' %}success{% else %}danger{% endif %}">�� {{ asignacion.comentarios_respuesta|truncatechars:30 }}</small>
+                                        </div>
+                                    {% endif %}
+                    {% endwith %}
+                    
+                    <div class="mt-2">
+                        <div class="progress" style="height: 4px;">
+                            <div class="progress-bar bg-success" style="width: 100%"></div>
+                        </div>
+                        <small class="text-success">100% completado</small>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted text-center py-3">No hay tareas completadas</p>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Columna Canceladas -->
+        <div class="kanban-column column-cancelada">
+            <h4>
+                <i class="fas fa-times-circle me-2"></i>Canceladas
+                <span class="column-counter">{{ tareas_canceladas|length }}</span>
+            </h4>
+            <div class="drop-zone" data-estado="cancelada">
+                {% for tarea in tareas_canceladas %}
+                <div class="kanban-task" draggable="true" data-tarea-id="{{ tarea.id_tarea }}">
+                    <div class="kanban-task-priority priority-{{ tarea.prioridad }}"></div>
+                    <h6>{{ tarea.titulo }}</h6>
+                    {% if tarea.descripcion %}
+                    <div class="kanban-task-info">
+                        {{ tarea.descripcion|truncatechars:80 }}
+                    </div>
+                    {% endif %}
+                                    {% if asignacion.comentarios_respuesta %}
+                                        <div style="background: {% if asignacion.estado == 'aceptada' %}#d4edda{% else %}#f8d7da{% endif %}; padding: 3px 6px; border-radius: 4px; margin-bottom: 3px;">
+                                            <small class="text-{% if asignacion.estado == 'aceptada' %}success{% else %}danger{% endif %}">�� {{ asignacion.comentarios_respuesta|truncatechars:30 }}</small>
+                                        </div>
+                                    {% endif %}
+                    <div class="kanban-task-date">
+                        <i class="fas fa-ban me-1"></i>
+                        Cancelada
+                    </div>
+                    
+                    <!-- Asignaciones -->
+                    {% with tarea.asignaciones.all as asignaciones %}
+                        {% if asignaciones %}
+                            <div class="mt-2" style="font-size: 0.75rem;">
+                                {% for asignacion in asignaciones %}
+                                    <div class="d-flex align-items-center justify-content-between mb-1">
+                                        <span class="badge bg-{% if asignacion.estado == 'aceptada' %}success{% elif asignacion.estado == 'rechazada' %}danger{% else %}warning{% endif %}" 
+                                    {% if asignacion.comentarios_respuesta %}
+                                        <div style="background: {% if asignacion.estado == 'aceptada' %}#d4edda{% else %}#f8d7da{% endif %}; padding: 3px 6px; border-radius: 4px; margin-bottom: 3px;">
+                                            <small class="text-{% if asignacion.estado == 'aceptada' %}success{% else %}danger{% endif %}">�� {{ asignacion.comentarios_respuesta|truncatechars:30 }}</small>
+                                        </div>
+                                    {% endif %}
+                                              style="font-size: 0.7rem;">
+                                            {{ asignacion.usuario.get_full_name|default:asignacion.usuario.username|truncatechars:10 }}
+                                            {% if asignacion.estado == 'aceptada' %}
+                                                ✓
+                                            {% elif asignacion.estado == 'rechazada' %}
+                                                ✗
+                                            {% else %}
+                                                ⏳
+                                            {% endif %}
+                                    {% if asignacion.comentarios_respuesta %}
+                                        <div style="background: {% if asignacion.estado == 'aceptada' %}#d4edda{% else %}#f8d7da{% endif %}; padding: 3px 6px; border-radius: 4px; margin-bottom: 3px;">
+                                            <small class="text-{% if asignacion.estado == 'aceptada' %}success{% else %}danger{% endif %}">�� {{ asignacion.comentarios_respuesta|truncatechars:30 }}</small>
+                                        </div>
+                                    {% endif %}
+                                        </span>
+                                    </div>
+                                    {% if asignacion.comentarios %}
+                                        <div style="background: #e3f2fd; padding: 3px 6px; border-radius: 4px; margin-bottom: 3px;">
+                                            <small class="text-primary">📋 {{ asignacion.comentarios|truncatechars:30 }}</small>
+                                        </div>
+                                    {% endif %}
+                                    {% if asignacion.comentarios_respuesta %}
+                                        <div style="background: {% if asignacion.estado == 'aceptada' %}#d4edda{% else %}#f8d7da{% endif %}; padding: 3px 6px; border-radius: 4px; margin-bottom: 3px;">
+                                            <small class="text-{% if asignacion.estado == 'aceptada' %}success{% else %}danger{% endif %}">�� {{ asignacion.comentarios_respuesta|truncatechars:30 }}</small>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                                    {% if asignacion.comentarios_respuesta %}
+                                        <div style="background: {% if asignacion.estado == 'aceptada' %}#d4edda{% else %}#f8d7da{% endif %}; padding: 3px 6px; border-radius: 4px; margin-bottom: 3px;">
+                                            <small class="text-{% if asignacion.estado == 'aceptada' %}success{% else %}danger{% endif %}">�� {{ asignacion.comentarios_respuesta|truncatechars:30 }}</small>
+                                        </div>
+                                    {% endif %}
+                    {% endwith %}
+                </div>
+                {% empty %}
+                <p class="text-muted text-center py-3">No hay tareas canceladas</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toast para notificaciones -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3">
+    <div id="kanban-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <strong class="me-auto">Kanban</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Cerrar"></button>
+        </div>
+        <div class="toast-body"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let draggedTask = null;
+    
+    // Hacer las tareas arrastrables
+    const tasks = document.querySelectorAll('.kanban-task');
+    tasks.forEach(task => {
+        task.addEventListener('dragstart', function(e) {
+            draggedTask = this;
+            this.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        });
+        
+        task.addEventListener('dragend', function(e) {
+            this.classList.remove('dragging');
+        });
+    });
+    
+    // Configurar zonas de drop
+    const dropZones = document.querySelectorAll('.drop-zone');
+    dropZones.forEach(zone => {
+        zone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            this.classList.add('drag-over');
+        });
+        
+        zone.addEventListener('dragleave', function(e) {
+            this.classList.remove('drag-over');
+        });
+        
+        zone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('drag-over');
+            
+            if (draggedTask) {
+                const nuevoEstado = this.dataset.estado;
+                const tareaId = draggedTask.dataset.tareaId;
+                
+                // Actualizar en el servidor
+                actualizarEstadoTarea(tareaId, nuevoEstado, draggedTask, this);
+            }
+        });
+    });
+    
+    function actualizarEstadoTarea(tareaId, nuevoEstado, taskElement, dropZone) {
+        const formData = new FormData();
+        formData.append('estado', nuevoEstado);
+        formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+        
+        fetch(`/agenda/actualizar-estado-tarea-kanban/${tareaId}/`, {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Mover la tarea visualmente
+                dropZone.appendChild(taskElement);
+                
+                // Actualizar contadores
+                actualizarContadores();
+                
+                // Mostrar notificación
+                mostrarToast('Tarea actualizada correctamente', 'success');
+            } else {
+                mostrarToast('Error: ' + data.error, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            mostrarToast('Error de conexión', 'error');
+        });
+    }
+    
+    function actualizarContadores() {
+        const columns = document.querySelectorAll('.kanban-column');
+        columns.forEach(column => {
+            const counter = column.querySelector('.column-counter');
+            const tasks = column.querySelectorAll('.kanban-task');
+            counter.textContent = tasks.length;
+        });
+    }
+    
+    function mostrarToast(message, type) {
+        const toast = document.getElementById('kanban-toast');
+        const toastBody = toast.querySelector('.toast-body');
+        toastBody.textContent = message;
+        
+        // Cambiar color según el tipo
+        toast.className = 'toast';
+        if (type === 'success') {
+            toast.classList.add('bg-success', 'text-white');
+        } else {
+            toast.classList.add('bg-danger', 'text-white');
+        }
+        
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+    }
+});
+</script>
+{% endblock %}
