@@ -1,0 +1,309 @@
+{% extends 'almacenamiento/base_almacenamiento.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}Crear Almacenaje - AGL SRL{% endblock %}
+
+{% block almacenamiento_breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'almacenamiento:dashboard' %}">Almacenamiento</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'almacenamiento:almacenajes_list' %}">Almacenajes</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Crear</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-xl-8 col-lg-10 mx-auto">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-1">
+                        <i class="fas fa-plus-circle text-success me-2"></i>
+                        Crear Nuevo Almacenaje
+                    </h1>
+                    <p class="text-muted mb-0">Complete la información del nuevo almacenaje</p>
+                </div>
+                <a href="{% url 'almacenamiento:almacenajes_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver
+                </a>
+            </div>
+
+            <div class="row">
+                <!-- Formulario -->
+                <div class="col-lg-8">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-warehouse me-2"></i>
+                                Información del Almacenaje
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <form method="post" class="needs-validation" novalidate>
+                                {% csrf_token %}
+                                
+                                <!-- Campos básicos -->
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="{{ form.ubicacion.id_for_label }}" class="form-label fw-bold">
+                                            <i class="fas fa-map-marker-alt text-primary me-1"></i>
+                                            Ubicación *
+                                        </label>
+                                        {{ form.ubicacion|add_class:"form-select" }}
+                                        {% if form.ubicacion.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.ubicacion.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ form.tipo.id_for_label }}" class="form-label fw-bold">
+                                            <i class="fas fa-layer-group text-info me-1"></i>
+                                            Tipo de Almacenaje *
+                                        </label>
+                                        {{ form.tipo|add_class:"form-select" }}
+                                        {% if form.tipo.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.tipo.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="{{ form.codigo.id_for_label }}" class="form-label fw-bold">
+                                            <i class="fas fa-barcode text-warning me-1"></i>
+                                            Código *
+                                        </label>
+                                        {{ form.codigo|add_class:"form-control" }}
+                                        <small class="form-text text-muted">
+                                            Código único dentro de la ubicación (ej: S-01, GB-A12)
+                                        </small>
+                                        {% if form.codigo.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.codigo.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ form.estado.id_for_label }}" class="form-label fw-bold">
+                                            <i class="fas fa-info-circle text-secondary me-1"></i>
+                                            Estado
+                                        </label>
+                                        {{ form.estado|add_class:"form-select" }}
+                                        {% if form.estado.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.estado.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="{{ form.capacidad_kg.id_for_label }}" class="form-label fw-bold">
+                                            <i class="fas fa-weight text-success me-1"></i>
+                                            Capacidad (kg)
+                                        </label>
+                                        {{ form.capacidad_kg|add_class:"form-control" }}
+                                        <small class="form-text text-muted">Capacidad máxima en kilogramos</small>
+                                        {% if form.capacidad_kg.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.capacidad_kg.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label fw-bold">Estado del Almacenaje</label>
+                                        <div class="form-check form-switch mt-2">
+                                            {{ form.activo|add_class:"form-check-input" }}
+                                            <label class="form-check-label" for="{{ form.activo.id_for_label }}">
+                                                <i class="fas fa-toggle-on text-success me-1"></i>
+                                                Almacenaje Activo
+                                            </label>
+                                        </div>
+                                        {% if form.activo.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.activo.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Campos para silo bolsa (ocultos por defecto) -->
+                                <div id="silo-bolsa-section" style="display: none;">
+                                    <div class="alert alert-warning border-warning">
+                                        <h6 class="mb-3">
+                                            <i class="fas fa-exclamation-triangle me-2"></i>
+                                            Campos específicos para Silo Bolsa
+                                        </h6>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <label for="{{ form.longitud_metros.id_for_label }}" class="form-label fw-bold">
+                                                    <i class="fas fa-ruler text-warning me-1"></i>
+                                                    Longitud (metros) *
+                                                </label>
+                                                {{ form.longitud_metros|add_class:"form-control" }}
+                                                {% if form.longitud_metros.errors %}
+                                                    <div class="invalid-feedback d-block">
+                                                        {{ form.longitud_metros.errors.0 }}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="{{ form.sentido.id_for_label }}" class="form-label fw-bold">
+                                                    <i class="fas fa-compass text-warning me-1"></i>
+                                                    Sentido de Orientación *
+                                                </label>
+                                                {{ form.sentido|add_class:"form-control" }}
+                                                <small class="form-text text-muted">
+                                                    Ej: Norte-Sur, Este-Oeste
+                                                </small>
+                                                {% if form.sentido.errors %}
+                                                    <div class="invalid-feedback d-block">
+                                                        {{ form.sentido.errors.0 }}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Observaciones -->
+                                <div class="mb-3">
+                                    <label for="{{ form.observaciones.id_for_label }}" class="form-label fw-bold">
+                                        <i class="fas fa-sticky-note text-info me-1"></i>
+                                        Observaciones
+                                    </label>
+                                    {{ form.observaciones|add_class:"form-control" }}
+                                    <small class="form-text text-muted">Información adicional sobre el almacenaje</small>
+                                    {% if form.observaciones.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.observaciones.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Errores generales -->
+                                {% if form.non_field_errors %}
+                                    <div class="alert alert-danger">
+                                        <h6><i class="fas fa-exclamation-circle me-2"></i>Errores en el formulario:</h6>
+                                        <ul class="mb-0">
+                                            {% for error in form.non_field_errors %}
+                                                <li>{{ error }}</li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                {% endif %}
+
+                                <!-- Botones -->
+                                <div class="d-flex justify-content-between pt-3 border-top">
+                                    <a href="{% url 'almacenamiento:almacenajes_list' %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-arrow-left me-2"></i>Cancelar
+                                    </a>
+                                    <button type="submit" class="btn btn-success btn-lg">
+                                        <i class="fas fa-save me-2"></i>{{ boton_texto|default:"Crear Almacenaje" }}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Panel de información -->
+                <div class="col-lg-4">
+                    <div class="card shadow-sm">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Información de Ayuda
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <h6><i class="fas fa-warehouse me-2"></i>Tipos de Almacenaje:</h6>
+                            <ul class="list-unstyled mb-3">
+                                <li class="mb-1">
+                                    <span class="badge bg-primary me-2">Silo</span>
+                                    Estructura vertical para granos
+                                </li>
+                                <li class="mb-1">
+                                    <span class="badge bg-warning me-2">Silo Bolsa</span>
+                                    Almacenaje en bolsas plásticas
+                                </li>
+                                <li class="mb-1">
+                                    <span class="badge bg-secondary me-2">Galpón</span>
+                                    Estructura techada horizontal
+                                </li>
+                            </ul>
+                            
+                            <h6><i class="fas fa-traffic-light me-2"></i>Estados Disponibles:</h6>
+                            <ul class="list-unstyled">
+                                <li class="mb-1">
+                                    <span class="badge bg-success me-2">Disponible</span>
+                                    Listo para usar
+                                </li>
+                                <li class="mb-1">
+                                    <span class="badge bg-warning me-2">Ocupado</span>
+                                    Con mercadería
+                                </li>
+                                <li class="mb-1">
+                                    <span class="badge bg-info me-2">Fumigación</span>
+                                    En proceso
+                                </li>
+                                <li class="mb-1">
+                                    <span class="badge bg-secondary me-2">Mantenimiento</span>
+                                    En reparación
+                                </li>
+                                <li class="mb-1">
+                                    <span class="badge bg-danger me-2">Bloqueado</span>
+                                    No disponible
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tipoSelect = document.getElementById('{{ form.tipo.id_for_label }}');
+    const siloBolsaSection = document.getElementById('silo-bolsa-section');
+    
+    function toggleSiloBolsaFields() {
+        if (tipoSelect && siloBolsaSection) {
+            if (tipoSelect.value === 'SILO_BOLSA') {
+                siloBolsaSection.style.display = 'block';
+                // Hacer campos requeridos
+                const longitud = document.getElementById('{{ form.longitud_metros.id_for_label }}');
+                const sentido = document.getElementById('{{ form.sentido.id_for_label }}');
+                if (longitud) longitud.required = true;
+                if (sentido) sentido.required = true;
+            } else {
+                siloBolsaSection.style.display = 'none';
+                // Quitar requerimiento
+                const longitud = document.getElementById('{{ form.longitud_metros.id_for_label }}');
+                const sentido = document.getElementById('{{ form.sentido.id_for_label }}');
+                if (longitud) longitud.required = false;
+                if (sentido) sentido.required = false;
+            }
+        }
+    }
+    
+    // Ejecutar al cargar y al cambiar
+    if (tipoSelect) {
+        toggleSiloBolsaFields();
+        tipoSelect.addEventListener('change', toggleSiloBolsaFields);
+    }
+});
+</script>
+{% endblock %}

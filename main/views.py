@@ -71,6 +71,26 @@ class MainPanelView(LoginRequiredMixin, TemplateView):
             context['total_camiones'] = 0
             context['total_choferes'] = 0
         
+        # Estadísticas de mercaderías
+        try:
+            from mercaderias.models import Grano, Mercaderia
+            context['total_granos'] = Grano.objects.filter(activo=True).count()
+            context['total_mercaderias'] = Mercaderia.objects.filter(estado='ACTIVO').count()
+        except ImportError:
+            # El módulo de mercaderías no está disponible
+            context['total_granos'] = 0
+            context['total_mercaderias'] = 0
+        
+        # Estadísticas de almacenamiento
+        try:
+            from almacenamiento.models import Ubicacion, Almacenaje
+            context['total_ubicaciones'] = Ubicacion.objects.filter(activo=True).count()
+            context['total_almacenajes'] = Almacenaje.objects.filter(activo=True).count()
+        except ImportError:
+            # El módulo de almacenamiento no está disponible
+            context['total_ubicaciones'] = 0
+            context['total_almacenajes'] = 0
+        
         # Información del usuario
         context['usuario'] = self.request.user
         

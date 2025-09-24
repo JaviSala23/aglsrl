@@ -1,0 +1,365 @@
+{% extends 'mercaderias/base_mercaderias.html' %}
+{% load static %}
+
+{% block title %}Lista de Granos - AGL SRL{% endblock %}
+
+{% block mercaderias_breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'mercaderias:dashboard' %}">Mercaderías</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Granos</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .grain-card {
+        transition: transform 0.2s ease-in-out;
+        border-left: 4px solid #007bff;
+    }
+    
+    .grain-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .grain-status {
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    .grain-code {
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+        color: #495057;
+    }
+    
+    .filters-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+        border: none;
+    }
+</style>
+{% endblock %}
+
+{% block mercaderias_content %}
+<div class="container-fluid">
+    <!-- Header con estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-seedling text-success me-2"></i>
+                        Gestión de Granos
+                    </h2>
+                    <p class="text-muted mb-0">Administra los tipos de granos disponibles en el sistema</p>
+                </div>
+                <a href="{% url 'mercaderias:granos:crear' %}" class="btn btn-success btn-lg">
+                    <i class="fas fa-plus"></i> Nuevo Grano
+                </a>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stats-card">
+                <div class="card-body text-center">
+                    <h3 class="mb-0">{{ total_granos }}</h3>
+                    <small>Total de Granos</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card filters-card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-7">
+                    <label for="search" class="form-label">
+                        <i class="fas fa-search"></i> Búsqueda
+                    </label>
+                    <input type="text" 
+                           class="form-control" 
+                           id="search" 
+                           name="search" 
+                           value="{{ search }}"
+                           placeholder="Buscar por nombre, código o descripción...">
+                </div>
+                <div class="col-md-3">
+                    <label for="activo" class="form-label">
+                        <i class="fas fa-toggle-on"></i> Estado
+                    </label>
+                    <select class="form-select" id="activo" name="activo">
+                        <option value="">Todos</option>
+                        <option value="true" {% if activo_filter == 'true' %}selected{% endif %}>Activos</option>
+                        <option value="false" {% if activo_filter == 'false' %}selected{% endif %}>Inactivos</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <a href="{% url 'mercaderias:granos:lista' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de granos -->
+    {% if granos %}
+        <div class="row">
+            {% for grano in granos %}
+                <div class="col-lg-6 col-xl-4 mb-4">
+                    <div class="card grain-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h5 class="card-title mb-1">{{ grano.nombre }}</h5>
+                                    <span class="grain-code">{{ grano.codigo }}</span>
+                                </div>
+                                <div class="text-end">
+                                    {% if grano.activo %}
+                                        <span class="badge bg-success grain-status">Activo</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary grain-status">Inactivo</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <small class="text-muted">Código:</small>
+                                <div class="fw-semibold grain-code">{{ grano.codigo }}</div>
+                            </div>
+
+                            {% if grano.descripcion %}
+                                <p class="card-text text-muted small">
+                                    {{ grano.descripcion|truncatewords:15 }}
+                                </p>
+                            {% endif %}
+
+                            <div class="row text-center small text-muted mb-3">
+                                <div class="col">
+                                    <div class="fw-bold">{{ grano.mercaderias.count }}</div>
+                                    <div>Mercaderías</div>
+                                </div>
+                                <div class="col">
+                                    <div class="fw-bold">{{ grano.mercaderias_activas_count }}</div>
+                                    <div>Activas</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-footer bg-transparent">
+                            <div class="btn-group w-100" role="group">
+                                <a href="{% url 'mercaderias:granos:detalle' grano.id %}" 
+                                   class="btn btn-outline-info btn-sm">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'mercaderias:granos:editar' grano.id %}" 
+                                   class="btn btn-outline-primary btn-sm">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" 
+                                        class="btn btn-outline-{% if grano.activo %}warning{% else %}success{% endif %} btn-sm"
+                                        data-grano-id="{{ grano.id }}"
+                                        data-grano-nombre="{{ grano.nombre }}"
+                                        data-grano-activo="{% if grano.activo %}true{% else %}false{% endif %}"
+                                        onclick="toggleGranoActivo(this)">
+                                    <i class="fas fa-{% if grano.activo %}pause{% else %}play{% endif %}"></i>
+                                </button>
+                                <button type="button" 
+                                        class="btn btn-outline-danger btn-sm"
+                                        data-grano-id="{{ grano.id }}"
+                                        data-grano-nombre="{{ grano.nombre }}"
+                                        data-mercaderias-count="{{ grano.mercaderias.count }}"
+                                        onclick="eliminarGrano(this)">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Paginación -->
+        {% if granos.has_other_pages %}
+            <nav aria-label="Paginación de granos">
+                <ul class="pagination justify-content-center">
+                    {% if granos.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if activo_filter %}&activo={{ activo_filter }}{% endif %}">Primera</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ granos.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if activo_filter %}&activo={{ activo_filter }}{% endif %}">Anterior</a>
+                        </li>
+                    {% endif %}
+
+                    {% for num in granos.paginator.page_range %}
+                        {% if granos.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > granos.number|add:'-3' and num < granos.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}{% if activo_filter %}&activo={{ activo_filter }}{% endif %}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if granos.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ granos.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if activo_filter %}&activo={{ activo_filter }}{% endif %}">Siguiente</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ granos.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if activo_filter %}&activo={{ activo_filter }}{% endif %}">Última</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+
+    {% else %}
+        <!-- Estado vacío -->
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i class="fas fa-seedling text-muted" style="font-size: 4rem;"></i>
+            </div>
+            <h4 class="text-muted">No hay granos registrados</h4>
+            <p class="text-muted">
+                {% if search or activo_filter %}
+                    No se encontraron granos que coincidan con los filtros aplicados.
+                    <br>
+                    <a href="{% url 'mercaderias:granos:lista' %}" class="btn btn-outline-primary mt-2">
+                        <i class="fas fa-times"></i> Limpiar filtros
+                    </a>
+                {% else %}
+                    Comienza agregando tu primer grano al sistema.
+                {% endif %}
+            </p>
+            {% if not search and not activo_filter %}
+                <a href="{% url 'mercaderias:granos:crear' %}" class="btn btn-success btn-lg">
+                    <i class="fas fa-plus"></i> Crear Primer Grano
+                </a>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+
+<!-- Modal de confirmación para eliminar -->
+<div class="modal fade" id="eliminarGranoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas eliminar el grano <strong id="granoNombre"></strong>?</p>
+                <div id="advertenciaMercaderias" class="alert alert-warning d-none">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Este grano tiene <strong id="cantidadMercaderias"></strong> mercadería(s) asociada(s) y no puede ser eliminado.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmarEliminar">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let granoIdEliminar = null;
+
+function eliminarGrano(button) {
+    const id = button.getAttribute('data-grano-id');
+    const nombre = button.getAttribute('data-grano-nombre');
+    const cantidadMercaderias = parseInt(button.getAttribute('data-mercaderias-count'));
+    
+    granoIdEliminar = id;
+    document.getElementById('granoNombre').textContent = nombre;
+    
+    const advertencia = document.getElementById('advertenciaMercaderias');
+    const botonEliminar = document.getElementById('confirmarEliminar');
+    
+    if (cantidadMercaderias > 0) {
+        document.getElementById('cantidadMercaderias').textContent = cantidadMercaderias;
+        advertencia.classList.remove('d-none');
+        botonEliminar.classList.add('d-none');
+    } else {
+        advertencia.classList.add('d-none');
+        botonEliminar.classList.remove('d-none');
+    }
+    
+    new bootstrap.Modal(document.getElementById('eliminarGranoModal')).show();
+}
+
+document.getElementById('confirmarEliminar').addEventListener('click', function() {
+    if (granoIdEliminar) {
+        // Crear formulario para enviar POST
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = `/mercaderias/granos/${granoIdEliminar}/eliminar/`;
+        
+        // Agregar token CSRF
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+        if (csrfToken) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = 'csrfmiddlewaretoken';
+            csrfInput.value = csrfToken.value;
+            form.appendChild(csrfInput);
+        }
+        
+        document.body.appendChild(form);
+        form.submit();
+    }
+});
+
+function toggleGranoActivo(button) {
+    const id = button.getAttribute('data-grano-id');
+    const nombre = button.getAttribute('data-grano-nombre');
+    const estaActivo = button.getAttribute('data-grano-activo') === 'true';
+    const accion = estaActivo ? 'desactivar' : 'activar';
+    
+    if (confirm(`¿Estás seguro de que deseas ${accion} el grano "${nombre}"?`)) {
+        fetch(`/mercaderias/granos/${id}/toggle/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al procesar la solicitud');
+        });
+    }
+}
+
+// Auto-submit del formulario de búsqueda al cambiar filtros
+document.getElementById('activo').addEventListener('change', function() {
+    this.form.submit();
+});
+</script>
+{% endblock %}

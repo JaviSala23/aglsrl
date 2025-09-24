@@ -163,9 +163,27 @@
         
         .modules-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            grid-template-columns: repeat(4, 1fr);
             gap: 1.5rem;
             margin-top: 2rem;
+        }
+        
+        @media (max-width: 1400px) {
+            .modules-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+        
+        @media (max-width: 1024px) {
+            .modules-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .modules-grid {
+                grid-template-columns: 1fr;
+            }
         }
         
         .module-card {
@@ -308,6 +326,18 @@
             background: linear-gradient(135deg, #3742fa 0%, #2f3542 100%) !important;
         }
         
+        .module-card.mercaderias {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%) !important;
+        }
+        
+        .module-card.almacenamiento {
+            background: linear-gradient(135deg, #fd7e14 0%, #e63946 100%) !important;
+        }
+        
+        .module-card.procesamiento {
+            background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%) !important;
+        }
+        
         .coming-soon {
             position: relative;
             opacity: 0.7;
@@ -427,6 +457,110 @@
                     </div>
                 </a>
                 
+                <!-- Módulo de Mercaderías -->
+                <a href="{% url 'mercaderias:dashboard' %}" class="module-card mercaderias">
+                    <div class="module-icon">
+                        <i class="fas fa-seedling"></i>
+                    </div>
+                    <h3 class="module-title">Gestión de Mercaderías</h3>
+                    <p class="module-description">
+                        Control de granos, productos agrícolas, características técnicas y propietarios. 
+                        Gestión completa del inventario de mercaderías.
+                    </p>
+                    <div class="module-stats">
+                        <div class="stat-item">
+                            <span class="stat-number">{{ total_mercaderias|default:0 }}</span>
+                            <span class="stat-label">Mercaderías</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">{{ total_granos|default:0 }}</span>
+                            <span class="stat-label">Granos</span>
+                        </div>
+                    </div>
+                    <div class="module-action">
+                        <span class="action-text">Acceder al módulo</span>
+                        <i class="bi bi-arrow-right action-arrow"></i>
+                    </div>
+                </a>
+                
+                <!-- Módulo de Almacenamiento -->
+                <a href="{% url 'almacenamiento:dashboard' %}" class="module-card almacenamiento">
+                    <div class="module-icon">
+                        <i class="fas fa-warehouse"></i>
+                    </div>
+                    <h3 class="module-title">Gestión de Almacenamiento</h3>
+                    <p class="module-description">
+                        Control de ubicaciones, almacenajes, silos y stock. 
+                        Gestión de infraestructura de almacenamiento y ocupación.
+                    </p>
+                    <div class="module-stats">
+                        <div class="stat-item">
+                            <span class="stat-number">{{ total_ubicaciones|default:0 }}</span>
+                            <span class="stat-label">Ubicaciones</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">{{ total_almacenajes|default:0 }}</span>
+                            <span class="stat-label">Almacenajes</span>
+                        </div>
+                    </div>
+                    <div class="module-action">
+                        <span class="action-text">Acceder al módulo</span>
+                        <i class="bi bi-arrow-right action-arrow"></i>
+                    </div>
+                </a>
+                
+                <!-- Módulo de Transportes -->
+                <a href="{% url 'transportes:dashboard' %}" class="module-card camiones">
+                    <div class="module-icon">
+                        <i class="bi bi-truck-front-fill"></i>
+                    </div>
+                    <h3 class="module-title">Gestión de Transportes</h3>
+                    <p class="module-description">
+                        Control de camiones, choferes, viajes y tickets de balanza. 
+                        Gestión completa de la logística de transporte.
+                    </p>
+                    <div class="module-stats">
+                        <div class="stat-item">
+                            <span class="stat-number">{{ total_camiones|default:0 }}</span>
+                            <span class="stat-label">Camiones</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">{{ total_choferes|default:0 }}</span>
+                            <span class="stat-label">Choferes</span>
+                        </div>
+                    </div>
+                    <div class="module-action">
+                        <span class="action-text">Acceder al módulo</span>
+                        <i class="bi bi-arrow-right action-arrow"></i>
+                    </div>
+                </a>
+                
+                <!-- Módulo de Tickets -->
+                <div class="module-card tickets coming-soon">
+                    <div class="module-icon">
+                        <i class="bi bi-truck"></i>
+                    </div>
+                    <h3 class="module-title">Tickets de Operación</h3>
+                    <p class="module-description">
+                        Gestión de tickets de entrada y salida de mercaderías. 
+                        Control de vehículos, pesajes, almacenajes y trazabilidad completa.
+                    </p>
+                    <div class="module-stats">
+                        <div class="stat-item">
+                            <span class="stat-number">-</span>
+                            <span class="stat-label">Entradas</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">-</span>
+                            <span class="stat-label">Salidas</span>
+                        </div>
+                    </div>
+                    <div class="module-action">
+                        <span class="action-text">En desarrollo</span>
+                        <i class="bi bi-hourglass-split action-arrow"></i>
+                    </div>
+                </div>
+                
                 <!-- Módulo de Agenda -->
                 <a href="{% url 'agenda:dashboard' %}" class="module-card agenda">
                     <div class="module-icon">
@@ -471,58 +605,6 @@
                         <div class="stat-item">
                             <span class="stat-number">{{ usuarios_activos|default:0 }}</span>
                             <span class="stat-label">Activos</span>
-                        </div>
-                    </div>
-                    <div class="module-action">
-                        <span class="action-text">Acceder al módulo</span>
-                        <i class="bi bi-arrow-right action-arrow"></i>
-                    </div>
-                </a>
-                
-                <!-- Módulo de Tickets -->
-                <div class="module-card tickets coming-soon">
-                    <div class="module-icon">
-                        <i class="bi bi-truck"></i>
-                    </div>
-                    <h3 class="module-title">Tickets de Operación</h3>
-                    <p class="module-description">
-                        Gestión de tickets de entrada y salida de mercaderías. 
-                        Control de vehículos, pesajes, almacenajes y trazabilidad completa.
-                    </p>
-                    <div class="module-stats">
-                        <div class="stat-item">
-                            <span class="stat-number">-</span>
-                            <span class="stat-label">Entradas</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-number">-</span>
-                            <span class="stat-label">Salidas</span>
-                        </div>
-                    </div>
-                    <div class="module-action">
-                        <span class="action-text">En desarrollo</span>
-                        <i class="bi bi-hourglass-split action-arrow"></i>
-                    </div>
-                </div>
-                
-                <!-- Módulo de Transportes -->
-                <a href="{% url 'transportes:dashboard' %}" class="module-card camiones">
-                    <div class="module-icon">
-                        <i class="bi bi-truck-front-fill"></i>
-                    </div>
-                    <h3 class="module-title">Gestión de Transportes</h3>
-                    <p class="module-description">
-                        Control de camiones, choferes, viajes y tickets de balanza. 
-                        Gestión completa de la logística de transporte.
-                    </p>
-                    <div class="module-stats">
-                        <div class="stat-item">
-                            <span class="stat-number">{{ total_camiones|default:0 }}</span>
-                            <span class="stat-label">Camiones</span>
-                        </div>
-                        <div class="stat-item">
-                            <span class="stat-number">{{ total_choferes|default:0 }}</span>
-                            <span class="stat-label">Choferes</span>
                         </div>
                     </div>
                     <div class="module-action">

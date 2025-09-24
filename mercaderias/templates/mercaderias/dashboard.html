@@ -1,0 +1,269 @@
+{% extends 'mercaderias/base_mercaderias.html' %}
+{% load static %}
+
+{% block title %}Dashboard - Mercaderías{% endblock %}
+
+{% block mercaderias_content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="h3 mb-3">
+            <i class="fas fa-tachometer-alt me-2"></i>
+            Dashboard de Mercaderías
+        </h1>
+    </div>
+</div>
+
+<!-- Tarjetas de estadísticas -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Mercaderías
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_mercaderias }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-boxes fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Stock Total (TN)
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_stock_tn|floatformat:1 }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-weight fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Ubicaciones
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_ubicaciones }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-map-marker-alt fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Almacenajes
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_almacenajes }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-warehouse fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Gráficos -->
+<div class="row mb-4">
+    <div class="col-xl-6 col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Stock por Tipo de Grano</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="stockPorGranoChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-6 col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">Stock por Ubicación</h6>
+            </div>
+            <div class="card-body">
+                <canvas id="stockPorUbicacionChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tablas de resumen -->
+<div class="row">
+    <div class="col-xl-6 col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Resumen por Grano</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Grano</th>
+                                <th>Código</th>
+                                <th class="text-end">Stock (KG)</th>
+                                <th class="text-end">Stock (TN)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in stock_por_grano %}
+                            <tr>
+                                <td>{{ item.mercaderia__grano__nombre }}</td>
+                                <td><span class="badge bg-secondary">{{ item.mercaderia__grano__codigo }}</span></td>
+                                <td class="text-end">{{ item.total_kg|floatformat:0 }}</td>
+                                <td class="text-end">{{ item.total_kg|floatformat:1|add:"0"|floatformat:1|floatformat:1 }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">No hay datos disponibles</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-6 col-lg-6">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">Resumen por Ubicación</h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Ubicación</th>
+                                <th>Tipo</th>
+                                <th class="text-end">Stock (TN)</th>
+                                <th class="text-center">Almacenajes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in stock_por_ubicacion %}
+                            <tr>
+                                <td>
+                                    {% if item.ubicacion__id %}
+                                        <a href="{% url 'almacenamiento:ubicacion_detail' pk=item.ubicacion__id %}" class="text-decoration-none">
+                                            {{ item.ubicacion__nombre }}
+                                        </a>
+                                    {% else %}
+                                        {{ item.ubicacion__nombre }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if item.ubicacion__tipo == 'PLANTA' %}success{% else %}info{% endif %}">
+                                        {{ item.ubicacion__tipo|capfirst }}
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    {% widthratio item.total_kg 1000 1 %}
+                                </td>
+                                <td class="text-center">{{ item.total_almacenajes }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">No hay datos disponibles</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Gráfico de stock por grano
+    fetch('{% url 'mercaderias:api_stock_por_grano' %}')
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('stockPorGranoChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        data: data.data,
+                        backgroundColor: [
+                            '#4e73df',
+                            '#1cc88a',
+                            '#36b9cc',
+                            '#f6c23e',
+                            '#e74a3b',
+                            '#858796',
+                            '#5a5c69'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        });
+
+    // Gráfico de stock por ubicación
+    fetch('{% url 'mercaderias:api_stock_por_ubicacion' %}')
+        .then(response => response.json())
+        .then(data => {
+            const ctx = document.getElementById('stockPorUbicacionChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.labels,
+                    datasets: [{
+                        label: 'Stock (KG)',
+                        data: data.data,
+                        backgroundColor: '#1cc88a'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        });
+});
+</script>
+{% endblock %}

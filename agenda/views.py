@@ -749,7 +749,7 @@ def agregar_comentario_tarea_view(request, tarea_id):
 
 @login_required
 def chat_list_rooms(request):
-    """Listar salas en las que participa el usuario."""
+    """Listar salas activas en las que participa el usuario."""
     rooms = ChatRoom.objects.filter(membresias__usuario=request.user, activo=True).distinct()
     data = []
     for r in rooms:
@@ -757,9 +757,10 @@ def chat_list_rooms(request):
             'id': r.id,
             'nombre': r.nombre or f'Sala {r.id}',
             'es_grupal': r.es_grupal,
-            'miembros': [m.usuario.get_full_name() or m.usuario.username for m in r.membresias.select_related('usuario')]
+            'miembros': [m.usuario.get_full_name() or m.usuario.username for m in r.membresias.select_related('usuario')],
+            'creador_id': r.creado_por_id
         })
-    return JsonResponse({'rooms': data})
+    return JsonResponse({'ok': True, 'rooms': data})
 
 
 @login_required
@@ -768,41 +769,43 @@ def chat_create_private(request):
     """Crear o retornar sala privada entre el usuario y `other_user_id`."""
     other_id = request.POST.get('other_user_id')
     if not other_id:
-        return HttpResponseBadRequest('Falta other_user_id')
+        return JsonResponse({'ok': False, 'error': 'missing_user_id', 'message': 'Falta other_user_id'}, status=400)
     try:
         other = request.user.__class__.objects.get(pk=other_id)
     except Exception:
-        return HttpResponseBadRequest('Usuario destino no encontrado')
+        return JsonResponse({'ok': False, 'error': 'user_not_found', 'message': 'Usuario no encontrado'}, status=404)
 
     # Buscar sala privada existente entre ambos
-    salas = ChatRoom.objects.filter(es_grupal=False, membresias__usuario=request.user).distinct()
+    salas = ChatRoom.objects.filter(es_grupal=False, membresias__usuario=request.user, activo=True).distinct()
     for s in salas:
         if s.membresias.filter(usuario=other).exists():
-            return JsonResponse({'room_id': s.id})
+            return JsonResponse({'ok': True, 'room_id': s.id})
 
     # Crear nueva sala privada
-    sala = ChatRoom.objects.create(es_grupal=False, creado_por=request.user)
+    sala = ChatRoom.objects.create(es_grupal=False, creado_por=request.user, activo=True)
     ChatMembership.objects.create(sala=sala, usuario=request.user)
     ChatMembership.objects.create(sala=sala, usuario=other)
-    return JsonResponse({'room_id': sala.id})
+    return JsonResponse({'ok': True, 'room_id': sala.id})
 
 
 @login_required
 @require_POST
 def chat_add_members(request, room_id):
     """Agregar miembros a una sala existente (user_ids = '1,2,3')."""
-    sala = get_object_or_404(ChatRoom, pk=room_id, activo=True)
+    sala = get_object_or_404(ChatRoom, pk=room_id)
+    if not sala.activo:
+        return JsonResponse({'ok': False, 'error': 'room_inactive', 'message': 'La sala está cerrada'}, status=400)
     # debe ser miembro para poder agregar
     if not sala.membresias.filter(usuario=request.user).exists():
-        return JsonResponse({'error': 'No tienes acceso a esta sala'}, status=403)
+        return JsonResponse({'ok': False, 'error': 'forbidden', 'message': 'No tienes acceso a esta sala'}, status=403)
 
     ids = request.POST.get('user_ids', '').strip()
     if not ids:
-        return HttpResponseBadRequest('Falta user_ids')
+        return JsonResponse({'ok': False, 'error': 'missing_user_ids', 'message': 'Falta user_ids'}, status=400)
     try:
         id_list = [int(x) for x in ids.split(',') if x.strip()]
     except ValueError:
-        return HttpResponseBadRequest('IDs inválidos')
+        return JsonResponse({'ok': False, 'error': 'invalid_ids', 'message': 'IDs inválidos'}, status=400)
 
     User = get_user_model()
     added = []
@@ -817,19 +820,21 @@ def chat_add_members(request, room_id):
         ChatMembership.objects.create(sala=sala, usuario=u)
         added.append({'id': u.id, 'nombre': u.get_full_name() or u.username})
 
-    return JsonResponse({'added': added})
+    return JsonResponse({'ok': True, 'added': added})
 
 
 @login_required
 @require_POST
 def chat_close_room(request, room_id):
     """Cerrar (desactivar) una sala. Solo el creador puede cerrarla."""
-    sala = get_object_or_404(ChatRoom, pk=room_id, activo=True)
+    sala = get_object_or_404(ChatRoom, pk=room_id)
+    if not sala.activo:
+        return JsonResponse({'ok': False, 'error': 'already_closed', 'message': 'La sala ya está cerrada'}, status=400)
     if sala.creado_por != request.user:
-        return JsonResponse({'error': 'Solo el creador puede cerrar la sala'}, status=403)
+        return JsonResponse({'ok': False, 'error': 'forbidden', 'message': 'Solo el creador puede cerrar la sala'}, status=403)
     sala.activo = False
     sala.save()
-    return JsonResponse({'closed': True})
+    return JsonResponse({'ok': True, 'closed': True})
 @login_required
 def chat_search_users(request):
     """Buscar usuarios por nombre/username para crear salas privadas."""
@@ -849,10 +854,13 @@ def chat_search_users(request):
 
 @login_required
 def chat_get_messages(request, room_id):
-    """Obtener últimos mensajes de una sala (limit 50)."""
-    sala = get_object_or_404(ChatRoom, pk=room_id, activo=True)
+    """Obtener mensajes de una sala si el usuario es miembro y la sala está activa."""
+    sala = get_object_or_404(ChatRoom, pk=room_id)
+    if not sala.activo:
+        return JsonResponse({'ok': False, 'error': 'room_inactive', 'message': 'La sala está cerrada'}, status=400)
     if not sala.membresias.filter(usuario=request.user).exists():
-        return JsonResponse({'error': 'No tienes acceso a esta sala'}, status=403)
+        return JsonResponse({'ok': False, 'error': 'forbidden', 'message': 'No tienes acceso a esta sala'}, status=403)
+    
     msgs = sala.mensajes.all().order_by('fecha_creacion')[:200]
     data = []
     for m in msgs:
@@ -863,7 +871,7 @@ def chat_get_messages(request, room_id):
             'mensaje': m.mensaje,
             'fecha': m.fecha_creacion.isoformat()
         })
-    return JsonResponse({'messages': data})
+    return JsonResponse({'ok': True, 'messages': data})
 
 
 @login_required
@@ -871,7 +879,7 @@ def chat_unread_count(request):
     """Devuelve la cantidad total de mensajes sin leer para las salas en las que participa el usuario."""
     # Mensajes en salas donde el usuario es miembro y que no fueron escritos por el usuario
     count = ChatMessage.objects.filter(sala__membresias__usuario=request.user, leido=False).exclude(usuario=request.user).distinct().count()
-    return JsonResponse({'unread_count': count})
+    return JsonResponse({'ok': True, 'unread_count': count})
 
 
 
@@ -881,33 +889,39 @@ def chat_mark_read(request):
     """Marca como leídos los mensajes especificados por ids (message_ids = '1,2,3')."""
     ids = request.POST.get('message_ids', '').strip()
     if not ids:
-        return HttpResponseBadRequest('Falta message_ids')
+        return JsonResponse({'ok': False, 'error': 'missing_ids', 'message': 'Falta message_ids'}, status=400)
     try:
         id_list = [int(x) for x in ids.split(',') if x.strip()]
     except ValueError:
-        return HttpResponseBadRequest('IDs inválidos')
+        return JsonResponse({'ok': False, 'error': 'invalid_ids', 'message': 'IDs inválidos'}, status=400)
 
     msgs = ChatMessage.objects.filter(id__in=id_list)
     # Asegurar que el usuario sea miembro de las salas de esos mensajes
     msgs = msgs.filter(sala__membresias__usuario=request.user).exclude(usuario=request.user)
     updated = msgs.update(leido=True)
-    return JsonResponse({'marked': updated})
+    return JsonResponse({'ok': True, 'marked': updated})
 
 
 @login_required
 @require_POST
 def chat_send_message(request, room_id):
-    sala = get_object_or_404(ChatRoom, pk=room_id, activo=True)
+    """Enviar mensaje a una sala si el usuario es miembro y la sala está activa."""
+    sala = get_object_or_404(ChatRoom, pk=room_id)
+    if not sala.activo:
+        return JsonResponse({'ok': False, 'error': 'room_inactive', 'message': 'La sala está cerrada'}, status=400)
     if not sala.membresias.filter(usuario=request.user).exists():
-        return JsonResponse({'error': 'No tienes acceso a esta sala'}, status=403)
+        return JsonResponse({'ok': False, 'error': 'forbidden', 'message': 'No tienes acceso a esta sala'}, status=403)
     text = request.POST.get('mensaje', '').strip()
     if not text:
-        return HttpResponseBadRequest('Mensaje vacío')
+        return JsonResponse({'ok': False, 'error': 'empty_message', 'message': 'Mensaje vacío'}, status=400)
     msg = ChatMessage.objects.create(sala=sala, usuario=request.user, mensaje=text)
     return JsonResponse({
-        'id': msg.id,
-        'usuario': msg.usuario.get_full_name() or msg.usuario.username,
-        'usuario_id': msg.usuario.id,
-        'mensaje': msg.mensaje,
-        'fecha': msg.fecha_creacion.isoformat()
+        'ok': True,
+        'message': {
+            'id': msg.id,
+            'usuario': msg.usuario.get_full_name() or msg.usuario.username,
+            'usuario_id': msg.usuario.id,
+            'mensaje': msg.mensaje,
+            'fecha': msg.fecha_creacion.isoformat()
+        }
     })

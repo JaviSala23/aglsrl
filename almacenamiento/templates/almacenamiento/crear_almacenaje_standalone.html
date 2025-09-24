@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Almacenaje</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-4">
+        <!-- Header -->
+        <div class="row">
+            <div class="col-12">
+                <h1 class="mb-3">Crear Nuevo Almacenaje</h1>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="/almacenamiento/">Almacenamiento</a>
+                        </li>
+                        <li class="breadcrumb-item">
+                            <a href="/almacenamiento/almacenajes/">Almacenajes</a>
+                        </li>
+                        <li class="breadcrumb-item active">Crear</li>
+                    </ol>
+                </nav>
+            </div>
+        </div>
+
+        <!-- Formulario -->
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-plus-circle me-2"></i>
+                            Nuevo Almacenaje
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" class="needs-validation" novalidate>
+                            {% csrf_token %}
+                            
+                            <!-- Campos básicos -->
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="id_ubicacion" class="form-label">
+                                        <strong>Ubicación *</strong>
+                                    </label>
+                                    {{ form.ubicacion }}
+                                    {% if form.ubicacion.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.ubicacion.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="id_tipo" class="form-label">
+                                        <strong>Tipo de Almacenaje *</strong>
+                                    </label>
+                                    {{ form.tipo }}
+                                    {% if form.tipo.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.tipo.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="id_codigo" class="form-label">
+                                        <strong>Código *</strong>
+                                    </label>
+                                    {{ form.codigo }}
+                                    <small class="form-text text-muted">
+                                        Código único dentro de la ubicación (ej: S-01, GB-A12)
+                                    </small>
+                                    {% if form.codigo.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.codigo.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="id_estado" class="form-label">
+                                        <strong>Estado</strong>
+                                    </label>
+                                    {{ form.estado }}
+                                    {% if form.estado.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.estado.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="id_capacidad_kg" class="form-label">
+                                        <strong>Capacidad (kg)</strong>
+                                    </label>
+                                    {{ form.capacidad_kg }}
+                                    {% if form.capacidad_kg.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {{ form.capacidad_kg.errors.0 }}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-check mt-4">
+                                        {{ form.activo }}
+                                        <label class="form-check-label" for="id_activo">
+                                            <strong>Almacenaje Activo</strong>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Campos para silo bolsa (ocultos por defecto) -->
+                            <div id="silo-bolsa-section" style="display: none;">
+                                <div class="alert alert-warning">
+                                    <h6 class="mb-3">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        Campos específicos para Silo Bolsa
+                                    </h6>
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <label for="id_longitud_metros" class="form-label">
+                                                <strong>Longitud (metros) *</strong>
+                                            </label>
+                                            {{ form.longitud_metros }}
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="id_sentido" class="form-label">
+                                                <strong>Sentido de Orientación *</strong>
+                                            </label>
+                                            {{ form.sentido }}
+                                            <small class="form-text text-muted">
+                                                Ej: Norte-Sur, Este-Oeste
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Observaciones -->
+                            <div class="mb-3">
+                                <label for="id_observaciones" class="form-label">
+                                    <strong>Observaciones</strong>
+                                </label>
+                                {{ form.observaciones }}
+                            </div>
+
+                            <!-- Errores generales -->
+                            {% if form.non_field_errors %}
+                                <div class="alert alert-danger">
+                                    <h6>Errores en el formulario:</h6>
+                                    <ul class="mb-0">
+                                        {% for error in form.non_field_errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            {% endif %}
+
+                            <!-- Botones -->
+                            <div class="d-flex justify-content-between pt-3 border-top">
+                                <a href="/almacenamiento/almacenajes/" class="btn btn-outline-secondary">
+                                    <i class="fas fa-arrow-left me-2"></i>Volver a la Lista
+                                </a>
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="fas fa-save me-2"></i>Crear Almacenaje
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Información de ayuda -->
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>
+                            Información de Ayuda
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <h6>Tipos de Almacenaje:</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>Silo:</strong> Estructura vertical para granos</li>
+                            <li><strong>Silo Bolsa:</strong> Almacenaje en bolsas plásticas</li>
+                            <li><strong>Galpón:</strong> Estructura techada horizontal</li>
+                        </ul>
+                        
+                        <h6 class="mt-3">Estados:</h6>
+                        <ul class="list-unstyled">
+                            <li><span class="badge bg-success me-2">Disponible</span>Listo para usar</li>
+                            <li><span class="badge bg-warning me-2">Ocupado</span>Con mercadería</li>
+                            <li><span class="badge bg-info me-2">Fumigación</span>En proceso</li>
+                            <li><span class="badge bg-secondary me-2">Mantenimiento</span>En reparación</li>
+                            <li><span class="badge bg-danger me-2">Bloqueado</span>No disponible</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/js/all.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const tipoSelect = document.getElementById('id_tipo');
+            const siloBolsaSection = document.getElementById('silo-bolsa-section');
+            
+            function toggleSiloBolsaFields() {
+                if (tipoSelect && siloBolsaSection) {
+                    if (tipoSelect.value === 'SILO_BOLSA') {
+                        siloBolsaSection.style.display = 'block';
+                        // Hacer campos requeridos
+                        const longitud = document.getElementById('id_longitud_metros');
+                        const sentido = document.getElementById('id_sentido');
+                        if (longitud) longitud.required = true;
+                        if (sentido) sentido.required = true;
+                    } else {
+                        siloBolsaSection.style.display = 'none';
+                        // Quitar requerimiento
+                        const longitud = document.getElementById('id_longitud_metros');
+                        const sentido = document.getElementById('id_sentido');
+                        if (longitud) longitud.required = false;
+                        if (sentido) sentido.required = false;
+                    }
+                }
+            }
+            
+            // Ejecutar al cargar y al cambiar
+            if (tipoSelect) {
+                toggleSiloBolsaFields();
+                tipoSelect.addEventListener('change', toggleSiloBolsaFields);
+            }
+            
+            // Agregar clases de Bootstrap a los campos del formulario
+            const formFields = document.querySelectorAll('select, input[type="text"], input[type="number"], textarea');
+            formFields.forEach(field => {
+                if (field.type === 'checkbox') {
+                    field.classList.add('form-check-input');
+                } else {
+                    field.classList.add('form-control');
+                }
+            });
+            
+            // Clase especial para selects
+            const selectFields = document.querySelectorAll('select');
+            selectFields.forEach(select => {
+                select.classList.remove('form-control');
+                select.classList.add('form-select');
+            });
+        });
+    </script>
+</body>
+</html>

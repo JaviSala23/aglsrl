@@ -1,0 +1,313 @@
+{% extends 'mercaderias/base_mercaderias.html' %}
+{% load static %}
+
+{% block title %}{{ grano.nombre }} - Detalle Grano - AGL SRL{% endblock %}
+
+{% block mercaderias_breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'mercaderias:dashboard' %}">Mercaderías</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'mercaderias:granos:lista' %}">Granos</a></li>
+        <li class="breadcrumb-item active" aria-current="page">{{ grano.nombre }}</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detail-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border: none;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        border-radius: 15px;
+    }
+    
+    .detail-header {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+        border-radius: 15px 15px 0 0;
+        padding: 2rem;
+        text-align: center;
+    }
+    
+    .grain-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        opacity: 0.9;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+        margin-top: 2rem;
+    }
+    
+    .stat-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border: none;
+        border-radius: 10px;
+        padding: 1.5rem;
+        text-align: center;
+        transition: transform 0.2s ease-in-out;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+        color: #007bff;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .info-section {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .grain-code {
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+        color: #495057;
+        font-size: 1.2rem;
+        background: #e9ecef;
+        padding: 0.5rem 1rem;
+        border-radius: 5px;
+        display: inline-block;
+    }
+    
+    .status-badge {
+        font-size: 1rem;
+        padding: 0.5rem 1rem;
+        border-radius: 25px;
+    }
+    
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 2rem;
+    }
+    
+    .btn-action {
+        padding: 12px 24px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-radius: 25px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-action:hover {
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
+
+{% block mercaderias_content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card detail-card">
+                <!-- Header del grano -->
+                <div class="detail-header">
+                    <i class="fas fa-seedling grain-icon"></i>
+                    <h1 class="mb-2">{{ grano.nombre }}</h1>
+                    <div class="grain-code">{{ grano.codigo }}</div>
+                    <div class="mt-3">
+                        {% if grano.activo %}
+                            <span class="badge bg-success status-badge">Activo</span>
+                        {% else %}
+                            <span class="badge bg-secondary status-badge">Inactivo</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div class="card-body p-4">
+                    <!-- Información básica -->
+                    <div class="info-section">
+                        <h5 class="mb-3">
+                            <i class="fas fa-info-circle text-primary me-2"></i>
+                            Información General
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>Nombre:</strong> {{ grano.nombre }}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Código:</strong> <span class="grain-code">{{ grano.codigo }}</span>
+                            </div>
+                        </div>
+                        {% if grano.descripcion %}
+                            <div class="mt-3">
+                                <strong>Descripción:</strong>
+                                <p class="mt-2 mb-0">{{ grano.descripcion }}</p>
+                            </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Estadísticas -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number">{{ total_mercaderias }}</div>
+                            <div class="stat-label">Total Mercaderías</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">{{ mercaderias_activas }}</div>
+                            <div class="stat-label">Mercaderías Activas</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">{{ total_mercaderias|add:"-"|add:mercaderias_activas }}</div>
+                            <div class="stat-label">Mercaderías Procesadas</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">
+                                {% if total_mercaderias > 0 %}
+                                    {% widthratio mercaderias_activas total_mercaderias 100 %}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </div>
+                            <div class="stat-label">Porcentaje Activo</div>
+                        </div>
+                    </div>
+
+                    <!-- Información adicional -->
+                    {% if total_mercaderias == 0 %}
+                        <div class="info-section text-center">
+                            <i class="fas fa-inbox text-muted mb-3" style="font-size: 3rem;"></i>
+                            <h5 class="text-muted">Sin Mercaderías Registradas</h5>
+                            <p class="text-muted">
+                                Este grano aún no tiene mercaderías asociadas en el sistema.
+                            </p>
+                        </div>
+                    {% endif %}
+
+                    <!-- Botones de acción -->
+                    <div class="action-buttons">
+                        <a href="{% url 'mercaderias:granos:editar' grano.id %}" 
+                           class="btn btn-primary btn-action">
+                            <i class="fas fa-edit me-2"></i>
+                            Editar Grano
+                        </a>
+                        
+                        <button type="button" 
+                                class="btn btn-{% if grano.activo %}warning{% else %}success{% endif %} btn-action"
+                                onclick="toggleGranoActivo()">
+                            <i class="fas fa-{% if grano.activo %}pause{% else %}play{% endif %} me-2"></i>
+                            {% if grano.activo %}Desactivar{% else %}Activar{% endif %}
+                        </button>
+                        
+                        {% if total_mercaderias == 0 %}
+                            <button type="button" 
+                                    class="btn btn-danger btn-action"
+                                    onclick="eliminarGrano()">
+                                <i class="fas fa-trash me-2"></i>
+                                Eliminar Grano
+                            </button>
+                        {% endif %}
+                        
+                        <a href="{% url 'mercaderias:granos:lista' %}" 
+                           class="btn btn-outline-secondary btn-action">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Volver a Lista
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación para eliminar -->
+<div class="modal fade" id="eliminarGranoModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas eliminar el grano <strong>{{ grano.nombre }}</strong>?</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    Esta acción no se puede deshacer.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmarEliminar">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleGranoActivo() {
+    const estaActivo = {% if grano.activo %}true{% else %}false{% endif %};
+    const textoAccion = estaActivo ? 'desactivar' : 'activar';
+    
+    if (confirm(`¿Estás seguro de que deseas ${textoAccion} el grano "{{ grano.nombre }}"?`)) {
+        fetch(`/mercaderias/granos/{{ grano.id }}/toggle/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error: ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al procesar la solicitud');
+        });
+    }
+}
+
+function eliminarGrano() {
+    new bootstrap.Modal(document.getElementById('eliminarGranoModal')).show();
+}
+
+document.getElementById('confirmarEliminar').addEventListener('click', function() {
+    // Crear formulario para enviar POST
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = `/mercaderias/granos/{{ grano.id }}/eliminar/`;
+    
+    // Agregar token CSRF
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (csrfToken) {
+        const csrfInput = document.createElement('input');
+        csrfInput.type = 'hidden';
+        csrfInput.name = 'csrfmiddlewaretoken';
+        csrfInput.value = csrfToken.value;
+        form.appendChild(csrfInput);
+    }
+    
+    document.body.appendChild(form);
+    form.submit();
+});
+</script>
+{% endblock %}

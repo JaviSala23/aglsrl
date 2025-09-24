@@ -1,0 +1,496 @@
+{% extends 'mercaderias/base_mercaderias.html' %}
+{% load static %}
+{% load mercaderias_extras %}
+
+{% block mercaderias_title %}
+    {% if clasificacion %}Editar{% else %}Crear{% endif %} Clasificación - Clasificación de Calidades
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .detalle-form {
+        border: 1px solid #dee2e6;
+        border-radius: 0.375rem;
+        margin-bottom: 1rem;
+        background-color: #f8f9fa;
+    }
+    
+    .detalle-form:hover {
+        border-color: #ffc107;
+        box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+    }
+    
+    .detalle-form.eliminar {
+        background-color: #f8d7da;
+        border-color: #dc3545;
+        opacity: 0.6;
+    }
+    
+    .porcentaje-input {
+        max-width: 80px;
+        text-align: center;
+        font-weight: bold;
+    }
+    
+    .porcentaje-warning {
+        border-color: #dc3545 !important;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25) !important;
+    }
+    
+    .porcentaje-total {
+        font-size: 1.2rem;
+        font-weight: bold;
+        padding: 0.5rem;
+        border-radius: 0.375rem;
+        min-width: 80px;
+        text-align: center;
+    }
+    
+    .porcentaje-correcto {
+        background-color: #d1edff;
+        color: #0c63e4;
+        border: 2px solid #0c63e4;
+    }
+    
+    .porcentaje-incorrecto {
+        background-color: #f8d7da;
+        color: #dc3545;
+        border: 2px solid #dc3545;
+    }
+    
+    .stock-info {
+        background: linear-gradient(135deg, #ffc107 0%, #ff8f00 100%);
+        color: white;
+        border-radius: 0.375rem;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-actions {
+        position: sticky;
+        bottom: 0;
+        background: white;
+        padding: 1rem 0;
+        border-top: 1px solid #dee2e6;
+        margin-top: 2rem;
+        z-index: 100;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Información del stock -->
+<div class="stock-info">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h4 class="mb-1">
+                <i class="fas fa-seedling me-2"></i>{{ stock.mercaderia.grano.nombre }}
+            </h4>
+            <p class="mb-1">
+                <strong>Ubicación:</strong> {{ stock.ubicacion.nombre }} - {{ stock.ubicacion.get_tipo_display }}
+                {% if stock.almacenaje %}
+                    | <strong>Almacenaje:</strong> {{ stock.almacenaje.codigo }} ({{ stock.almacenaje.get_tipo_display }})
+                {% endif %}
+            </p>
+            <p class="mb-0">
+                <strong>Propietario:</strong> 
+                {% if stock.mercaderia.propietario_nombre %}
+                    {{ stock.mercaderia.propietario_nombre }}
+                {% else %}
+                    Sin propietario especificado
+                {% endif %}
+                | <strong>Tipo:</strong> {{ stock.mercaderia.get_tipo_display }}
+            </p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <div class="display-6 fw-bold">{{ stock.cantidad_kg|floatformat:0 }} kg</div>
+            <div class="h6">{{ stock.cantidad_kg|kg_to_ton|floatformat:2 }} ton</div>
+        </div>
+    </div>
+</div>
+
+<form method="post" id="clasificacion-form" novalidate>
+    {% csrf_token %}
+    
+    <!-- Información general de la clasificación -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="m-0 font-weight-bold text-warning">
+                <i class="fas fa-info-circle me-2"></i>Información de la Clasificación
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="{{ form.fecha.id_for_label }}" class="form-label">{{ form.fecha.label }}</label>
+                    {{ form.fecha }}
+                    {% if form.fecha.errors %}
+                        <div class="invalid-feedback d-block">{{ form.fecha.errors.0 }}</div>
+                    {% endif %}
+                    {% if form.fecha.help_text %}
+                        <div class="form-text">{{ form.fecha.help_text }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-md-6">
+                    <label for="{{ form.responsable.id_for_label }}" class="form-label">{{ form.responsable.label }}</label>
+                    {{ form.responsable }}
+                    {% if form.responsable.errors %}
+                        <div class="invalid-feedback d-block">{{ form.responsable.errors.0 }}</div>
+                    {% endif %}
+                    {% if form.responsable.help_text %}
+                        <div class="form-text">{{ form.responsable.help_text }}</div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-12">
+                    <label for="{{ form.observaciones.id_for_label }}" class="form-label">{{ form.observaciones.label }}</label>
+                    {{ form.observaciones }}
+                    {% if form.observaciones.errors %}
+                        <div class="invalid-feedback d-block">{{ form.observaciones.errors.0 }}</div>
+                    {% endif %}
+                    {% if form.observaciones.help_text %}
+                        <div class="form-text">{{ form.observaciones.help_text }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detalles de calidad -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-warning">
+                <i class="fas fa-chart-pie me-2"></i>Clasificación por Calidades
+            </h6>
+            <div class="d-flex align-items-center">
+                <span class="me-3">Total: </span>
+                <div id="porcentaje-total" class="porcentaje-total porcentaje-incorrecto">0%</div>
+            </div>
+        </div>
+        <div class="card-body">
+            {{ formset.management_form }}
+            
+            <!-- Mensajes de error del formset -->
+            {% if formset.non_form_errors %}
+                <div class="alert alert-danger">
+                    {{ formset.non_form_errors }}
+                </div>
+            {% endif %}
+            
+            <div id="detalles-container">
+                {% for form in formset %}
+                    <div class="detalle-form p-3 {% if form.DELETE.value %}eliminar{% endif %}" data-form-index="{{ forloop.counter0 }}">
+                        {{ form.id }}
+                        
+                        <div class="row align-items-center">
+                            <div class="col-md-4">
+                                <label for="{{ form.calidad.id_for_label }}" class="form-label">Calidad</label>
+                                {{ form.calidad }}
+                                {% if form.calidad.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.calidad.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <label for="{{ form.porcentaje.id_for_label }}" class="form-label">Porcentaje (%)</label>
+                                {{ form.porcentaje }}
+                                {% if form.porcentaje.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.porcentaje.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-3">
+                                <label class="form-label">Cantidad (kg)</label>
+                                <input type="text" class="form-control cantidad-calculada" readonly>
+                            </div>
+                            
+                            <div class="col-md-2 text-end">
+                                {% if clasificacion %}
+                                    <div class="form-check mb-2">
+                                        {{ form.DELETE }}
+                                        <label for="{{ form.DELETE.id_for_label }}" class="form-check-label text-danger">
+                                            Eliminar
+                                        </label>
+                                    </div>
+                                {% endif %}
+                                
+                                <button type="button" class="btn btn-outline-danger btn-sm eliminar-detalle" 
+                                        {% if clasificacion %}style="display: none;"{% endif %}>
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        {% if form.observaciones %}
+                        <div class="row mt-2">
+                            <div class="col-12">
+                                <label for="{{ form.observaciones.id_for_label }}" class="form-label">Observaciones</label>
+                                {{ form.observaciones }}
+                                {% if form.observaciones.errors %}
+                                    <div class="invalid-feedback d-block">{{ form.observaciones.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+            
+            <div class="text-center mt-3">
+                <button type="button" id="agregar-detalle" class="btn btn-outline-warning">
+                    <i class="fas fa-plus me-2"></i>Agregar Calidad
+                </button>
+            </div>
+            
+            <!-- Advertencias -->
+            <div id="advertencias" class="mt-3" style="display: none;">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <span id="mensaje-advertencia"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen de diferencias (si existe clasificación previa) -->
+    {% if clasificacion %}
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="m-0 font-weight-bold text-info">
+                <i class="fas fa-balance-scale me-2"></i>Diferencias con Stock Original
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                Las diferencias detectadas generarán automáticamente tickets de ajuste de stock.
+            </div>
+            <div id="resumen-diferencias" class="table-responsive">
+                <!-- El contenido se generará dinámicamente con JavaScript -->
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</form>
+
+<!-- Acciones del formulario -->
+<div class="form-actions">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center">
+                    <a href="{% url 'mercaderias:clasificacion:seleccionar_stock' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Volver al Stock
+                    </a>
+                    
+                    <div>
+                        <button type="submit" form="clasificacion-form" class="btn btn-warning btn-lg" id="btn-guardar">
+                            <i class="fas fa-save me-2"></i>
+                            {% if clasificacion %}Actualizar{% else %}Crear{% endif %} Clasificación
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Template para nuevos detalles -->
+<div id="detalle-template" style="display: none;">
+    <div class="detalle-form p-3" data-form-index="__prefix__">
+        <div class="row align-items-center">
+            <div class="col-md-4">
+                <label class="form-label">Calidad</label>
+                <select name="form-__prefix__-calidad" class="form-select" required>
+                    <option value="">Seleccione una calidad...</option>
+                    {% for calidad in calidades %}
+                        <option value="{{ calidad.id }}">{{ calidad.nombre }} ({{ calidad.codigo }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="col-md-3">
+                <label class="form-label">Porcentaje (%)</label>
+                <input type="number" name="form-__prefix__-porcentaje" 
+                       class="form-control porcentaje-input" 
+                       min="0" max="100" step="0.01" required>
+            </div>
+            
+            <div class="col-md-3">
+                <label class="form-label">Cantidad (kg)</label>
+                <input type="text" class="form-control cantidad-calculada" readonly>
+            </div>
+            
+            <div class="col-md-2 text-end">
+                <button type="button" class="btn btn-outline-danger btn-sm eliminar-detalle">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="row mt-2">
+            <div class="col-12">
+                <label class="form-label">Observaciones</label>
+                <textarea name="form-__prefix__-observaciones" 
+                          class="form-control" rows="2" 
+                          placeholder="Observaciones específicas para esta calidad..."></textarea>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+$(document).ready(function() {
+    const stockCantidad = {{ stock.cantidad_kg }};
+    let formIndex = {{ formset.total_form_count }};
+    
+    // Funciones de cálculo
+    function calcularTotales() {
+        let totalPorcentaje = 0;
+        let totalCantidad = 0;
+        
+        $('.detalle-form:not(.eliminar)').each(function() {
+            const porcentaje = parseFloat($(this).find('input[name$="-porcentaje"]').val()) || 0;
+            const cantidad = (stockCantidad * porcentaje) / 100;
+            
+            totalPorcentaje += porcentaje;
+            totalCantidad += cantidad;
+            
+            // Actualizar cantidad calculada
+            $(this).find('.cantidad-calculada').val(cantidad.toFixed(2));
+        });
+        
+        // Actualizar total visual
+        const $totalDiv = $('#porcentaje-total');
+        $totalDiv.text(totalPorcentaje.toFixed(2) + '%');
+        
+        if (Math.abs(totalPorcentaje - 100) < 0.01) {
+            $totalDiv.removeClass('porcentaje-incorrecto').addClass('porcentaje-correcto');
+            $('#advertencias').hide();
+            $('#btn-guardar').prop('disabled', false);
+        } else {
+            $totalDiv.removeClass('porcentaje-correcto').addClass('porcentaje-incorrecto');
+            
+            let mensaje = '';
+            if (totalPorcentaje > 100) {
+                mensaje = `El total de porcentajes (${totalPorcentaje.toFixed(2)}%) excede el 100%. Debe ajustar los valores.`;
+            } else {
+                mensaje = `El total de porcentajes (${totalPorcentaje.toFixed(2)}%) es menor al 100%. Faltan ${(100 - totalPorcentaje).toFixed(2)}% por clasificar.`;
+            }
+            
+            $('#mensaje-advertencia').text(mensaje);
+            $('#advertencias').show();
+            $('#btn-guardar').prop('disabled', totalPorcentaje > 100);
+        }
+        
+        // Resaltar inputs con problemas
+        $('.detalle-form:not(.eliminar)').each(function() {
+            const porcentaje = parseFloat($(this).find('input[name$="-porcentaje"]').val()) || 0;
+            const $input = $(this).find('input[name$="-porcentaje"]');
+            
+            if (porcentaje > 100 || porcentaje < 0) {
+                $input.addClass('porcentaje-warning');
+            } else {
+                $input.removeClass('porcentaje-warning');
+            }
+        });
+    }
+    
+    // Agregar nuevo detalle
+    $('#agregar-detalle').click(function() {
+        const template = $('#detalle-template').html();
+        const newForm = template.replace(/__prefix__/g, formIndex);
+        
+        $('#detalles-container').append(newForm);
+        
+        // Actualizar management form
+        const totalForms = $('#id_form-TOTAL_FORMS');
+        totalForms.val(parseInt(totalForms.val()) + 1);
+        
+        formIndex++;
+        
+        // Añadir eventos al nuevo formulario
+        bindDetalleEvents($('#detalles-container .detalle-form').last());
+        
+        calcularTotales();
+    });
+    
+    // Eliminar detalle
+    function bindDetalleEvents($detalle) {
+        $detalle.find('.eliminar-detalle').click(function() {
+            const $form = $(this).closest('.detalle-form');
+            
+            {% if clasificacion %}
+                // Si estamos editando, marcar para eliminar
+                $form.addClass('eliminar');
+                $form.find('input[name$="-DELETE"]').prop('checked', true);
+                $(this).hide();
+                $form.find('.form-check').show();
+            {% else %}
+                // Si estamos creando, eliminar directamente
+                $form.remove();
+                
+                // Actualizar management form
+                const totalForms = $('#id_form-TOTAL_FORMS');
+                totalForms.val(parseInt(totalForms.val()) - 1);
+            {% endif %}
+            
+            calcularTotales();
+        });
+        
+        // Evento para checkbox de eliminar (solo en edición)
+        $detalle.find('input[name$="-DELETE"]').change(function() {
+            const $form = $(this).closest('.detalle-form');
+            if ($(this).is(':checked')) {
+                $form.addClass('eliminar');
+                $form.find('.eliminar-detalle').hide();
+            } else {
+                $form.removeClass('eliminar');
+                $form.find('.eliminar-detalle').show();
+            }
+            calcularTotales();
+        });
+        
+        // Evento para cambios en porcentaje
+        $detalle.find('input[name$="-porcentaje"]').on('input change', calcularTotales);
+    }
+    
+    // Aplicar eventos a formularios existentes
+    $('.detalle-form').each(function() {
+        bindDetalleEvents($(this));
+    });
+    
+    // Cálculo inicial
+    calcularTotales();
+    
+    // Validación del formulario
+    $('#clasificacion-form').submit(function(e) {
+        let valid = true;
+        let totalPorcentaje = 0;
+        
+        $('.detalle-form:not(.eliminar)').each(function() {
+            const porcentaje = parseFloat($(this).find('input[name$="-porcentaje"]').val()) || 0;
+            totalPorcentaje += porcentaje;
+        });
+        
+        if (Math.abs(totalPorcentaje - 100) > 0.01) {
+            e.preventDefault();
+            alert('El total de porcentajes debe ser exactamente 100% antes de guardar.');
+            valid = false;
+        }
+        
+        // Validar que haya al menos un detalle
+        if ($('.detalle-form:not(.eliminar)').length === 0) {
+            e.preventDefault();
+            alert('Debe agregar al menos una clasificación de calidad.');
+            valid = false;
+        }
+        
+        return valid;
+    });
+});
+</script>
+{% endblock %}

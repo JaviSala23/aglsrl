@@ -1,0 +1,199 @@
+{% extends 'mercaderias/base_mercaderias.html' %}
+{% load static %}
+{% load mercaderias_extras %}
+
+{% block mercaderias_title %}Seleccionar Stock{% endblock %}
+
+{% block mercaderias_breadcrumb %}
+<li class="breadcrumb-item">
+    <a href="{% url 'mercaderias:clasificacion:panel' %}">Clasificación</a>
+</li>
+<li class="breadcrumb-item active" aria-current="page">Seleccionar Stock</li>
+{% endblock %}
+
+{% block mercaderias_header_icon %}<i class="fas fa-plus text-success"></i>{% endblock %}
+{% block mercaderias_header_title %}Nueva Clasificación{% endblock %}
+{% block mercaderias_subtitle %}Selecciona el stock que deseas clasificar{% endblock %}
+
+{% block mercaderias_content %}
+<!-- Filtros de búsqueda -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-warning">
+                    <i class="fas fa-filter me-2"></i>Filtrar Stock Disponible
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="ubicacion" class="form-label">Ubicación:</label>
+                        <select name="ubicacion" id="ubicacion" class="form-select">
+                            <option value="">Todas las ubicaciones</option>
+                            {% for ubicacion in ubicaciones %}
+                                <option value="{{ ubicacion.id }}" 
+                                        {% if request.GET.ubicacion == ubicacion.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ ubicacion.nombre }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="grano" class="form-label">Grano:</label>
+                        <input type="text" name="grano" id="grano" class="form-control" 
+                               value="{{ request.GET.grano }}" placeholder="Buscar por grano...">
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button type="submit" class="btn btn-warning me-2">
+                            <i class="fas fa-search me-1"></i>Filtrar
+                        </button>
+                        <a href="{% url 'mercaderias:clasificacion:seleccionar_stock' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-1"></i>Limpiar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de stock disponible -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-warning">Stock Disponible para Clasificar</h6>
+                <span class="badge bg-info">{{ page_obj.paginator.count }} stock{{ page_obj.paginator.count|pluralize:"s" }} disponible{{ page_obj.paginator.count|pluralize:"s" }}</span>
+            </div>
+            <div class="card-body">
+                {% if page_obj %}
+                <div class="table-responsive">
+                    <table class="table table-hover table-clasificaciones">
+                        <thead>
+                            <tr>
+                                <th>Grano</th>
+                                <th>Ubicación</th>
+                                <th>Almacenaje</th>
+                                <th>Cantidad</th>
+                                <th>Tipo</th>
+                                <th>Propietario</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stock in page_obj %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="me-3">
+                                            <i class="fas fa-seedling text-success fa-lg"></i>
+                                        </div>
+                                        <div>
+                                            <strong>{{ stock.mercaderia.grano.nombre }}</strong>
+                                            {% if stock.mercaderia.grano.codigo %}
+                                                <br><small class="text-muted">{{ stock.mercaderia.grano.codigo }}</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <strong>{{ stock.ubicacion.nombre }}</strong>
+                                    <br><small class="text-muted">{{ stock.ubicacion.get_tipo_display }}</small>
+                                </td>
+                                <td>
+                                    {% if stock.almacenaje %}
+                                        <span class="badge bg-secondary">{{ stock.almacenaje.codigo }}</span>
+                                        <br><small class="text-muted">{{ stock.almacenaje.get_tipo_display }}</small>
+                                    {% else %}
+                                        <span class="text-muted">Sin almacenaje específico</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="text-center">
+                                        <strong class="text-success">{{ stock.cantidad_kg|floatformat:0 }} kg</strong>
+                                        <br><small class="text-muted">{{ stock.cantidad_kg|kg_to_ton|floatformat:2 }} ton</small>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if stock.mercaderia.tipo == 'PROPIO' %}success{% else %}info{% endif %}">
+                                        {{ stock.mercaderia.get_tipo_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if stock.mercaderia.propietario_nombre %}
+                                        <strong>{{ stock.mercaderia.propietario_nombre }}</strong>
+                                        {% if stock.mercaderia.propietario_contacto %}
+                                            <br><small class="text-muted">{{ stock.mercaderia.propietario_contacto }}</small>
+                                        {% endif %}
+                                    {% else %}
+                                        <span class="text-muted">Sin propietario</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{% url 'mercaderias:clasificacion:crear_clasificacion' stock_id=stock.id %}" 
+                                       class="btn btn-warning btn-sm" 
+                                       title="Clasificar este stock">
+                                        <i class="fas fa-search-plus me-1"></i>Clasificar
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginación -->
+                {% if page_obj.has_other_pages %}
+                <nav aria-label="Navegación de stock">
+                    <ul class="pagination justify-content-center">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page=1{% if request.GET.ubicacion %}&ubicacion={{ request.GET.ubicacion }}{% endif %}{% if request.GET.grano %}&grano={{ request.GET.grano }}{% endif %}">Primera</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.ubicacion %}&ubicacion={{ request.GET.ubicacion }}{% endif %}{% if request.GET.grano %}&grano={{ request.GET.grano }}{% endif %}">Anterior</a>
+                            </li>
+                        {% endif %}
+                        
+                        <li class="page-item active">
+                            <span class="page-link">
+                                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                            </span>
+                        </li>
+                        
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.ubicacion %}&ubicacion={{ request.GET.ubicacion }}{% endif %}{% if request.GET.grano %}&grano={{ request.GET.grano }}{% endif %}">Siguiente</a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.ubicacion %}&ubicacion={{ request.GET.ubicacion }}{% endif %}{% if request.GET.grano %}&grano={{ request.GET.grano }}{% endif %}">Última</a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+                {% endif %}
+
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">No hay stock disponible</h5>
+                    <p class="text-muted">
+                        {% if filtros_activos %}
+                            No se encontró stock con los filtros aplicados.
+                        {% else %}
+                            No hay stock disponible para clasificar.
+                        {% endif %}
+                    </p>
+                    {% if filtros_activos %}
+                        <a href="{% url 'mercaderias:clasificacion:seleccionar_stock' %}" class="btn btn-outline-warning">
+                            <i class="fas fa-times me-2"></i>Limpiar Filtros
+                        </a>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

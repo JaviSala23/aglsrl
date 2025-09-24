@@ -1,0 +1,190 @@
+{% extends 'mercaderias/base_mercaderias.html' %}
+{% load static %}
+
+{% block title %}Panel - Clasificación de Calidades{% endblock %}
+
+{% block mercaderias_content %}
+<!-- Estadísticas principales -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Total Clasificaciones
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_clasificaciones }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Pendientes
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ clasificaciones_pendientes }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-clock fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Verificadas
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ clasificaciones_verificadas }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-danger shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                            Tickets Pendientes
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ tickets_pendientes }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Acciones rápidas -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-warning">Acciones Rápidas</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                                                <a href="{% url 'mercaderias:clasificacion:seleccionar_stock' %}" class="btn btn-warning btn-lg btn-block">
+                            <i class="fas fa-plus me-2"></i>Crear Nueva Clasificación
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="{% url 'mercaderias:clasificacion:lista_clasificaciones' %}?estado=BORRADOR" class="btn btn-info btn-lg btn-block">
+                            <i class="fas fa-edit me-2"></i>Clasificaciones en Borrador
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <a href="{% url 'mercaderias:clasificacion:lista_clasificaciones' %}?estado=REGISTRADO" class="btn btn-success btn-lg btn-block">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Clasificaciones recientes -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-warning">Clasificaciones Recientes</h6>
+            </div>
+            <div class="card-body">
+                {% if clasificaciones_recientes %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Stock</th>
+                                <th>Ubicación</th>
+                                <th>Tipo</th>
+                                <th>Estado</th>
+                                <th>Registrado por</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for clasificacion in clasificaciones_recientes %}
+                            <tr>
+                                <td>
+                                    <strong>{{ clasificacion.codigo }}</strong>
+                                </td>
+                                <td>
+                                    {{ clasificacion.stock_origen.mercaderia.grano.nombre }}
+                                    <br>
+                                    <small class="text-muted">{{ clasificacion.cantidad_stock_original|floatformat:0 }} kg</small>
+                                </td>
+                                <td>
+                                    {{ clasificacion.stock_origen.ubicacion.nombre }}
+                                    {% if clasificacion.stock_origen.almacenaje %}
+                                        <br><small class="text-muted">{{ clasificacion.stock_origen.almacenaje.codigo }}</small>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ clasificacion.get_tipo_clasificacion_display }}</span>
+                                </td>
+                                <td>
+                                    {% if clasificacion.estado == 'BORRADOR' %}
+                                        <span class="badge bg-warning">{{ clasificacion.get_estado_display }}</span>
+                                    {% elif clasificacion.estado == 'REGISTRADO' %}
+                                        <span class="badge bg-info">{{ clasificacion.get_estado_display }}</span>
+                                    {% elif clasificacion.estado == 'VERIFICADO' %}
+                                        <span class="badge bg-success">{{ clasificacion.get_estado_display }}</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">{{ clasificacion.get_estado_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ clasificacion.registrado_por }}</td>
+                                <td>{{ clasificacion.fecha_registro|date:"d/m/Y" }}</td>
+                                <td>
+                                    <a href="{% url 'mercaderias:clasificacion:detalle_clasificacion' id=clasificacion.id %}" 
+                                       class="btn btn-sm btn-outline-primary" title="Ver detalle">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No hay clasificaciones recientes</p>
+                    <a href="{% url 'mercaderias:clasificacion:seleccionar_stock' %}" class="btn btn-warning">
+                        <i class="fas fa-plus me-2"></i>Crear Primera Clasificación
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

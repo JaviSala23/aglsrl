@@ -40,12 +40,16 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     # Third party apps
     'rest_framework',
+    'widget_tweaks',
     # 'django_filters',  # Comentado temporalmente
     # Local apps
     'main',
     'cuentas',
     'agenda',
     'transportes',
+    'mercaderias',
+    'almacenamiento',
+    'procesamiento',
     # 'usuarios',  # Comentado temporalmente hasta arreglar modelos
 ]
 

@@ -1,0 +1,321 @@
+{% extends 'mercaderias/base_mercaderias.html' %}
+{% load static %}
+{% load mercaderias_extras %}
+
+{% block title %}{{ grano.nombre }} - Granos{% endblock %}
+
+{% block mercaderias_content %}
+<!-- Encabezado -->
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="{% url 'mercaderias:dashboard' %}">Dashboard</a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="{% url 'mercaderias:granos_list' %}">Granos</a>
+                </li>
+                <li class="breadcrumb-item active">{{ grano.nombre }}</li>
+            </ol>
+        </nav>
+        
+        <div class="d-flex justify-content-between align-items-center">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-seedling me-2 text-success"></i>
+                {{ grano.nombre }}
+            </h1>
+            <div class="btn-group">
+                <a href="{% url 'mercaderias:grano_edit' pk=grano.pk %}" class="btn btn-success">
+                    <i class="fas fa-edit me-2"></i>
+                    Editar
+                </a>
+                <a href="{% url 'mercaderias:grano_delete' pk=grano.pk %}" class="btn btn-danger">
+                    <i class="fas fa-trash-alt me-2"></i>
+                    Eliminar
+                </a>
+                <a href="{% url 'mercaderias:granos_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    Volver
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Información del grano -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Información del Grano
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Nombre:</label>
+                            <div class="fw-bold">{{ grano.nombre }}</div>
+                        </div>
+                        
+                        {% if grano.codigo %}
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Código:</label>
+                            <div><code>{{ grano.codigo }}</code></div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Estado:</label>
+                            <div>
+                                {% if grano.activo %}
+                                    <span class="badge bg-success">Activo</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inactivo</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Estado:</label>
+                            <div>
+                                <span class="badge bg-{{ grano.activo|yesno:'success,secondary' }}">
+                                    {{ grano.activo|yesno:'Activo,Inactivo' }}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if grano.descripcion %}
+                <div class="mb-0">
+                    <label class="form-label text-muted">Descripción:</label>
+                    <div>{{ grano.descripcion }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Estadísticas -->
+    <div class="col-md-4">
+        <div class="card h-100">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    Estadísticas
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded">
+                    <div>
+                        <div class="text-muted small">Stock Total</div>
+                        <div class="h4 mb-0 text-success">{{ total_stock|floatformat:0 }} kg</div>
+                        <div class="small text-muted">{{ total_stock|kg_to_ton|floatformat:2 }} toneladas</div>
+                    </div>
+                    <div class="text-success">
+                        <i class="fas fa-weight fa-2x"></i>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded">
+                    <div>
+                        <div class="text-muted small">Mercaderías</div>
+                        <div class="h4 mb-0 text-primary">{{ mercaderias.count }}</div>
+                        <div class="small text-muted">registradas</div>
+                    </div>
+                    <div class="text-primary">
+                        <i class="fas fa-boxes fa-2x"></i>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center p-3 bg-light rounded">
+                    <div>
+                        <div class="text-muted small">Ubicaciones</div>
+                        <div class="h4 mb-0 text-info">{{ stock_por_ubicacion.count }}</div>
+                        <div class="small text-muted">con stock</div>
+                    </div>
+                    <div class="text-info">
+                        <i class="fas fa-map-marker-alt fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stock por ubicación -->
+{% if stock_por_ubicacion %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-map-marker-alt me-2"></i>
+                    Stock por Ubicación
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Ubicación</th>
+                                <th>Stock (kg)</th>
+                                <th>Stock (ton)</th>
+                                <th>Porcentaje</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in stock_por_ubicacion %}
+                            <tr>
+                                <td>
+                                    <strong>{{ item.ubicacion__nombre }}</strong>
+                                </td>
+                                <td>{{ item.total_kg|floatformat:0 }}</td>
+                                <td>{{ item.total_kg|kg_to_ton|floatformat:2 }}</td>
+                                <td>
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar bg-success" role="progressbar" 
+                                             style="width: {% widthratio item.total_kg total_stock 100 %}%">
+                                            {% widthratio item.total_kg total_stock 100 %}%
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if item.ubicacion__id %}
+                                        <a href="{% url 'almacenamiento:ubicacion_detail' pk=item.ubicacion__id %}" 
+                                           class="btn btn-sm btn-outline-info">
+                                            <i class="fas fa-eye"></i>
+                                            Ver ubicación
+                                        </a>
+                                    {% else %}
+                                        <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Mercaderías del grano -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-boxes me-2"></i>
+                        Mercaderías de {{ grano.nombre }}
+                        <span class="badge bg-secondary ms-2">{{ mercaderias.count }}</span>
+                    </h5>
+                    <a href="{% url 'admin:mercaderias_mercaderia_add' %}?grano={{ grano.pk }}" class="btn btn-success btn-sm">
+                        <i class="fas fa-plus me-1"></i>
+                        Nueva Mercadería
+                    </a>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                {% if mercaderias %}
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Mercadería</th>
+                                    <th>Tipo</th>
+                                    <th>Estado</th>
+                                    <th>Fecha Ingreso</th>
+                                    <th>Propietario</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for mercaderia in mercaderias %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'mercaderias:mercaderia_detail' pk=mercaderia.pk %}" 
+                                           class="text-decoration-none">
+                                            <div class="d-flex align-items-center">
+                                                <div class="flex-shrink-0 me-3">
+                                                    <div class="rounded-circle bg-primary bg-opacity-10 p-2">
+                                                        <i class="fas fa-box text-primary"></i>
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <strong>{{ mercaderia.descripcion|default:"Sin descripción" }}</strong>
+                                                    <small class="text-muted d-block">ID: {{ mercaderia.pk }}</small>
+                                                </div>
+                                            </div>
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">
+                                            {{ mercaderia.get_tipo_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if mercaderia.estado == 'ACTIVO' %}
+                                            <span class="badge bg-success">{{ mercaderia.get_estado_display }}</span>
+                                        {% elif mercaderia.estado == 'VENDIDO' %}
+                                            <span class="badge bg-warning">{{ mercaderia.get_estado_display }}</span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">{{ mercaderia.get_estado_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ mercaderia.fecha_ingreso|date:"d/m/Y" }}</td>
+                                    <td>
+                                        {% if mercaderia.propietario_cuenta %}
+                                            <a href="{% url 'cuentas:cuenta_detail' pk=mercaderia.propietario_cuenta.pk %}" 
+                                               class="text-decoration-none">
+                                                {{ mercaderia.propietario_cuenta.razon_social }}
+                                            </a>
+                                        {% else %}
+                                            <span class="text-muted">Sin propietario</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="{% url 'mercaderias:mercaderia_detail' pk=mercaderia.pk %}" 
+                                               class="btn btn-sm btn-outline-primary" title="Ver detalle">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'admin:mercaderias_mercaderia_change' mercaderia.pk %}" 
+                                               class="btn btn-sm btn-outline-secondary" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-5">
+                        <div class="mb-3">
+                            <i class="fas fa-boxes fa-3x text-muted"></i>
+                        </div>
+                        <h5>No hay mercaderías registradas</h5>
+                        <p class="text-muted mb-4">Aún no se han registrado mercaderías para este grano.</p>
+                        <a href="{% url 'admin:mercaderias_mercaderia_add' %}?grano={{ grano.pk }}" class="btn btn-success">
+                            <i class="fas fa-plus me-2"></i>
+                            Crear Primera Mercadería
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

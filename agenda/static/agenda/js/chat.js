@@ -28,7 +28,7 @@ document.addEventListener('DOMContentLoaded', function() {
             div.className = 'chat-room p-2 border-bottom';
             div.innerHTML = `<div class="d-flex justify-content-between align-items-center">
                                 <div>${r.nombre || 'Sala ' + r.id}</div>
-                                <div><small class="text-muted">${r.miembros.join(', ')}</small></div>
+                                <div><small class="text-muted">${r.miembros ? r.miembros.join(', ') : ''}</small></div>
                              </div>`;
             div.addEventListener('click', () => openRoom(r.id));
             chatRooms.appendChild(div);
@@ -42,6 +42,10 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch(`/agenda/chat/${roomId}/messages/`, {credentials: 'same-origin'})
             .then(r => r.json())
             .then(data => {
+                if (!data.ok) {
+                    chatMessageList.innerHTML = `<small class="text-danger">Error: ${data.message || 'Error cargando mensajes'}</small>`;
+                    return;
+                }
                 chatMessageList.innerHTML = '';
                 data.messages.forEach(m => {
                     const el = document.createElement('div');
@@ -64,7 +68,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (addBtn) addBtn.style.display = 'inline-block';
                 if (closeBtn) closeBtn.style.display = 'inline-block';
             }).catch(e => {
-                chatMessageList.innerHTML = '<small class="text-danger">Error cargando mensajes</small>';
+                chatMessageList.innerHTML = '<small class="text-danger">Error de conexión</small>';
+                console.error('Error loading messages:', e);
             });
     }
 
@@ -73,6 +78,7 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch(`/agenda/chat/${roomId}/messages/`, {credentials: 'same-origin'})
             .then(r => r.json())
             .then(data => {
+                if (!data.ok) return; // Si hay error, no actualizar
                 chatMessageList.innerHTML = '';
                 data.messages.forEach(m => {
                     const el = document.createElement('div');
@@ -166,13 +172,18 @@ document.addEventListener('DOMContentLoaded', function() {
                                     credentials: 'same-origin',
                                     headers: {'X-CSRFToken': getCookie('csrftoken')}
                                 }).then(r => r.json()).then(data => {
-                                    if (data.room_id) {
+                                    if (data.ok && data.room_id) {
                                         chatUserSearch.value = '';
                                         chatSearchResults.innerHTML = '';
                                         loadRooms();
                                         openRoom(data.room_id);
+                                    } else {
+                                        alert(`Error: ${data.message || 'No se pudo crear la sala'}`);
                                     }
-                                }).catch(e => console.error(e));
+                                }).catch(e => {
+                                    console.error('Error creating room:', e);
+                                    alert('Error de conexión');
+                                });
                             });
                         });
 
@@ -228,14 +239,22 @@ document.addEventListener('DOMContentLoaded', function() {
             credentials: 'same-origin',
             headers: {'X-CSRFToken': getCookie('csrftoken')}
         }).then(r => r.json()).then(data => {
-            // limpiar UI
-            chatAddMembersList.innerHTML = '';
-            chatAddMembersArea.classList.add('d-none');
-            chatSearchResults.innerHTML = '';
-            chatUserSearch.value = '';
-            // recargar salas
-            loadRooms();
-        }).catch(e => console.error(e));
+            if (data.ok) {
+                // limpiar UI
+                chatAddMembersList.innerHTML = '';
+                chatAddMembersArea.classList.add('d-none');
+                chatSearchResults.innerHTML = '';
+                chatUserSearch.value = '';
+                // recargar salas
+                loadRooms();
+                alert(`Agregados: ${data.added.length} usuarios`);
+            } else {
+                alert(`Error: ${data.message || 'No se pudieron agregar usuarios'}`);
+            }
+        }).catch(e => {
+            console.error('Error adding members:', e);
+            alert('Error de conexión');
+        });
     });
 
     // Cerrar sala
@@ -249,23 +268,36 @@ document.addEventListener('DOMContentLoaded', function() {
                 credentials: 'same-origin',
                 headers: {'X-CSRFToken': getCookie('csrftoken')}
             }).then(r => r.json()).then(data => {
-                if (data.closed) {
+                if (data.ok && data.closed) {
                     // ocultar panel y recargar salas
                     chatMessages.classList.add('d-none');
                     currentRoom = null;
                     loadRooms();
+                    alert('Sala cerrada');
                 } else {
-                    alert('No se pudo cerrar la sala');
+                    alert(`Error: ${data.message || 'No se pudo cerrar la sala'}`);
                 }
-            }).catch(e => console.error(e));
+            }).catch(e => {
+                console.error('Error closing room:', e);
+                alert('Error de conexión');
+            });
         });
     }
 
     function loadRooms() {
         fetch('/agenda/chat/rooms/', {credentials: 'same-origin'})
             .then(r => r.json())
-            .then(data => renderRooms(data.rooms))
-            .catch(e => { chatRooms.innerHTML = '<small class="text-danger">Error cargando salas</small>'; });
+            .then(data => {
+                if (data.ok) {
+                    renderRooms(data.rooms);
+                } else {
+                    chatRooms.innerHTML = `<small class="text-danger">Error: ${data.message || 'Error cargando salas'}</small>`;
+                }
+            })
+            .catch(e => { 
+                chatRooms.innerHTML = '<small class="text-danger">Error de conexión</small>'; 
+                console.error('Error loading rooms:', e);
+            });
     }
 
     function getCookie(name) {
@@ -291,12 +323,14 @@ document.addEventListener('DOMContentLoaded', function() {
         fetch('/agenda/chat/unread_count/', {credentials: 'same-origin'})
             .then(r => r.json())
             .then(data => {
-                const n = parseInt(data.unread_count || 0, 10);
-                if (n > 0) {
-                    unreadBadge.style.display = 'inline-block';
-                    unreadBadge.textContent = n;
-                } else {
-                    unreadBadge.style.display = 'none';
+                if (data.ok) {
+                    const n = parseInt(data.unread_count || 0, 10);
+                    if (n > 0) {
+                        unreadBadge.style.display = 'inline-block';
+                        unreadBadge.textContent = n;
+                    } else {
+                        unreadBadge.style.display = 'none';
+                    }
                 }
             }).catch(e => {});
     }

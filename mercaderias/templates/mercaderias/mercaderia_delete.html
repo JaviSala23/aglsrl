@@ -1,0 +1,211 @@
+{% extends 'mercaderias/base_mercaderias.html' %}
+{% load static %}
+
+{% block title %}Eliminar {{ mercaderia.descripcion|truncatechars:30 }} - Mercaderías{% endblock %}
+
+{% block mercaderias_content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-2">
+                        <i class="fas fa-trash-alt me-2 text-danger"></i>
+                        Eliminar Mercadería
+                    </h1>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{% url 'mercaderias:dashboard' %}">Dashboard</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'mercaderias:mercaderias_list' %}">Mercaderías</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'mercaderias:mercaderia_detail' mercaderia.pk %}">{{ mercaderia|truncatechars:30 }}</a></li>
+                            <li class="breadcrumb-item active">Eliminar</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div>
+                    <a href="{% url 'mercaderias:mercaderia_detail' mercaderia.pk %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>
+                        Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmación de Eliminación -->
+    <div class="row justify-content-center">
+        <div class="col-xl-10 col-lg-12">
+            <div class="card shadow-sm border-danger">
+                <div class="card-header bg-danger text-white">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <h5 class="mb-0">Confirmar Eliminación</h5>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    
+                    {% if stocks_count > 0 %}
+                        <!-- Advertencia: No se puede eliminar -->
+                        <div class="alert alert-warning" role="alert">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-exclamation-triangle fa-3x text-warning"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h5 class="alert-heading">No se puede eliminar esta mercadería</h5>
+                                    <p class="mb-2">
+                                        La mercadería <strong>"{{ mercaderia }}"</strong> tiene 
+                                        <strong>{{ stocks_count }} registro{{ stocks_count|pluralize }} de stock</strong> asociado{{ stocks_count|pluralize }}.
+                                    </p>
+                                    <p class="mb-0">
+                                        Para poder eliminarla, primero debe eliminar o transferir todos los registros de stock asociados.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center">
+                            <a href="{% url 'mercaderias:mercaderia_detail' mercaderia.pk %}" class="btn btn-primary btn-lg">
+                                <i class="bi bi-arrow-left me-1"></i>
+                                Volver al Detalle
+                            </a>
+                            <a href="{% url 'mercaderias:stocks_list' %}?mercaderia={{ mercaderia.pk }}" class="btn btn-outline-info btn-lg ms-2">
+                                <i class="fas fa-chart-bar me-1"></i>
+                                Ver Stocks Asociados
+                            </a>
+                        </div>
+                        
+                    {% else %}
+                        <!-- Confirmación de eliminación -->
+                        <div class="row">
+                            <div class="col-md-8 mx-auto text-center">
+                                <i class="fas fa-boxes text-success mb-4" style="font-size: 5rem;"></i>
+                                <h4 class="text-danger mb-4">¿Está seguro que desea eliminar esta mercadería?</h4>
+                            </div>
+                        </div>
+                        
+                        <!-- Información de la mercadería -->
+                        <div class="card bg-light mb-4">
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h5 class="card-title text-success">
+                                            <i class="fas fa-boxes me-2"></i>
+                                            {{ mercaderia }}
+                                        </h5>
+                                        <p class="card-text">
+                                            <strong>Grano:</strong> 
+                                            <span class="badge bg-success">{{ mercaderia.grano.nombre }}</span>
+                                        </p>
+                                        <p class="card-text">
+                                            <strong>Estado:</strong> 
+                                            <span class="badge bg-{% if mercaderia.estado == 'ACTIVO' %}success{% else %}secondary{% endif %}">
+                                                {{ mercaderia.get_estado_display }}
+                                            </span>
+                                        </p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <p class="card-text">
+                                            <strong>Propietario:</strong> {{ mercaderia.propietario_nombre|default:"No especificado" }}
+                                        </p>
+                                        {% if mercaderia.propietario_contacto %}
+                                        <p class="card-text">
+                                            <strong>Contacto:</strong> {{ mercaderia.propietario_contacto }}
+                                        </p>
+                                        {% endif %}
+                                        {% if mercaderia.observaciones %}
+                                            <p class="card-text">
+                                                <strong>Observaciones:</strong><br>
+                                                <small class="text-muted">{{ mercaderia.observaciones }}</small>
+                                            </p>
+                                        {% endif %}
+                                        <small class="text-muted">
+                                            <i class="fas fa-calendar me-1"></i>
+                                            Ingreso: {{ mercaderia.fecha_ingreso|date:"d/m/Y" }}
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-danger" role="alert">
+                            <div class="d-flex">
+                                <div class="flex-shrink-0">
+                                    <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="alert-heading">⚠️ Advertencia Importante</h6>
+                                    <ul class="mb-0">
+                                        <li>Esta acción <strong>no se puede deshacer</strong></li>
+                                        <li>La mercadería será eliminada permanentemente del sistema</li>
+                                        <li>Se perderá todo el historial asociado a esta mercadería</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <form method="post" class="text-center">
+                            {% csrf_token %}
+                            <div class="d-flex justify-content-center gap-3">
+                                <a href="{% url 'mercaderias:mercaderia_detail' mercaderia.pk %}" class="btn btn-outline-secondary btn-lg">
+                                    <i class="bi bi-x-circle me-1"></i>
+                                    Cancelar
+                                </a>
+                                <button type="submit" class="btn btn-danger btn-lg px-4" id="confirm-delete">
+                                    <i class="fas fa-trash-alt me-1"></i>
+                                    Sí, Eliminar Mercadería
+                                </button>
+                            </div>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if stocks_count == 0 %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const deleteButton = document.getElementById('confirm-delete');
+    
+    deleteButton.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        Swal.fire({
+            title: '¿Está completamente seguro?',
+            html: 'Esta acción eliminará la mercadería <br><strong>"{{ mercaderia }}"</strong><br> permanentemente del sistema.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+            reverseButtons: true,
+            customClass: {
+                confirmButton: 'btn btn-danger',
+                cancelButton: 'btn btn-secondary'
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                // Mostrar loading
+                Swal.fire({
+                    title: 'Eliminando mercadería...',
+                    text: 'Por favor espere',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    willOpen: () => {
+                        Swal.showLoading();
+                    }
+                });
+                
+                // Enviar formulario
+                e.target.closest('form').submit();
+            }
+        });
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,126 @@
+/* ==========================================
+   ESTILOS PARA MÓDULO DE CLASIFICACIÓN
+   ========================================== */
+
+.procesamiento-module {
+    background-color: #fafafa;
+}
+
+/* Colores del módulo - Tema naranja/warning */
+.border-left-warning {
+    border-left: 0.25rem solid #f39c12 !important;
+}
+
+.border-left-info {
+    border-left: 0.25rem solid #3498db !important;
+}
+
+.border-left-success {
+    border-left: 0.25rem solid #2ecc71 !important;
+}
+
+.border-left-danger {
+    border-left: 0.25rem solid #e74c3c !important;
+}
+
+/* Navegación del módulo */
+.nav-pills .nav-link {
+    color: #6c757d;
+    border-radius: 20px;
+    margin: 0 5px;
+    transition: all 0.3s ease;
+}
+
+.nav-pills .nav-link:hover {
+    color: #f39c12;
+    background-color: rgba(243, 156, 18, 0.1);
+}
+
+.nav-pills .nav-link.active {
+    background-color: #f39c12;
+    color: white;
+}
+
+/* Cards especiales */
+.card-clasificacion {
+    border-left: 4px solid #f39c12;
+    transition: all 0.3s ease;
+}
+
+.card-clasificacion:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    transform: translateY(-2px);
+}
+
+/* Estados de clasificación */
+.estado-borrador {
+    color: #f39c12;
+    background-color: rgba(243, 156, 18, 0.1);
+}
+
+.estado-registrado {
+    color: #3498db;
+    background-color: rgba(52, 152, 219, 0.1);
+}
+
+.estado-verificado {
+    color: #2ecc71;
+    background-color: rgba(46, 204, 113, 0.1);
+}
+
+.estado-cancelado {
+    color: #e74c3c;
+    background-color: rgba(231, 76, 60, 0.1);
+}
+
+/* Tabla de clasificaciones */
+.table-clasificaciones th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #f39c12;
+    font-weight: 600;
+    color: #495057;
+}
+
+.table-clasificaciones tbody tr:hover {
+    background-color: rgba(243, 156, 18, 0.05);
+}
+
+/* Formularios */
+.form-clasificacion .form-control:focus {
+    border-color: #f39c12;
+    box-shadow: 0 0 0 0.2rem rgba(243, 156, 18, 0.25);
+}
+
+/* Alertas de diferencias */
+.alerta-diferencia {
+    background-color: rgba(231, 76, 60, 0.1);
+    border: 1px solid rgba(231, 76, 60, 0.3);
+    border-radius: 5px;
+    padding: 10px;
+    margin: 10px 0;
+}
+
+/* Botones del módulo */
+.btn-clasificacion-primary {
+    background-color: #f39c12;
+    border-color: #f39c12;
+    color: white;
+}
+
+.btn-clasificacion-primary:hover {
+    background-color: #e67e22;
+    border-color: #e67e22;
+    color: white;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .nav-pills {
+        flex-direction: column;
+    }
+    
+    .nav-pills .nav-link {
+        margin: 2px 0;
+        text-align: center;
+    }
+}

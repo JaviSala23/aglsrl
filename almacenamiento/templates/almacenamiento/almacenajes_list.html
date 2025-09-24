@@ -1,0 +1,428 @@
+{% extends 'almacenamiento/base_almacenamiento.html' %}
+{% load static %}
+
+{% block title %}Lista de Almacenajes - AGL SRL{% endblock %}
+
+{% block almacenamiento_breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'almacenamiento:dashboard' %}">Almacenamiento</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Almacenajes</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .almacenaje-card {
+        transition: transform 0.2s ease-in-out;
+        border-left: 4px solid #007bff;
+    }
+    
+    .almacenaje-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .almacenaje-status {
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    .almacenaje-type {
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+        color: #495057;
+    }
+    
+    .filters-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+        border: none;
+    }
+    
+    .capacity-info {
+        color: #007bff;
+        font-size: 0.85rem;
+    }
+    
+    .pagination .page-link {
+        color: #007bff;
+    }
+    
+    .pagination .page-item.active .page-link {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+    
+    .badge-DISPONIBLE { background-color: #28a745 !important; }
+    .badge-OCUPADO { background-color: #dc3545 !important; }
+    .badge-FUMIGACION { background-color: #ffc107 !important; color: #000 !important; }
+    .badge-MANTENIMIENTO { background-color: #6c757d !important; }
+    .badge-BLOQUEADO { background-color: #343a40 !important; }
+</style>
+{% endblock %}
+
+{% block almacenamiento_content %}
+<div class="container-fluid">
+    <!-- Header con estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="h4 mb-1">
+                        <i class="fas fa-warehouse me-2 text-primary"></i>
+                        Lista de Almacenajes
+                    </h2>
+                    <p class="text-muted mb-0">Gestión de almacenajes por ubicación</p>
+                </div>
+                                <a href="{% url 'almacenamiento:crear_almacenaje' %}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-plus-circle me-2"></i>Crear Almacenaje
+                </a>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stats-card">
+                <div class="card-body text-center">
+                    <h3 class="mb-0">{{ total_almacenajes }}</h3>
+                    <small>Total de Almacenajes</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card filters-card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                {% csrf_token %}
+                <div class="col-md-3">
+                    <label for="search" class="form-label">
+                        <i class="fas fa-search"></i> Búsqueda
+                    </label>
+                    <input type="text" 
+                           class="form-control" 
+                           id="search" 
+                           name="search" 
+                           value="{{ search }}"
+                           placeholder="Buscar por código o ubicación...">
+                </div>
+                <div class="col-md-2">
+                    <label for="ubicacion" class="form-label">
+                        <i class="fas fa-map-marker-alt"></i> Ubicación
+                    </label>
+                    <select class="form-select" id="ubicacion" name="ubicacion">
+                        <option value="">Todas las ubicaciones</option>
+                        {% for ubicacion in ubicaciones %}
+                            <option value="{{ ubicacion.id }}" {% if ubicacion_filter == ubicacion.id|stringformat:"s" %}selected{% endif %}>
+                                {{ ubicacion.nombre }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="tipo" class="form-label">
+                        <i class="fas fa-layer-group"></i> Tipo
+                    </label>
+                    <select class="form-select" id="tipo" name="tipo">
+                        <option value="">Todos los tipos</option>
+                        {% for valor, etiqueta in tipos %}
+                            <option value="{{ valor }}" {% if tipo_filter == valor %}selected{% endif %}>
+                                {{ etiqueta }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="estado" class="form-label">
+                        <i class="fas fa-info-circle"></i> Estado
+                    </label>
+                    <select class="form-select" id="estado" name="estado">
+                        <option value="">Todos los estados</option>
+                        {% for valor, etiqueta in estados %}
+                            <option value="{{ valor }}" {% if estado_filter == valor %}selected{% endif %}>
+                                {{ etiqueta }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="activo" class="form-label">
+                        <i class="fas fa-toggle-on"></i> Estado
+                    </label>
+                    <select class="form-select" id="activo" name="activo">
+                        <option value="">Todos</option>
+                        <option value="true" {% if activo_filter == 'true' %}selected{% endif %}>Activos</option>
+                        <option value="false" {% if activo_filter == 'false' %}selected{% endif %}>Inactivos</option>
+                    </select>
+                </div>
+                <div class="col-md-1 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <a href="{% url 'almacenamiento:almacenajes_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de almacenajes -->
+    {% if page_obj %}
+        <div class="row">
+            {% for almacenaje in page_obj %}
+                <div class="col-lg-6 col-xl-4 mb-4">
+                    <div class="card almacenaje-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h5 class="card-title mb-1">{{ almacenaje.codigo }}</h5>
+                                    <span class="almacenaje-type">{{ almacenaje.get_tipo_display }}</span>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge badge-{{ almacenaje.estado }} almacenaje-status">
+                                        {{ almacenaje.get_estado_display }}
+                                    </span>
+                                    {% if not almacenaje.activo %}
+                                        <br><span class="badge bg-secondary mt-1">Inactivo</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="mb-2">
+                                <small class="text-muted">Ubicación:</small>
+                                <div class="fw-semibold">{{ almacenaje.ubicacion.nombre }}</div>
+                            </div>
+
+                            {% if almacenaje.capacidad_kg %}
+                                <div class="capacity-info mb-2">
+                                    <i class="fas fa-weight-hanging me-1"></i>
+                                    Capacidad: {{ almacenaje.capacidad_kg|floatformat:0 }} kg
+                                </div>
+                            {% endif %}
+
+                            {% if almacenaje.longitud_metros %}
+                                <div class="mb-2">
+                                    <small class="text-muted">Longitud:</small>
+                                    <div class="small">{{ almacenaje.longitud_metros }} metros</div>
+                                </div>
+                            {% endif %}
+
+                            {% if almacenaje.sentido %}
+                                <div class="mb-2">
+                                    <small class="text-muted">Sentido:</small>
+                                    <div class="small">{{ almacenaje.sentido }}</div>
+                                </div>
+                            {% endif %}
+
+                            {% if almacenaje.latitud and almacenaje.longitud %}
+                                <div class="capacity-info mb-2">
+                                    <i class="fas fa-map-pin me-1"></i>
+                                    {{ almacenaje.latitud }}, {{ almacenaje.longitud }}
+                                </div>
+                            {% endif %}
+
+                            {% if almacenaje.observaciones %}
+                                <div class="mb-2">
+                                    <small class="text-muted">Observaciones:</small>
+                                    <div class="small">{{ almacenaje.observaciones|truncatewords:8 }}</div>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="card-footer bg-transparent">
+                            <div class="row text-center mb-2">
+                                <div class="col-6">
+                                    <div class="fw-bold">{{ almacenaje.stocks.count }}</div>
+                                    <div>Stocks</div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="fw-bold">
+                                        {% with almacenaje.stocks.first as primer_stock %}
+                                            {% if primer_stock %}
+                                                {{ primer_stock.cantidad_kg|default:0|floatformat:0 }}
+                                            {% else %}
+                                                0
+                                            {% endif %}
+                                        {% endwith %}
+                                        kg
+                                    </div>
+                                    <div>Stock Actual</div>
+                                </div>
+                            </div>
+                            
+                            <div class="btn-group w-100" role="group">
+                                <a href="{% url 'almacenamiento:almacenaje_detail' almacenaje.id %}" 
+                                   class="btn btn-outline-info btn-sm"
+                                   title="Ver detalles">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'almacenamiento:editar_almacenaje' almacenaje.id %}" 
+                                   class="btn btn-outline-primary btn-sm"
+                                   title="Editar almacenaje">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" 
+                                        class="btn btn-outline-{% if almacenaje.activo %}warning{% else %}success{% endif %} btn-sm toggle-almacenaje-btn"
+                                        data-almacenaje-id="{{ almacenaje.id }}"
+                                        data-almacenaje-codigo="{{ almacenaje.codigo }}"
+                                        data-almacenaje-activo="{% if almacenaje.activo %}true{% else %}false{% endif %}"
+                                        title="{% if almacenaje.activo %}Desactivar{% else %}Activar{% endif %}">
+                                    <i class="fas fa-{% if almacenaje.activo %}pause{% else %}play{% endif %}"></i>
+                                </button>
+                                <a href="{% url 'almacenamiento:eliminar_almacenaje' almacenaje.id %}" 
+                                   class="btn btn-outline-danger btn-sm"
+                                   title="Eliminar almacenaje">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Paginación -->
+        {% if is_paginated %}
+            <div class="d-flex justify-content-center mt-4">
+                <nav aria-label="Paginación de almacenajes">
+                    <ul class="pagination">
+                        {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% if search %}search={{ search }}&{% endif %}{% if ubicacion_filter %}ubicacion={{ ubicacion_filter }}&{% endif %}{% if tipo_filter %}tipo={{ tipo_filter }}&{% endif %}{% if estado_filter %}estado={{ estado_filter }}&{% endif %}{% if activo_filter %}activo={{ activo_filter }}&{% endif %}page=1">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?{% if search %}search={{ search }}&{% endif %}{% if ubicacion_filter %}ubicacion={{ ubicacion_filter }}&{% endif %}{% if tipo_filter %}tipo={{ tipo_filter }}&{% endif %}{% if estado_filter %}estado={{ estado_filter }}&{% endif %}{% if activo_filter %}activo={{ activo_filter }}&{% endif %}page={{ page_obj.previous_page_number }}">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+
+                        <li class="page-item active">
+                            <span class="page-link">
+                                {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+                            </span>
+                        </li>
+
+                        {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% if search %}search={{ search }}&{% endif %}{% if ubicacion_filter %}ubicacion={{ ubicacion_filter }}&{% endif %}{% if tipo_filter %}tipo={{ tipo_filter }}&{% endif %}{% if estado_filter %}estado={{ estado_filter }}&{% endif %}{% if activo_filter %}activo={{ activo_filter }}&{% endif %}page={{ page_obj.next_page_number }}">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="?{% if search %}search={{ search }}&{% endif %}{% if ubicacion_filter %}ubicacion={{ ubicacion_filter }}&{% endif %}{% if tipo_filter %}tipo={{ tipo_filter }}&{% endif %}{% if estado_filter %}estado={{ estado_filter }}&{% endif %}{% if activo_filter %}activo={{ activo_filter }}&{% endif %}page={{ page_obj.paginator.num_pages }}">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+        {% endif %}
+
+    {% else %}
+        <!-- Sin almacenajes -->
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i class="fas fa-warehouse fa-4x text-muted"></i>
+            </div>
+            <h4 class="text-muted">No hay almacenajes</h4>
+            <p class="text-muted mb-4">
+                {% if search or ubicacion_filter or tipo_filter or estado_filter or activo_filter %}
+                    No se encontraron almacenajes que coincidan con los filtros aplicados.
+                {% else %}
+                    Aún no se han registrado almacenajes en el sistema.
+                {% endif %}
+            </p>
+            {% if not search and not ubicacion_filter and not tipo_filter and not estado_filter and not activo_filter %}
+                                <a href="{% url 'almacenamiento:crear_almacenaje' %}" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>Crear Almacenaje
+                </a>
+            {% else %}
+                <button type="button" class="btn btn-outline-secondary" onclick="location.href='{% url 'almacenamiento:almacenajes_list' %}'">
+                    <i class="fas fa-times me-1"></i>
+                    Limpiar Filtros
+                </button>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-submit del formulario de búsqueda al cambiar filtros
+document.getElementById('ubicacion').addEventListener('change', function() {
+    this.form.submit();
+});
+
+document.getElementById('tipo').addEventListener('change', function() {
+    this.form.submit();
+});
+
+document.getElementById('estado').addEventListener('change', function() {
+    this.form.submit();
+});
+
+document.getElementById('activo').addEventListener('change', function() {
+    this.form.submit();
+});
+
+// Toggle activar/desactivar almacenaje con AJAX
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.toggle-almacenaje-btn').forEach(function(button) {
+        button.addEventListener('click', function() {
+            const almacenajeId = this.dataset.almacenajeId;
+            const almacenajeCodigo = this.dataset.almacenajeCodigo;
+            const isActivo = this.dataset.almacenajeActivo === 'true';
+            const action = isActivo ? 'desactivar' : 'activar';
+            
+            if (confirm(`¿Está seguro que desea ${action} el almacenaje "${almacenajeCodigo}"?`)) {
+                // Deshabilitar botón durante la petición
+                this.disabled = true;
+                const originalHtml = this.innerHTML;
+                this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+                
+                fetch(`/almacenamiento/almacenajes/${almacenajeId}/toggle-activo/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Recargar la página para actualizar la vista
+                        location.reload();
+                    } else {
+                        alert(data.message || 'Error al actualizar el almacenaje');
+                        // Restaurar botón
+                        this.disabled = false;
+                        this.innerHTML = originalHtml;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error de conexión al actualizar el almacenaje');
+                    // Restaurar botón
+                    this.disabled = false;
+                    this.innerHTML = originalHtml;
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

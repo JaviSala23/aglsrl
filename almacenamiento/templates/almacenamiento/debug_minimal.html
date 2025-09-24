@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Almacenaje</title>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h1>Debug - Crear Almacenaje</h1>
+    
+    <h2>Variables del contexto:</h2>
+    <ul>
+        <li>titulo: "{{ titulo }}"</li>
+        <li>subtitulo: "{{ subtitulo }}"</li>
+        <li>boton_texto: "{{ boton_texto }}"</li>
+        <li>form existe: {% if form %}SÍ{% else %}NO{% endif %}</li>
+        <li>form type: {{ form|default:"None" }}</li>
+    </ul>
+    
+    {% if form %}
+        <h2>Formulario encontrado:</h2>
+        <p>{{ form.as_p }}</p>
+    {% else %}
+        <h2>ERROR: No hay formulario</h2>
+        <p>El objeto form no está disponible en el contexto.</p>
+    {% endif %}
+    
+    <hr>
+    <h2>HTML generado el: {% now "d/m/Y H:i:s" %}</h2>
+</body>
+</html>

@@ -1,0 +1,383 @@
+{% extends 'a{% endblock %}almacenamiento.html' %}
+{% load static %}
+
+{% block title %}Lista de Ubicaciones - AGL SRL{% endblock %}
+
+{% block almacenamiento_breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'almacenamiento:dashboard' %}">Almacenamiento</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Ubicaciones</li>
+    </ol>
+</nav>
+{% endblock %}miento/base_almacenamiento.html' %}
+{% load static %}
+
+{% block title %}Lista de Ubicaciones - AGL SRL{% endblock %}
+
+{% block almac                            {% if ubicacion.encargado %}
+                                <div class="text-center">
+                                    <small class="text-muted">Encargado:</small>
+                                    <div class="fw-semibold">
+                                        {{ ubicacion.encargado.get_full_name|default:ubicacion.encargado.username }}
+                                    </div>
+                                </div>
+                            {% endif %}nto_breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'almacenamiento:dashboard' %}">Almacenamiento</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Ubicaciones</li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .location-card {
+        transition: transform 0.2s ease-in-out;
+        border-left: 4px solid #28a745;
+    }
+    
+    .location-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    .location-status {
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    .location-type {
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+        color: #495057;
+    }
+    
+    .filters-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .stats-card {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border: none;
+    }
+    
+    .coord-info {
+        font-size: 0.8rem;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block almacenamiento_content %}
+<div class="container-fluid">
+    <!-- Header con estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-map-marker-alt text-success me-2"></i>
+                        Gestión de Ubicaciones
+                    </h2>
+                    <p class="text-muted mb-0">Administra las ubicaciones de almacenamiento disponibles</p>
+                </div>
+                <a href="{% url 'almacenamiento:crear_ubicacion' %}" class="btn btn-success btn-lg">
+                    <i class="fas fa-plus"></i> Nueva Ubicación
+                </a>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stats-card">
+                <div class="card-body text-center">
+                    <h3 class="mb-0">{{ total_ubicaciones }}</h3>
+                    <small>Total de Ubicaciones</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card filters-card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <label for="search" class="form-label">
+                        <i class="fas fa-search"></i> Búsqueda
+                    </label>
+                    <input type="text" 
+                           class="form-control" 
+                           id="search" 
+                           name="search" 
+                           value="{{ search }}"
+                           placeholder="Buscar por nombre, encargado o dirección...">
+                </div>
+                <div class="col-md-3">
+                    <label for="tipo" class="form-label">
+                        <i class="fas fa-filter"></i> Tipo
+                    </label>
+                    <select class="form-select" id="tipo" name="tipo">
+                        <option value="">Todos los tipos</option>
+                        <option value="PLANTA" {% if tipo_filter == 'PLANTA' %}selected{% endif %}>Planta</option>
+                        <option value="CAMPO" {% if tipo_filter == 'CAMPO' %}selected{% endif %}>Campo</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="activo" class="form-label">
+                        <i class="fas fa-toggle-on"></i> Estado
+                    </label>
+                    <select class="form-select" id="activo" name="activo">
+                        <option value="">Todos</option>
+                        <option value="true" {% if activo_filter == 'true' %}selected{% endif %}>Activos</option>
+                        <option value="false" {% if activo_filter == 'false' %}selected{% endif %}>Inactivos</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <a href="{% url 'almacenamiento:ubicaciones_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Lista de ubicaciones -->
+    {% if ubicaciones %}
+        <div class="row">
+            {% for ubicacion in ubicaciones %}
+                <div class="col-lg-6 col-xl-4 mb-4">
+                    <div class="card location-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h5 class="card-title mb-1">{{ ubicacion.nombre }}</h5>
+                                    <span class="location-type">{{ ubicacion.get_tipo_display }}</span>
+                                </div>
+                                <div class="text-end">
+                                    {% if ubicacion.activo %}
+                                        <span class="badge bg-success location-status">Activo</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary location-status">Inactivo</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            {% if ubicacion.encargado %}
+                                <div class="mb-2">
+                                    <small class="text-muted">Encargado:</small>
+                                    <div class="fw-semibold">
+                                        {{ ubicacion.encargado.get_full_name|default:ubicacion.encargado.username }}
+                                    </div>
+                                </div>
+                            {% endif %}
+
+                            {% if ubicacion.direccion %}
+                                <div class="mb-2">
+                                    <small class="text-muted">Dirección:</small>
+                                    <div class="small">{{ ubicacion.direccion|truncatewords:10 }}</div>
+                                </div>
+                            {% endif %}
+
+                            {% if ubicacion.latitud and ubicacion.longitud %}
+                                <div class="coord-info mb-2">
+                                    <i class="fas fa-map-pin me-1"></i>
+                                    {{ ubicacion.latitud }}, {{ ubicacion.longitud }}
+                                </div>
+                            {% endif %}
+
+                            {% if ubicacion.observaciones %}
+                                <p class="card-text text-muted small">
+                                    {{ ubicacion.observaciones|truncatewords:12 }}
+                                </p>
+                            {% endif %}
+
+                            <div class="row text-center small text-muted mb-3">
+                                <div class="col">
+                                    <div class="fw-bold">{{ ubicacion.almacenajes.count }}</div>
+                                    <div>Almacenajes</div>
+                                </div>
+                                <div class="col">
+                                    <div class="fw-bold">{{ ubicacion.stocks.count }}</div>
+                                    <div>Stocks</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card-footer bg-transparent">
+                            <div class="btn-group w-100" role="group">
+                                <a href="{% url 'almacenamiento:ubicacion_detail' ubicacion.id %}" 
+                                   class="btn btn-outline-info btn-sm"
+                                   title="Ver detalles">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="{% url 'almacenamiento:editar_ubicacion' ubicacion.id %}" 
+                                   class="btn btn-outline-primary btn-sm"
+                                   title="Editar ubicación">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" 
+                                        class="btn btn-outline-{% if ubicacion.activo %}warning{% else %}success{% endif %} btn-sm"
+                                        onclick="toggleUbicacionActivo({{ ubicacion.id }}, '{{ ubicacion.nombre|escapejs }}')"
+                                        title="{% if ubicacion.activo %}Desactivar{% else %}Activar{% endif %}">
+                                    <i class="fas fa-{% if ubicacion.activo %}pause{% else %}play{% endif %}"></i>
+                                </button>
+                                <a href="{% url 'almacenamiento:eliminar_ubicacion' ubicacion.id %}" 
+                                   class="btn btn-outline-danger btn-sm"
+                                   title="Eliminar ubicación">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Paginación -->
+        {% if ubicaciones.has_other_pages %}
+            <nav aria-label="Paginación de ubicaciones">
+                <ul class="pagination justify-content-center">
+                    {% if ubicaciones.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if tipo_filter %}&tipo={{ tipo_filter }}{% endif %}{% if activo_filter %}&activo={{ activo_filter }}{% endif %}">Primera</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ ubicaciones.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if tipo_filter %}&tipo={{ tipo_filter }}{% endif %}{% if activo_filter %}&activo={{ activo_filter }}{% endif %}">Anterior</a>
+                        </li>
+                    {% endif %}
+
+                    {% for num in ubicaciones.paginator.page_range %}
+                        {% if ubicaciones.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > ubicaciones.number|add:'-3' and num < ubicaciones.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}{% if tipo_filter %}&tipo={{ tipo_filter }}{% endif %}{% if activo_filter %}&activo={{ activo_filter }}{% endif %}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if ubicaciones.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ ubicaciones.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if tipo_filter %}&tipo={{ tipo_filter }}{% endif %}{% if activo_filter %}&activo={{ activo_filter }}{% endif %}">Siguiente</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ ubicaciones.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if tipo_filter %}&tipo={{ tipo_filter }}{% endif %}{% if activo_filter %}&activo={{ activo_filter }}{% endif %}">Última</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+
+    {% else %}
+        <!-- Estado vacío -->
+        <div class="text-center py-5">
+            <div class="mb-4">
+                <i class="fas fa-map-marker-alt text-muted" style="font-size: 4rem;"></i>
+            </div>
+            <h4 class="text-muted">No hay ubicaciones registradas</h4>
+            <p class="text-muted">
+                {% if search or tipo_filter or activo_filter %}
+                    No se encontraron ubicaciones que coincidan con los filtros aplicados.
+                    <br>
+                    <a href="{% url 'almacenamiento:ubicaciones_list' %}" class="btn btn-outline-primary mt-2">
+                        <i class="fas fa-times"></i> Limpiar filtros
+                    </a>
+                {% else %}
+                    Comienza agregando tu primera ubicación al sistema.
+                {% endif %}
+            </p>
+            {% if not search and not tipo_filter and not activo_filter %}
+                <button class="btn btn-success btn-lg" onclick="alert('Funcionalidad de crear ubicación no implementada aún')">
+                    <i class="fas fa-plus"></i> Crear Primera Ubicación
+                </button>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Auto-submit del formulario de búsqueda al cambiar filtros
+document.getElementById('tipo').addEventListener('change', function() {
+    this.form.submit();
+});
+
+document.getElementById('activo').addEventListener('change', function() {
+    this.form.submit();
+});
+
+// Función para activar/desactivar ubicaciones
+function toggleUbicacionActivo(ubicacionId, ubicacionNombre) {
+    if (confirm(`¿Está seguro que desea cambiar el estado de la ubicación "${ubicacionNombre}"?`)) {
+        fetch(`{% url 'almacenamiento:toggle_ubicacion_activo' 0 %}`.replace('0', ubicacionId), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Mostrar mensaje de éxito
+                showAlert('success', data.message);
+                
+                // Recargar la página para actualizar el estado
+                setTimeout(() => {
+                    location.reload();
+                }, 1500);
+            } else {
+                showAlert('error', data.message || 'Error al cambiar el estado de la ubicación');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showAlert('error', 'Error de comunicación con el servidor');
+        });
+    }
+}
+
+// Función para mostrar alertas
+function showAlert(type, message) {
+    const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+    const iconClass = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle';
+    
+    const alertDiv = document.createElement('div');
+    alertDiv.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+    alertDiv.style.cssText = 'top: 20px; right: 20px; z-index: 9999; min-width: 300px;';
+    alertDiv.innerHTML = `
+        <i class="fas ${iconClass} me-2"></i>
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    
+    document.body.appendChild(alertDiv);
+    
+    // Auto-remover después de 5 segundos
+    setTimeout(() => {
+        if (alertDiv.parentNode) {
+            alertDiv.remove();
+        }
+    }, 5000);
+}
+
+// Agregar token CSRF si no existe
+if (!document.querySelector('[name=csrfmiddlewaretoken]')) {
+    const csrfInput = document.createElement('input');
+    csrfInput.type = 'hidden';
+    csrfInput.name = 'csrfmiddlewaretoken';
+    csrfInput.value = '{{ csrf_token }}';
+    document.body.appendChild(csrfInput);
+}
+</script>
+{% endblock %}

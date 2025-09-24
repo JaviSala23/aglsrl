@@ -29,6 +29,8 @@
         <link rel="stylesheet" href="{% static 'agenda/css/agenda.css' %}">
     {% elif request.resolver_match.namespace == 'transportes' %}
         <link rel="stylesheet" href="{% static 'transportes/css/transportes.css' %}">
+    {% elif request.resolver_match.namespace == 'mercaderias' %}
+        <link rel="stylesheet" href="{% static 'mercaderias/css/mercaderias.css' %}">
     {% elif request.resolver_match.namespace == 'usuarios' %}
         <link rel="stylesheet" href="{% static 'usuarios/css/usuarios.css' %}">
     {% endif %}
@@ -79,6 +81,74 @@
                         </a>
                     </li>
                     
+                    <!-- Mercaderías Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if request.resolver_match.namespace == 'mercaderias' %}active{% endif %}" 
+                           href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-seedling me-1"></i>Mercaderías
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'mercaderias:dashboard' %}">
+                                <i class="bi bi-speedometer2 me-2"></i>Dashboard Mercaderías
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'mercaderias:clasificacion:panel' %}">
+                                <i class="fas fa-clipboard-list me-2 text-warning"></i><strong>Clasificación</strong>
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            
+                            <li class="dropdown-header">Inventario</li>
+                            <li><a class="dropdown-item" href="{% url 'mercaderias:mercaderias_list' %}">
+                                <i class="fas fa-boxes me-2"></i>Ver Mercaderías
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'mercaderias:stocks_list' %}">
+                                <i class="fas fa-warehouse me-2"></i>Control de Stock
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            
+                            <li class="dropdown-header">Ubicaciones</li>
+                            <li><a class="dropdown-item" href="{% url 'almacenamiento:ubicaciones_list' %}">
+                                <i class="fas fa-map-marker-alt me-2"></i>Ver Ubicaciones
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            
+                            <li class="dropdown-header">Administración</li>
+                            <li><a class="dropdown-item" href="{% url 'admin:mercaderias_mercaderia_changelist' %}" target="_blank">
+                                <i class="fas fa-cog me-2"></i>Admin Mercaderías
+                            </a></li>
+                        </ul>
+                    </li>
+
+                    <!-- Almacenamiento Dropdown -->
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle {% if request.resolver_match.namespace == 'almacenamiento' %}active{% endif %}" 
+                           href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-warehouse me-1"></i>Almacenamiento
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'almacenamiento:dashboard' %}">
+                                <i class="bi bi-speedometer2 me-2"></i>Dashboard Almacenamiento
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Ubicaciones</li>
+                            <li><a class="dropdown-item" href="{% url 'almacenamiento:ubicaciones_list' %}">
+                                <i class="fas fa-map-marker-alt me-2"></i>Ver Ubicaciones
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'almacenamiento:almacenajes_list' %}">
+                                <i class="fas fa-warehouse me-2"></i>Ver Almacenajes
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Stock</li>
+                            <li><a class="dropdown-item" href="{% url 'almacenamiento:stocks_list' %}">
+                                <i class="fas fa-boxes me-2"></i>Control de Stock
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="dropdown-header">Administración</li>
+                            <li><a class="dropdown-item" href="{% url 'admin:almacenamiento_ubicacion_changelist' %}" target="_blank">
+                                <i class="fas fa-cog me-2"></i>Admin Almacenamiento
+                            </a></li>
+                        </ul>
+                    </li>
+
                     <!-- Transportes Dropdown -->
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle {% if request.resolver_match.namespace == 'transportes' %}active{% endif %}" 

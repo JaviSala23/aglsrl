@@ -1,0 +1,370 @@
+{% extends 'mercaderias/base_mercaderias.html' %}
+{% load static %}
+{% load mercaderias_extras %}
+
+{% block title %}{{ clasificacion.codigo }} - Detalle de Clasificación{% endblock %}
+
+{% block mercaderias_content %}
+<!-- Información principal de la clasificación -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card border-left-warning">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="m-0 font-weight-bold text-warning">
+                    <i class="fas fa-clipboard-check me-2"></i>{{ clasificacion.codigo }}
+                </h5>
+                <div>
+                    {% if clasificacion.estado == 'BORRADOR' %}
+                        <span class="badge bg-secondary fs-6">{{ clasificacion.get_estado_display }}</span>
+                    {% elif clasificacion.estado == 'REGISTRADO' %}
+                        <span class="badge bg-info fs-6">{{ clasificacion.get_estado_display }}</span>
+                    {% elif clasificacion.estado == 'VERIFICADO' %}
+                        <span class="badge bg-success fs-6">{{ clasificacion.get_estado_display }}</span>
+                    {% elif clasificacion.estado == 'RECHAZADO' %}
+                        <span class="badge bg-danger fs-6">{{ clasificacion.get_estado_display }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-warning">Información General</h6>
+                        <table class="table table-borderless table-sm">
+                            <tr>
+                                <td><strong>Fecha de Registro:</strong></td>
+                                <td>{{ clasificacion.fecha_registro|date:"d/m/Y" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Tipo de Clasificación:</strong></td>
+                                <td>{{ clasificacion.get_tipo_clasificacion_display }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Registrado por:</strong></td>
+                                <td>{{ clasificacion.registrado_por }}</td>
+                            </tr>
+                            {% if clasificacion.responsable %}
+                            <tr>
+                                <td><strong>Responsable:</strong></td>
+                                <td>{{ clasificacion.responsable }}</td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                                <td><strong>Fecha de Creación:</strong></td>
+                                <td>{{ clasificacion.fecha_creacion|date:"d/m/Y H:i" }}</td>
+                            </tr>
+                            {% if clasificacion.fecha_actualizacion != clasificacion.fecha_creacion %}
+                            <tr>
+                                <td><strong>Última Actualización:</strong></td>
+                                <td>{{ clasificacion.fecha_actualizacion|date:"d/m/Y H:i" }}</td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-warning">Stock Clasificado</h6>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-seedling text-success fa-2x me-3"></i>
+                                    <div>
+                                        <h5 class="mb-1">{{ clasificacion.stock_origen.mercaderia.grano.nombre }}</h5>
+                                        <p class="mb-0 text-muted">{{ clasificacion.stock_origen.ubicacion.nombre }}</p>
+                                    </div>
+                                </div>
+                                <div class="row text-center">
+                                    <div class="col-6">
+                                        <div class="border-end">
+                                            <div class="h4 text-success">{{ clasificacion.cantidad_stock_original|floatformat:0 }} kg</div>
+                                            <small class="text-muted">Stock Original</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="h4 text-info">{{ clasificacion.cantidad_total_registrada|floatformat:0 }} kg</div>
+                                        <small class="text-muted">Total Registrado</small>
+                                    </div>
+                                </div>
+                                {% if clasificacion.diferencia_cantidad != 0 %}
+                                <div class="alert alert-warning mt-3 mb-0">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    <strong>Diferencia detectada:</strong> {{ clasificacion.diferencia_cantidad|floatformat:2 }} kg
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if clasificacion.observaciones %}
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6 class="text-warning">Observaciones Generales</h6>
+                        <div class="alert alert-info">
+                            {{ clasificacion.observaciones|linebreaks }}
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Detalles de calidad -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-warning">
+                    <i class="fas fa-chart-pie me-2"></i>Detalles de Clasificación por Calidades
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if clasificacion.detalles.all %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Calidad</th>
+                                <th class="text-center">Porcentaje</th>
+                                <th class="text-center">Cantidad (kg)</th>
+                                <th class="text-center">Cantidad (ton)</th>
+                                <th>Observaciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for detalle in clasificacion.detalles.all %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if detalle.calidad.color_hex %}
+                                            <div class="me-3" style="width: 20px; height: 20px; border-radius: 50%; background-color: {{ detalle.calidad.color_hex }}; border: 2px solid #dee2e6;"></div>
+                                        {% else %}
+                                            <i class="fas fa-circle me-3 text-secondary"></i>
+                                        {% endif %}
+                                        <div>
+                                            <strong>{{ detalle.calidad.nombre }}</strong>
+                                            <br><small class="text-muted">{{ detalle.calidad.codigo }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-warning text-dark fs-6">{{ detalle.porcentaje|floatformat:2 }}%</span>
+                                </td>
+                                <td class="text-center">
+                                    <strong class="text-success">{{ detalle.cantidad_kg|floatformat:2 }}</strong>
+                                </td>
+                                <td class="text-center">
+                                    <span class="text-muted">{{ detalle.cantidad_kg|kg_to_ton|floatformat:3 }}</span>
+                                </td>
+                                <td>
+                                    {% if detalle.observaciones %}
+                                        <small class="text-muted">{{ detalle.observaciones }}</small>
+                                    {% else %}
+                                        <small class="text-muted">—</small>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-warning">
+                                <th>TOTAL</th>
+                                <th class="text-center">
+                                    <strong>{{ clasificacion.porcentaje_total|floatformat:2 }}%</strong>
+                                </th>
+                                <th class="text-center">
+                                    <strong>{{ clasificacion.cantidad_total_registrada|floatformat:2 }} kg</strong>
+                                </th>
+                                <th class="text-center">
+                                    <strong>{{ clasificacion.cantidad_total_registrada|kg_to_ton|floatformat:3 }} ton</strong>
+                                </th>
+                                <th></th>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+
+                <!-- Gráfico de distribución de calidades -->
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <h6 class="text-warning">Distribución por Calidades</h6>
+                        <canvas id="calidadChart" width="400" height="200"></canvas>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-warning">Resumen</h6>
+                        <div class="list-group list-group-flush">
+                            {% for detalle in clasificacion.detalles.all %}
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div class="d-flex align-items-center">
+                                    {% if detalle.calidad.color_hex %}
+                                        <div class="me-2" style="width: 12px; height: 12px; border-radius: 50%; background-color: {{ detalle.calidad.color_hex }};"></div>
+                                    {% endif %}
+                                    <span>{{ detalle.calidad.nombre }}</span>
+                                </div>
+                                <span class="badge bg-secondary">{{ detalle.porcentaje|floatformat:1 }}%</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-exclamation-triangle fa-2x text-warning mb-3"></i>
+                    <h5 class="text-muted">Sin detalles de clasificación</h5>
+                    <p class="text-muted">Esta clasificación no tiene detalles de calidad registrados.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tickets de ajuste relacionados -->
+{% if tickets_ajuste %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="m-0 font-weight-bold text-info">
+                    <i class="fas fa-balance-scale me-2"></i>Tickets de Ajuste Generados
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm">
+                        <thead>
+                            <tr>
+                                <th>Ticket</th>
+                                <th>Tipo</th>
+                                <th>Cantidad</th>
+                                <th>Fecha</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ticket in tickets_ajuste %}
+                            <tr>
+                                <td><strong>{{ ticket.numero_ticket }}</strong></td>
+                                <td>
+                                    {% if ticket.tipo_ajuste == 'ALTA' %}
+                                        <span class="badge bg-success">{{ ticket.get_tipo_ajuste_display }}</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">{{ ticket.get_tipo_ajuste_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ ticket.cantidad_ajuste_kg|floatformat:2 }} kg</td>
+                                <td>{{ ticket.fecha_ajuste|date:"d/m/Y" }}</td>
+                                <td>
+                                    {% if ticket.aplicado %}
+                                        <span class="badge bg-success">Aplicado</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Pendiente</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Acciones -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <a href="{% url 'mercaderias:clasificacion:lista_clasificaciones' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Volver a la Lista
+                        </a>
+                    </div>
+                    
+                    <div>
+                        {% if clasificacion.estado == 'BORRADOR' %}
+                            <a href="{% url 'mercaderias:clasificacion:editar_clasificacion' id=clasificacion.id %}" class="btn btn-warning">
+                                <i class="fas fa-edit me-2"></i>Editar Clasificación
+                            </a>
+                        {% endif %}
+                        
+                        <div class="btn-group">
+                            <button class="btn btn-info dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <i class="fas fa-download me-2"></i>Exportar
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="#" onclick="window.print()">
+                                    <i class="fas fa-print me-2"></i>Imprimir
+                                </a></li>
+                                <li><a class="dropdown-item" href="#">
+                                    <i class="fas fa-file-pdf me-2"></i>Exportar PDF
+                                </a></li>
+                                <li><a class="dropdown-item" href="#">
+                                    <i class="fas fa-file-excel me-2"></i>Exportar Excel
+                                </a></li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+$(document).ready(function() {
+    // Gráfico de distribución de calidades
+    const ctx = document.getElementById('calidadChart').getContext('2d');
+    
+    const data = {
+        labels: [
+            {% for detalle in clasificacion.detalles.all %}
+                '{{ detalle.calidad.nombre }}'{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ],
+        datasets: [{
+            data: [
+                {% for detalle in clasificacion.detalles.all %}
+                    {{ detalle.porcentaje }}{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ],
+            backgroundColor: [
+                {% for detalle in clasificacion.detalles.all %}
+                    '{{ detalle.calidad.color_hex|default:"#6c757d" }}'{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ],
+            borderWidth: 2,
+            borderColor: '#fff'
+        }]
+    };
+
+    new Chart(ctx, {
+        type: 'doughnut',
+        data: data,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.label + ': ' + context.parsed.toFixed(1) + '%';
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

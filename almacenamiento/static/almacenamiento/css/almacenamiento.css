@@ -1,0 +1,120 @@
+/* ===== ALMACENAMIENTO MODULE STYLES ===== */
+
+/* Variables de color para almacenamiento (naranja) */
+:root {
+    --almacenamiento-primary: #fd7e14;
+    --almacenamiento-secondary: #e76500;
+    --almacenamiento-light: #fff3e0;
+    --almacenamiento-dark: #cc5200;
+    --almacenamiento-gradient: linear-gradient(135deg, #fd7e14, #e76500);
+}
+
+/* Colores específicos para el módulo de almacenamiento */
+.almacenamiento-primary {
+    color: var(--almacenamiento-primary) !important;
+}
+
+.almacenamiento-bg-primary {
+    background-color: var(--almacenamiento-primary) !important;
+}
+
+.almacenamiento-bg-gradient {
+    background: var(--almacenamiento-gradient) !important;
+}
+
+/* Cards específicos para almacenamiento */
+.card.almacenamiento {
+    border-left: 4px solid var(--almacenamiento-primary);
+}
+
+.card.almacenamiento .card-header {
+    background: var(--almacenamiento-light);
+    border-bottom: 1px solid var(--almacenamiento-primary);
+}
+
+/* Badges y botones */
+.badge.almacenamiento {
+    background-color: var(--almacenamiento-primary) !important;
+}
+
+.btn.almacenamiento {
+    background-color: var(--almacenamiento-primary);
+    border-color: var(--almacenamiento-primary);
+    color: white;
+}
+
+.btn.almacenamiento:hover {
+    background-color: var(--almacenamiento-secondary);
+    border-color: var(--almacenamiento-secondary);
+}
+
+/* Iconos de almacenamiento */
+.almacenamiento-icon {
+    color: var(--almacenamiento-primary);
+}
+
+/* Progress bars */
+.progress-bar.almacenamiento {
+    background-color: var(--almacenamiento-primary);
+}
+
+/* Enlaces de almacenamiento */
+a.almacenamiento-link {
+    color: var(--almacenamiento-primary);
+}
+
+a.almacenamiento-link:hover {
+    color: var(--almacenamiento-secondary);
+}
+
+/* Estadísticas de almacenamiento */
+.stat-almacenamiento {
+    background: var(--almacenamiento-light);
+    border-left: 3px solid var(--almacenamiento-primary);
+}
+
+/* Tables específicas para almacenamiento */
+.table.almacenamiento th {
+    background-color: var(--almacenamiento-light);
+    color: var(--almacenamiento-dark);
+    border-bottom: 2px solid var(--almacenamiento-primary);
+}
+
+/* Charts y gráficos */
+.chart-almacenamiento {
+    border: 2px solid var(--almacenamiento-light);
+    border-radius: 8px;
+}
+
+/* Navegación activa */
+.nav-link.active.almacenamiento {
+    background-color: var(--almacenamiento-primary) !important;
+    color: white !important;
+}
+
+/* Hover effects */
+.hover-almacenamiento:hover {
+    background-color: var(--almacenamiento-light);
+    border-color: var(--almacenamiento-primary);
+    transform: translateY(-2px);
+    transition: all 0.3s ease;
+}
+
+/* Alerts específicos */
+.alert.almacenamiento {
+    background-color: var(--almacenamiento-light);
+    border-color: var(--almacenamiento-primary);
+    color: var(--almacenamiento-dark);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .almacenamiento-mobile-text {
+        font-size: 0.9rem;
+    }
+    
+    .btn.almacenamiento {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+}

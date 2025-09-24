@@ -1,0 +1,45 @@
+{% extends 'almacenamiento/base_almacenamiento.html' %}
+
+{% block title %}Crear Almacenaje{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <h1>Crear Almacenaje - Test Simple</h1>
+            
+            {% if form %}
+                <div class="card">
+                    <div class="card-body">
+                        <form method="post">
+                            {% csrf_token %}
+                            
+                            <div class="mb-3">
+                                <label>Ubicación:</label>
+                                {{ form.ubicacion }}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label>Código:</label>
+                                {{ form.codigo }}
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label>Tipo:</label>
+                                {{ form.tipo }}
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary">Crear</button>
+                            <a href="/almacenamiento/almacenajes/" class="btn btn-secondary">Cancelar</a>
+                        </form>
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-danger">
+                    Error: No hay formulario disponible
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

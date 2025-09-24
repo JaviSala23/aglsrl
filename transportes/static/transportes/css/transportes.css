@@ -5,10 +5,10 @@
  */
 
 :root {
-    /* Colores específicos para Transportes - Tema Verde (siguiendo cuentas) */
-    --transportes-primary: #198754;
-    --transportes-primary-light: #20c997;
-    --transportes-primary-dark: #146c43;
+    /* Colores específicos para Transportes - Tema Azul Oscuro (coincide exactamente con tarjeta del panel) */
+    --transportes-primary: #2f3542;
+    --transportes-primary-light: #3742fa;
+    --transportes-primary-dark: #1e2328;
     --transportes-secondary: #6c757d;
     --transportes-success: #198754;
     --transportes-info: #0dcaf0;
@@ -17,25 +17,25 @@
     --transportes-light: #f8f9fa;
     --transportes-dark: #212529;
     
-    /* Gradientes verdes */
-    --transportes-gradient: linear-gradient(135deg, #198754, #20c997);
-    --transportes-gradient-hover: linear-gradient(135deg, #146c43, #198754);
+    /* Gradientes azul oscuro para coincidir exactamente con la tarjeta */
+    --transportes-gradient: linear-gradient(135deg, #3742fa, #2f3542);
+    --transportes-gradient-hover: linear-gradient(135deg, #2f3542, #1e2328);
 }
 
 /* ===========================================
    NAVEGACIÓN ESPECÍFICA DE TRANSPORTES
    ========================================== */
 
-/* Resaltar el dropdown de transportes en verde */
+/* Resaltar el dropdown de transportes en azul oscuro */
 .navbar-nav .nav-item.dropdown .nav-link.active,
 .navbar-nav .nav-item.dropdown:hover .nav-link {
-    background-color: rgba(25, 135, 84, 0.15) !important;
+    background-color: rgba(47, 53, 66, 0.15) !important;
     color: #ffffff !important;
 }
 
 /* Items del dropdown de transportes */
 .navbar-nav .dropdown-menu .dropdown-item:hover {
-    background-color: rgba(25, 135, 84, 0.1);
+    background-color: rgba(47, 53, 66, 0.1);
     color: var(--transportes-primary);
 }
 

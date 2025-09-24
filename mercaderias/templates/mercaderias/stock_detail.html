@@ -1,0 +1,273 @@
+{% extends 'mercaderias/base_mercaderias.html' %}
+{% load static %}
+{% load mercaderias_extras %}
+
+{% block title %}Stock: {{ stock.mercaderia.descripcion|truncatechars:30 }} - Mercaderías{% endblock %}
+
+{% block mercaderias_content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-2">
+                        <i class="fas fa-chart-bar me-2 text-success"></i>
+                        Detalle de Stock
+                    </h1>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb">
+                            <li class="breadcrumb-item"><a href="{% url 'mercaderias:dashboard' %}">Dashboard</a></li>
+                            <li class="breadcrumb-item"><a href="{% url 'mercaderias:stocks_list' %}">Stock</a></li>
+                            <li class="breadcrumb-item active">Detalle</li>
+                        </ol>
+                    </nav>
+                </div>
+                <div class="btn-group">
+                    <a href="{% url 'mercaderias:stocks_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i>
+                        Volver a Stock
+                    </a>
+                    <a href="{% url 'mercaderias:stocks_filter' %}" class="btn btn-outline-info">
+                        <i class="fas fa-filter me-1"></i>
+                        Filtros Avanzados
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información Principal del Stock -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-success text-white">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        <h5 class="mb-0">Información del Stock</h5>
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row">
+                        <!-- Columna Izquierda: Información de la Mercadería -->
+                        <div class="col-md-6">
+                            <h6 class="text-success fw-bold mb-3">
+                                <i class="fas fa-boxes me-2"></i>
+                                Información de la Mercadería
+                            </h6>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-muted">Descripción:</label>
+                                <p class="mb-1">{{ stock.mercaderia.descripcion }}</p>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-muted">Tipo de Grano:</label>
+                                <p class="mb-1">
+                                    <span class="badge bg-success fs-6">
+                                        <i class="fas fa-seedling me-1"></i>
+                                        {{ stock.mercaderia.grano.nombre }}
+                                    </span>
+                                </p>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-muted">Propietario:</label>
+                                <p class="mb-1">
+                                    <span class="badge bg-{% if stock.mercaderia.tipo == 'PROPIO' %}primary{% else %}info{% endif %} fs-6">
+                                        <i class="fas fa-user-tie me-1"></i>
+                                        {{ stock.mercaderia.propietario_nombre|default:"No especificado" }}
+                                    </span>
+                                </p>
+                                <small class="text-muted">{{ stock.mercaderia.get_tipo_display }}</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-muted">Estado:</label>
+                                <p class="mb-1">
+                                    <span class="badge bg-{% if stock.mercaderia.estado == 'ACTIVO' %}success{% else %}secondary{% endif %} fs-6">
+                                        {{ stock.mercaderia.get_estado_display }}
+                                    </span>
+                                </p>
+                            </div>
+                            
+                            {% if stock.mercaderia.observaciones %}
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-muted">Observaciones:</label>
+                                <p class="mb-1 text-muted">{{ stock.mercaderia.observaciones }}</p>
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <!-- Columna Derecha: Información de Ubicación y Stock -->
+                        <div class="col-md-6">
+                            <h6 class="text-primary fw-bold mb-3">
+                                <i class="fas fa-warehouse me-2"></i>
+                                Ubicación y Almacenamiento
+                            </h6>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-muted">Ubicación:</label>
+                                <p class="mb-1">
+                                    <a href="{% url 'almacenamiento:ubicacion_detail' pk=stock.ubicacion.pk %}" 
+                                       class="text-decoration-none">
+                                        <strong>{{ stock.ubicacion.nombre }}</strong>
+                                    </a>
+                                </p>
+                                <small class="text-muted">Tipo: {{ stock.ubicacion.tipo }}</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-muted">Código de Almacenaje:</label>
+                                <p class="mb-1">
+                                    <code class="fs-6">{{ stock.almacenaje.codigo }}</code>
+                                </p>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-muted">Cantidad en Stock:</label>
+                                <div class="bg-light p-3 rounded">
+                                    <div class="row text-center">
+                                        <div class="col-6">
+                                            <div class="border-end">
+                                                <h4 class="text-success mb-1">{{ stock.cantidad_kg|floatformat:0 }}</h4>
+                                                <small class="text-muted">Kilogramos</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-6">
+                                            <h4 class="text-success mb-1">{{ stock.cantidad_kg|kg_to_ton|floatformat:2 }}</h4>
+                                            <small class="text-muted">Toneladas</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold text-muted">Última Actualización:</label>
+                                <p class="mb-1">
+                                    <i class="fas fa-calendar me-1 text-info"></i>
+                                    {{ stock.fecha_actualizacion|date:"d/m/Y" }} a las {{ stock.fecha_actualizacion|time:"H:i" }}
+                                </p>
+                                <small class="text-muted">
+                                    Hace {{ stock.fecha_actualizacion|timesince }}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones Rápidas -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-tools me-2"></i>
+                        Acciones Rápidas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <a href="{% url 'mercaderias:mercaderia_detail' pk=stock.mercaderia.pk %}" 
+                               class="btn btn-outline-success w-100">
+                                <i class="fas fa-boxes me-2"></i>
+                                Ver Mercadería Completa
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{% url 'almacenamiento:ubicacion_detail' pk=stock.ubicacion.pk %}" 
+                               class="btn btn-outline-primary w-100">
+                                <i class="fas fa-warehouse me-2"></i>
+                                Ver Ubicación
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{% url 'mercaderias:stocks_filter' %}?grano={{ stock.mercaderia.grano.pk }}" 
+                               class="btn btn-outline-info w-100">
+                                <i class="fas fa-seedling me-2"></i>
+                                Otros Stocks del Grano
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="{% url 'mercaderias:stocks_filter' %}?propietario={{ stock.mercaderia.propietario_nombre }}" 
+                               class="btn btn-outline-warning w-100">
+                                <i class="fas fa-user-tie me-2"></i>
+                                Stocks del Propietario
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información Adicional -->
+    <div class="row">
+        <div class="col-md-6">
+            <!-- Historial (Placeholder) -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-history me-2"></i>
+                        Historial de Movimientos
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center py-4">
+                        <i class="fas fa-clock fa-2x text-muted mb-3"></i>
+                        <p class="text-muted">Historial de movimientos próximamente disponible</p>
+                        <small class="text-muted">Se mostrarán entradas, salidas y transferencias</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <!-- Estadísticas Relacionadas -->
+            <div class="card shadow-sm border-0">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-chart-pie me-2"></i>
+                        Estadísticas Relacionadas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6 text-center">
+                            <div class="border-end">
+                                <h5 class="text-success">ID: {{ stock.id }}</h5>
+                                <small class="text-muted">Registro</small>
+                            </div>
+                        </div>
+                        <div class="col-6 text-center">
+                            <h5 class="text-info">{{ stock.mercaderia.fecha_ingreso|date:"M Y" }}</h5>
+                            <small class="text-muted">Fecha Ingreso</small>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="small text-muted">
+                        <p class="mb-1">
+                            <i class="fas fa-info-circle me-1"></i>
+                            <strong>Estado del sistema:</strong> Activo
+                        </p>
+                        <p class="mb-1">
+                            <i class="fas fa-database me-1"></i>
+                            <strong>Base de datos:</strong> MySQL
+                        </p>
+                        <p class="mb-0">
+                            <i class="fas fa-sync me-1"></i>
+                            <strong>Sincronización:</strong> En tiempo real
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

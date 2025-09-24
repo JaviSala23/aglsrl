@@ -1,0 +1,391 @@
+{% extends 'mercaderias/base_mercaderias.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - AGL SRL{% endblock %}
+
+{% block mercaderias_breadcrumb %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'mercaderias:dashboard' %}">Mercaderías</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'mercaderias:granos:lista' %}">Granos</a></li>
+        <li class="breadcrumb-item active" aria-current="page">
+            {% if grano %}Editar{% else %}Crear{% endif %}
+        </li>
+    </ol>
+</nav>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-card {
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        border: none;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        border-radius: 15px;
+    }
+    
+    .form-header {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+        border-radius: 15px 15px 0 0;
+        padding: 2rem;
+        text-align: center;
+    }
+    
+    .form-icon {
+        font-size: 3rem;
+        margin-bottom: 1rem;
+        opacity: 0.9;
+    }
+    
+    .required-field {
+        position: relative;
+    }
+    
+    .required-field label::after {
+        content: " *";
+        color: #dc3545;
+        font-weight: bold;
+    }
+    
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0,123,255,0.25);
+    }
+    
+    .btn-create {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        padding: 12px 30px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-radius: 25px;
+        box-shadow: 0 4px 15px rgba(40,167,69,0.3);
+        transition: all 0.3s ease;
+    }
+    
+    .btn-create:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(40,167,69,0.4);
+    }
+    
+    .btn-update {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        border: none;
+        padding: 12px 30px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        border-radius: 25px;
+        box-shadow: 0 4px 15px rgba(0,123,255,0.3);
+        transition: all 0.3s ease;
+    }
+    
+    .btn-update:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,123,255,0.4);
+    }
+    
+    .info-box {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+        border-left: 4px solid #2196f3;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .char-counter {
+        font-size: 0.75rem;
+        color: #6c757d;
+        text-align: right;
+        margin-top: 0.25rem;
+    }
+    
+    .preview-code {
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+        color: #495057;
+        background: #f8f9fa;
+        padding: 0.5rem;
+        border-radius: 4px;
+        border: 1px solid #dee2e6;
+    }
+</style>
+{% endblock %}
+
+{% block mercaderias_content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card form-card">
+                <!-- Header -->
+                <div class="form-header">
+                    <i class="fas fa-seedling form-icon"></i>
+                    <h2 class="mb-0">{{ title }}</h2>
+                    <p class="mb-0 opacity-75">
+                        {% if grano %}
+                            Actualiza la información del grano
+                        {% else %}
+                            Completa los datos para crear un nuevo grano
+                        {% endif %}
+                    </p>
+                </div>
+
+                <div class="card-body p-4">
+                    <!-- Información adicional -->
+                    <div class="info-box">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-info-circle text-primary me-2"></i>
+                            <div>
+                                <strong>Información importante:</strong>
+                                <ul class="mb-0 mt-1">
+                                    <li>El código debe ser único y se convertirá automáticamente a mayúsculas</li>
+                                    <li>El nombre del grano debe ser descriptivo y único</li>
+                                    <li>Los campos marcados con (*) son obligatorios</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Formulario -->
+                    <form method="post" id="granoForm" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <!-- Nombre del grano -->
+                            <div class="col-md-6 mb-3 required-field">
+                                <label for="{{ form.nombre.id_for_label }}" class="form-label">
+                                    <i class="fas fa-tag text-primary me-1"></i>
+                                    Nombre del Grano
+                                </label>
+                                {{ form.nombre }}
+                                {% if form.nombre.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.nombre.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <div class="char-counter">
+                                    <span id="nombreCounter">0</span>/100 caracteres
+                                </div>
+                            </div>
+
+                            <!-- Código del grano -->
+                            <div class="col-md-6 mb-3 required-field">
+                                <label for="{{ form.codigo.id_for_label }}" class="form-label">
+                                    <i class="fas fa-barcode text-primary me-1"></i>
+                                    Código
+                                </label>
+                                {{ form.codigo }}
+                                {% if form.codigo.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.codigo.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <div class="char-counter">
+                                    <span id="codigoCounter">0</span>/20 caracteres
+                                </div>
+                                <div class="mt-2">
+                                    <small class="text-muted">Vista previa:</small>
+                                    <div class="preview-code" id="codigoPreview">-</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Estado activo -->
+                        <div class="mb-4">
+                            <label class="form-label">
+                                <i class="fas fa-toggle-on text-primary me-1"></i>
+                                Estado
+                            </label>
+                            <div class="d-flex align-items-center">
+                                {{ form.activo }}
+                                <label for="{{ form.activo.id_for_label }}" class="form-check-label ms-2">
+                                    Grano activo
+                                </label>
+                            </div>
+                            {% if form.activo.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.activo.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                            <small class="form-text text-muted">
+                                Los granos inactivos no aparecerán en las listas de selección
+                            </small>
+                        </div>
+
+                        <!-- Descripción -->
+                        <div class="mb-4">
+                            <label for="{{ form.descripcion.id_for_label }}" class="form-label">
+                                <i class="fas fa-align-left text-primary me-1"></i>
+                                Descripción
+                            </label>
+                            {{ form.descripcion }}
+                            {% if form.descripcion.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.descripcion.errors %}
+                                        {{ error }}
+                                    </div>
+                                {% endfor %}
+                            {% endif %}
+                            <div class="char-counter">
+                                <span id="descripcionCounter">0</span>/500 caracteres
+                            </div>
+                        </div>
+
+                        <!-- Botones de acción -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <a href="{% url 'mercaderias:granos:lista' %}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-arrow-left me-1"></i>
+                                        Volver a la Lista
+                                    </a>
+                                    
+                                    <div>
+                                        {% if grano %}
+                                            <button type="submit" class="btn btn-update text-white">
+                                                <i class="fas fa-save me-1"></i>
+                                                {{ submit_text }}
+                                            </button>
+                                        {% else %}
+                                            <button type="submit" class="btn btn-create text-white">
+                                                <i class="fas fa-plus me-1"></i>
+                                                {{ submit_text }}
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Contadores de caracteres
+    function setupCharCounter(fieldId, counterId, maxLength) {
+        const field = document.getElementById(fieldId);
+        const counter = document.getElementById(counterId);
+        
+        if (field && counter) {
+            function updateCounter() {
+                const length = field.value.length;
+                counter.textContent = length;
+                
+                if (length > maxLength * 0.8) {
+                    counter.style.color = '#dc3545';
+                } else if (length > maxLength * 0.6) {
+                    counter.style.color = '#ffc107';
+                } else {
+                    counter.style.color = '#6c757d';
+                }
+            }
+            
+            field.addEventListener('input', updateCounter);
+            updateCounter(); // Inicializar
+        }
+    }
+    
+    // Configurar contadores
+    setupCharCounter('{{ form.nombre.id_for_label }}', 'nombreCounter', 100);
+    setupCharCounter('{{ form.codigo.id_for_label }}', 'codigoCounter', 10);
+    setupCharCounter('{{ form.descripcion.id_for_label }}', 'descripcionCounter', 500);
+    
+    // Vista previa del código
+    const codigoField = document.getElementById('{{ form.codigo.id_for_label }}');
+    const codigoPreview = document.getElementById('codigoPreview');
+    
+    if (codigoField && codigoPreview) {
+        function updatePreview() {
+            const value = codigoField.value.toUpperCase();
+            codigoPreview.textContent = value || '-';
+        }
+        
+        codigoField.addEventListener('input', function() {
+            // Convertir a mayúsculas automáticamente
+            this.value = this.value.toUpperCase();
+            updatePreview();
+        });
+        
+        updatePreview(); // Inicializar
+    }
+    
+    // Validación del formulario
+    const form = document.getElementById('granoForm');
+    
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        
+        // Validar campos requeridos
+        const requiredFields = [
+            '{{ form.nombre.id_for_label }}',
+            '{{ form.codigo.id_for_label }}'
+        ];
+        
+        requiredFields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field && !field.value.trim()) {
+                field.classList.add('is-invalid');
+                isValid = false;
+            } else if (field) {
+                field.classList.remove('is-invalid');
+            }
+        });
+        
+        if (!isValid) {
+            e.preventDefault();
+            
+            // Scroll al primer campo con error
+            const firstError = form.querySelector('.is-invalid');
+            if (firstError) {
+                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                firstError.focus();
+            }
+            
+            // Mostrar mensaje de error
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+            alertDiv.innerHTML = `
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Por favor, completa todos los campos obligatorios.
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            const cardBody = document.querySelector('.card-body');
+            cardBody.insertBefore(alertDiv, cardBody.firstChild);
+            
+            // Auto-ocultar después de 5 segundos
+            setTimeout(() => {
+                const alert = document.querySelector('.alert-danger');
+                if (alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                }
+            }, 5000);
+        }
+    });
+    
+    // Limpiar validación al escribir
+    const allFields = form.querySelectorAll('.form-control, .form-select');
+    allFields.forEach(field => {
+        field.addEventListener('input', function() {
+            this.classList.remove('is-invalid');
+        });
+    });
+});
+</script>
+{% endblock %}

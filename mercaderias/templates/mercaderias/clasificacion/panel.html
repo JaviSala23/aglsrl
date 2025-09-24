@@ -1,0 +1,242 @@
+{% extends 'mercaderias/base_mercaderias.html' %}
+{% load static %}
+
+{% block mercaderias_title %}Clasificación de Calidades{% endblock %}
+
+{% block mercaderias_breadcrumb %}
+<li class="breadcrumb-item active" aria-current="page">
+    <i class="fas fa-clipboard-list me-1"></i>Clasificación de Calidades
+</li>
+{% endblock %}
+
+{% block mercaderias_header_icon %}<i class="fas fa-clipboard-list text-warning"></i>{% endblock %}
+{% block mercaderias_header_title %}Clasificación de Calidades{% endblock %}
+{% block mercaderias_subtitle %}Panel de control para gestión de clasificaciones de stock{% endblock %}
+
+{% block mercaderias_header_buttons %}
+<a href="{% url 'mercaderias:clasificacion:seleccionar_stock' %}" class="btn btn-warning">
+    <i class="fas fa-plus"></i> Nueva Clasificación
+</a>
+<a href="{% url 'mercaderias:clasificacion:lista_clasificaciones' %}" class="btn btn-outline-secondary">
+    <i class="fas fa-list"></i> Ver Lista
+</a>
+<a href="{% url 'mercaderias:dashboard' %}" class="btn btn-outline-primary">
+    <i class="fas fa-arrow-left"></i> Volver a Mercaderías
+</a>
+{% endblock %}
+
+{% block mercaderias_content %}
+
+    <!-- Estadísticas principales -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Total Clasificaciones
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.total_clasificaciones }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Pendientes Verificación
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.pendientes_verificacion }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Tickets Pendientes
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.tickets_pendientes }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-exclamation-triangle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Este Mes
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ stats.clasificaciones_mes }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenido en dos columnas -->
+    <div class="row">
+        <!-- Clasificaciones recientes -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-warning">Clasificaciones Recientes</h6>
+                    <a href="{% url 'mercaderias:clasificacion:lista_clasificaciones' %}" class="btn btn-sm btn-outline-warning">
+                        Ver todas
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if clasificaciones_recientes %}
+                        <div class="table-responsive">
+                            <table class="table table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Código</th>
+                                        <th>Grano</th>
+                                        <th>Fecha</th>
+                                        <th>Estado</th>
+                                        <th>Cantidad</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for clasificacion in clasificaciones_recientes %}
+                                    <tr>
+                                        <td>{{ clasificacion.codigo }}</td>
+                                        <td>{{ clasificacion.stock_origen.mercaderia.grano.nombre }}</td>
+                                        <td>{{ clasificacion.fecha_registro|date:"d/m/Y" }}</td>
+                                        <td>
+                                            <span class="badge badge-{% if clasificacion.estado == 'BORRADOR' %}secondary{% elif clasificacion.estado == 'REGISTRADO' %}warning{% elif clasificacion.estado == 'VERIFICADO' %}success{% else %}danger{% endif %}">
+                                                {{ clasificacion.get_estado_display }}
+                                            </span>
+                                        </td>
+                                        <td>{{ clasificacion.cantidad_stock_original|floatformat:2 }} kg</td>
+                                        <td>
+                                            <a href="{% url 'mercaderias:clasificacion:detalle_clasificacion' clasificacion.id %}" 
+                                               class="btn btn-sm btn-outline-info">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-clipboard-list fa-3x text-gray-300 mb-3"></i>
+                            <p class="text-muted">No hay clasificaciones recientes</p>
+                            <a href="{% url 'mercaderias:clasificacion:seleccionar_stock' %}" class="btn btn-warning">
+                                <i class="fas fa-plus"></i> Crear Primera Clasificación
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel lateral -->
+        <div class="col-lg-4">
+            <!-- Pendientes de verificación -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">Pendientes de Verificación</h6>
+                </div>
+                <div class="card-body">
+                    {% if pendientes %}
+                        {% for clasificacion in pendientes %}
+                        <div class="d-flex align-items-center border-bottom py-2">
+                            <div class="flex-grow-1">
+                                <div class="font-weight-bold">{{ clasificacion.codigo }}</div>
+                                <small class="text-muted">{{ clasificacion.stock_origen.mercaderia.grano.nombre }}</small>
+                            </div>
+                            <a href="{% url 'mercaderias:clasificacion:detalle_clasificacion' clasificacion.id %}" 
+                               class="btn btn-sm btn-outline-info">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-check-circle text-success fa-2x mb-2"></i>
+                            <p class="text-muted mb-0">Todo verificado</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Tickets pendientes -->
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-danger">Tickets de Ajuste Pendientes</h6>
+                </div>
+                <div class="card-body">
+                    {% if tickets_pendientes %}
+                        {% for ticket in tickets_pendientes %}
+                        <div class="d-flex align-items-center border-bottom py-2">
+                            <div class="flex-grow-1">
+                                <div class="font-weight-bold">{{ ticket.numero_ticket }}</div>
+                                <small class="text-muted">
+                                    {{ ticket.get_tipo_ajuste_display }}: {{ ticket.cantidad_ajuste_kg|floatformat:2 }} kg
+                                </small>
+                            </div>
+                            <span class="badge badge-{{ ticket.tipo_ajuste|lower }}">{{ ticket.get_tipo_ajuste_display }}</span>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="fas fa-check-circle text-success fa-2x mb-2"></i>
+                            <p class="text-muted mb-0">Sin tickets pendientes</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block mercaderias_css %}
+<style>
+.border-left-warning {
+    border-left: 0.25rem solid #f6c23e !important;
+}
+.border-left-info {
+    border-left: 0.25rem solid #36b9cc !important;
+}
+.border-left-danger {
+    border-left: 0.25rem solid #e74a3b !important;
+}
+.border-left-success {
+    border-left: 0.25rem solid #1cc88a !important;
+}
+</style>
+{% endblock %}

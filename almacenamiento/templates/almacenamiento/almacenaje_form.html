@@ -1,0 +1,307 @@
+{% extends 'almacenamiento/base_almacenamiento.html' %}
+{% load static %}
+{% load widget_tweaks %}
+
+{% block title %}{{ titulo }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card-form {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        border: 1px solid rgba(0, 0, 0, 0.125);
+    }
+    
+    .form-section {
+        background-color: #f8f9fa;
+        border-left: 4px solid #28a745;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .form-section h6 {
+        color: #28a745;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+    
+    .required-field::after {
+        content: " *";
+        color: #dc3545;
+    }
+    
+    .help-text {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+    }
+    
+    .conditional-fields {
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 0.375rem;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .conditional-fields.hidden {
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-xl-8 col-lg-10">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-1">{{ titulo }}</h1>
+                    <p class="text-muted mb-0">{{ subtitulo }}</p>
+                </div>
+                <a href="{% url cancelar_url %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver
+                </a>
+            </div>
+
+            <!-- Formulario -->
+            <div class="card card-form">
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+                        
+                        <!-- Información Básica -->
+                        <div class="form-section">
+                            <h6><i class="fas fa-info-circle me-2"></i>Información Básica</h6>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ form.ubicacion.id_for_label }}" class="form-label required-field">Ubicación</label>
+                                        {{ form.ubicacion|add_class:"form-select" }}
+                                        {% if form.ubicacion.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.ubicacion.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ form.tipo.id_for_label }}" class="form-label required-field">Tipo de Almacenaje</label>
+                                        {{ form.tipo|add_class:"form-select" }}
+                                        {% if form.tipo.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.tipo.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ form.codigo.id_for_label }}" class="form-label required-field">Código</label>
+                                        {{ form.codigo|add_class:"form-control" }}
+                                        <div class="help-text">Código único dentro de la ubicación (ej: S-01, GB-A12)</div>
+                                        {% if form.codigo.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.codigo.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ form.estado.id_for_label }}" class="form-label">Estado</label>
+                                        {{ form.estado|add_class:"form-select" }}
+                                        {% if form.estado.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.estado.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Capacidad y Especificaciones -->
+                        <div class="form-section">
+                            <h6><i class="fas fa-weight me-2"></i>Capacidad y Especificaciones</h6>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ form.capacidad_kg.id_for_label }}" class="form-label">Capacidad (kg)</label>
+                                        {{ form.capacidad_kg|add_class:"form-control" }}
+                                        <div class="help-text">Capacidad máxima en kilogramos</div>
+                                        {% if form.capacidad_kg.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.capacidad_kg.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <div class="form-check form-switch">
+                                            {{ form.activo|add_class:"form-check-input" }}
+                                            <label class="form-check-label" for="{{ form.activo.id_for_label }}">
+                                                Almacenaje Activo
+                                            </label>
+                                        </div>
+                                        {% if form.activo.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.activo.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Campos específicos para silo bolsa -->
+                            <div id="silo-bolsa-fields" class="conditional-fields hidden">
+                                <h6 class="text-warning mb-3">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    Campos específicos para Silo Bolsa
+                                </h6>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.longitud_metros.id_for_label }}" class="form-label">Longitud (metros)</label>
+                                            {{ form.longitud_metros|add_class:"form-control" }}
+                                            <div class="help-text">Longitud del silo bolsa en metros</div>
+                                            {% if form.longitud_metros.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ form.longitud_metros.errors.0 }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="col-md-6">
+                                        <div class="mb-3">
+                                            <label for="{{ form.sentido.id_for_label }}" class="form-label">Sentido de Orientación</label>
+                                            {{ form.sentido|add_class:"form-control" }}
+                                            <div class="help-text">Ej: Norte-Sur, Este-Oeste</div>
+                                            {% if form.sentido.errors %}
+                                                <div class="invalid-feedback d-block">
+                                                    {{ form.sentido.errors.0 }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Ubicación GPS -->
+                        <div class="form-section">
+                            <h6><i class="fas fa-map-marker-alt me-2"></i>Ubicación GPS (Opcional)</h6>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ form.latitud.id_for_label }}" class="form-label">Latitud</label>
+                                        {{ form.latitud|add_class:"form-control" }}
+                                        <div class="help-text">Ej: -34.6037 (entre -90 y 90)</div>
+                                        {% if form.latitud.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.latitud.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label for="{{ form.longitud.id_for_label }}" class="form-label">Longitud</label>
+                                        {{ form.longitud|add_class:"form-control" }}
+                                        <div class="help-text">Ej: -58.3816 (entre -180 y 180)</div>
+                                        {% if form.longitud.errors %}
+                                            <div class="invalid-feedback d-block">
+                                                {{ form.longitud.errors.0 }}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Observaciones -->
+                        <div class="form-section">
+                            <h6><i class="fas fa-sticky-note me-2"></i>Observaciones</h6>
+                            
+                            <div class="mb-3">
+                                <label for="{{ form.observaciones.id_for_label }}" class="form-label">Observaciones</label>
+                                {{ form.observaciones|add_class:"form-control" }}
+                                <div class="help-text">Información adicional sobre el almacenaje</div>
+                                {% if form.observaciones.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.observaciones.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Errores generales del formulario -->
+                        {% if form.non_field_errors %}
+                            <div class="alert alert-danger">
+                                {% for error in form.non_field_errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+
+                        <!-- Botones -->
+                        <div class="d-flex justify-content-end gap-2 pt-3 border-top">
+                            <a href="{% url cancelar_url %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times me-2"></i>Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-success">
+                                <i class="fas fa-save me-2"></i>{{ boton_texto }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tipoSelect = document.getElementById('{{ form.tipo.id_for_label }}');
+    const siloBolsaFields = document.getElementById('silo-bolsa-fields');
+    
+    function toggleSiloBolsaFields() {
+        if (tipoSelect.value === 'SILO_BOLSA') {
+            siloBolsaFields.classList.remove('hidden');
+            // Hacer campos requeridos
+            const longitud = document.getElementById('{{ form.longitud_metros.id_for_label }}');
+            const sentido = document.getElementById('{{ form.sentido.id_for_label }}');
+            if (longitud) longitud.required = true;
+            if (sentido) sentido.required = true;
+        } else {
+            siloBolsaFields.classList.add('hidden');
+            // Quitar requerimiento
+            const longitud = document.getElementById('{{ form.longitud_metros.id_for_label }}');
+            const sentido = document.getElementById('{{ form.sentido.id_for_label }}');
+            if (longitud) longitud.required = false;
+            if (sentido) sentido.required = false;
+        }
+    }
+    
+    // Ejecutar al cargar y al cambiar
+    toggleSiloBolsaFields();
+    tipoSelect.addEventListener('change', toggleSiloBolsaFields);
+});
+</script>
+{% endblock %}

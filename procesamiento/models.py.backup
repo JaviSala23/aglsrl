@@ -1,0 +1,207 @@
+from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
+from django.utils import timezone
+from decimal import Decimal
+from mercaderias.models import Mercaderia
+from almacenamiento.models import Ubicacion, Almacenaje, Stock
+
+# ==========================================
+# CLASIFICACIÓN DE CALIDADES Y AJUSTES
+# ==========================================
+
+class TipoClasificacion(models.TextChoices):
+    """Tipos de clasificación de calidad"""
+    TAMANO = 'TAMANO', 'Por Tamaño (mm)'
+    GRAMAJE = 'GRAMAJE', 'Por Gramaje' 
+    CALIDAD = 'CALIDAD', 'Por Calidad'
+    DESCARTE = 'DESCARTE', 'Descarte/Aprovechable'
+    MIXTA = 'MIXTA', 'Clasificación Mixta'
+
+
+class EstadoClasificacion(models.TextChoices):
+    """Estados de la clasificación"""
+    BORRADOR = 'BORRADOR', 'Borrador'
+    REGISTRADO = 'REGISTRADO', 'Registrado'
+    VERIFICADO = 'VERIFICADO', 'Verificado'
+    CANCELADO = 'CANCELADO', 'Cancelado'
+
+
+class TipoAjuste(models.TextChoices):
+    """Tipos de ajuste de stock"""
+    BAJA = 'BAJA', 'Baja por Corrección'
+    ALTA = 'ALTA', 'Alta por Corrección'
+
+
+class ClasificacionCalidad(models.Model):
+    """Registro de clasificación de calidades de mercadería"""
+    id = models.AutoField(primary_key=True)
+    
+    # Información básica
+    codigo = models.CharField(max_length=50, unique=True, 
+                             help_text="Código único del registro")
+    fecha_registro = models.DateField(help_text="Fecha del registro de clasificación")
+    
+    # Stock/Mercadería clasificada
+    stock_origen = models.ForeignKey(Stock, on_delete=models.CASCADE,
+                                   related_name='clasificaciones',
+                                   help_text="Stock que se está clasificando")
+    
+    # Tipo de clasificación
+    tipo_clasificacion = models.CharField(max_length=20, choices=TipoClasificacion.choices)
+    estado = models.CharField(max_length=20, choices=EstadoClasificacion.choices, 
+                             default=EstadoClasificacion.BORRADOR)
+    
+    # Personal que realiza el registro
+    registrado_por = models.CharField(max_length=100, 
+                                    help_text="Empleado administrativo que registra")
+    
+    # Totales de control
+    cantidad_total_registrada = models.DecimalField(max_digits=12, decimal_places=2,
+                                                   default=Decimal('0.00'),
+                                                   help_text="Total registrado en kg")
+    cantidad_stock_original = models.DecimalField(max_digits=12, decimal_places=2,
+                                                 help_text="Cantidad original del stock en kg")
+    
+    # Observaciones
+    observaciones = models.TextField(blank=True, null=True,
+                                   help_text="Observaciones del registro")
+    
+    # Metadata
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Clasificación de Calidad"
+        verbose_name_plural = "Clasificaciones de Calidad"
+        ordering = ['-fecha_registro', '-fecha_creacion']
+    
+    def __str__(self):
+        return f"{self.codigo} - {self.stock_origen} ({self.get_estado_display()})"
+    
+    @property
+    def diferencia_cantidad(self):
+        """Diferencia entre cantidad original y registrada"""
+        return self.cantidad_stock_original - self.cantidad_total_registrada
+    
+    @property
+    def tiene_diferencia(self):
+        """Indica si hay diferencia en las cantidades"""
+        return abs(self.diferencia_cantidad) > Decimal('0.01')
+    
+    @property
+    def porcentaje_total(self):
+        """Suma de todos los porcentajes de los detalles"""
+        return sum(detalle.porcentaje for detalle in self.detalles.all())
+
+
+class DetalleCalidad(models.Model):
+    """Detalle de cada calidad específica encontrada"""
+    id = models.AutoField(primary_key=True)
+    
+    # Clasificación a la que pertenece
+    clasificacion = models.ForeignKey(ClasificacionCalidad, on_delete=models.CASCADE,
+                                    related_name='detalles')
+    
+    # Descripción de la calidad
+    descripcion_calidad = models.CharField(max_length=200,
+                                         help_text="Ej: 'Garbanzo 6mm', 'Descarte', etc.")
+    
+    # Especificación técnica (según tipo de clasificación)
+    valor_especifico = models.CharField(max_length=50, blank=True, null=True,
+                                       help_text="Ej: '6mm', '7mm', 'Primera', etc.")
+    
+    # Cantidad de esta calidad
+    cantidad_kg = models.DecimalField(max_digits=12, decimal_places=2,
+                                    validators=[MinValueValidator(Decimal('0.01'))])
+    
+    # Porcentaje respecto al total
+    porcentaje = models.DecimalField(max_digits=5, decimal_places=2,
+                                   validators=[MinValueValidator(Decimal('0')), 
+                                             MaxValueValidator(Decimal('100'))],
+                                   help_text="% respecto al total clasificado")
+    
+    # Ubicación específica donde se encuentra esta calidad
+    ubicacion_especifica = models.ForeignKey(Ubicacion, on_delete=models.CASCADE,
+                                           related_name='calidades_ubicadas',
+                                           blank=True, null=True)
+    almacenaje_especifico = models.ForeignKey(Almacenaje, on_delete=models.CASCADE,
+                                            related_name='calidades_almacenadas',
+                                            blank=True, null=True)
+    
+    # Observaciones específicas de esta calidad
+    observaciones = models.TextField(blank=True, null=True)
+    
+    class Meta:
+        verbose_name = "Detalle de Calidad"
+        verbose_name_plural = "Detalles de Calidad"
+        ordering = ['-porcentaje', 'descripcion_calidad']
+    
+    def __str__(self):
+        valor = f" - {self.valor_especifico}" if self.valor_especifico else ""
+        return f"{self.descripcion_calidad}{valor}: {self.cantidad_kg}kg ({self.porcentaje}%)"
+
+
+class TicketAjuste(models.Model):
+    """Tickets de ajuste para correcciones de stock"""
+    id = models.AutoField(primary_key=True)
+    
+    # Información básica
+    numero_ticket = models.CharField(max_length=50, unique=True,
+                                   help_text="Número único del ticket")
+    tipo_ajuste = models.CharField(max_length=10, choices=TipoAjuste.choices)
+    fecha_ajuste = models.DateField(help_text="Fecha del ajuste")
+    
+    # Stock afectado
+    stock_afectado = models.ForeignKey(Stock, on_delete=models.CASCADE,
+                                     related_name='ajustes')
+    
+    # Cantidad del ajuste
+    cantidad_ajuste_kg = models.DecimalField(max_digits=12, decimal_places=2,
+                                           validators=[MinValueValidator(Decimal('0.01'))],
+                                           help_text="Cantidad del ajuste en kg")
+    
+    # Motivo del ajuste
+    motivo = models.TextField(help_text="Motivo detallado del ajuste")
+    
+    # Relación con clasificación (si el ajuste proviene de una diferencia)
+    clasificacion_origen = models.ForeignKey(ClasificacionCalidad, on_delete=models.SET_NULL,
+                                           related_name='ajustes_generados',
+                                           blank=True, null=True,
+                                           help_text="Clasificación que originó este ajuste")
+    
+    # Personal responsable
+    autorizado_por = models.CharField(max_length=100,
+                                    help_text="Persona que autoriza el ajuste")
+    registrado_por = models.CharField(max_length=100,
+                                    help_text="Persona que registra el ajuste")
+    
+    # Control
+    aplicado = models.BooleanField(default=False,
+                                 help_text="Indica si el ajuste ya fue aplicado al stock")
+    fecha_aplicacion = models.DateTimeField(blank=True, null=True)
+    
+    # Metadata
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Ticket de Ajuste"
+        verbose_name_plural = "Tickets de Ajuste"
+        ordering = ['-fecha_ajuste', '-fecha_creacion']
+    
+    def __str__(self):
+        signo = "+" if self.tipo_ajuste == TipoAjuste.ALTA else "-"
+        return f"{self.numero_ticket}: {signo}{self.cantidad_ajuste_kg}kg - {self.stock_afectado}"
+    
+    def aplicar_ajuste(self):
+        """Aplica el ajuste al stock correspondiente"""
+        if not self.aplicado:
+            if self.tipo_ajuste == TipoAjuste.ALTA:
+                self.stock_afectado.cantidad_kg += self.cantidad_ajuste_kg
+            else:  # BAJA
+                self.stock_afectado.cantidad_kg -= self.cantidad_ajuste_kg
+            
+            self.stock_afectado.save()
+            self.aplicado = True
+            self.fecha_aplicacion = timezone.now()
+            self.save()
