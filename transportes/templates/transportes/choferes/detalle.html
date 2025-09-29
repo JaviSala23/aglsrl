@@ -1,0 +1,385 @@
+{% extends 'transportes/base_transportes.html' %}
+{% load static %}
+
+{% block title %}
+    Detalle Chofer {{ chofer.nombre_completo }} - {{ block.super }}
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <!-- Encabezado -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800">
+                        <i class="fas fa-user-tie me-2"></i>
+                        {{ chofer.nombre_completo }}
+                    </h1>
+                    <p class="text-muted mb-0">
+                        Legajo: {{ chofer.legajo }}
+                        {% if not chofer.activo %}
+                            <span class="badge bg-danger ms-2">Inactivo</span>
+                        {% else %}
+                            <span class="badge bg-success ms-2">{{ chofer.get_estado_display }}</span>
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'transportes:editar_chofer' chofer.pk %}" 
+                       class="btn btn-warning">
+                        <i class="fas fa-edit me-1"></i> Editar
+                    </a>
+                    <a href="{% url 'transportes:lista_choferes' %}" 
+                       class="btn btn-secondary">
+                        <i class="fas fa-arrow-left me-1"></i> Volver
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información Personal -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-user me-1"></i>
+                        Información Personal
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong>Nombre:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            {{ chofer.nombre }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong>Apellido:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            {{ chofer.apellido }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong>CUIT:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            <code>{{ chofer.cuit }}</code>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong>Fecha de Nacimiento:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            {{ chofer.fecha_nacimiento|date:"d/m/Y" }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong>Estado:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            <span class="badge 
+                                {% if chofer.estado == 'disponible' %}bg-success
+                                {% elif chofer.estado == 'en_viaje' %}bg-primary
+                                {% elif chofer.estado == 'descanso' %}bg-warning
+                                {% elif chofer.estado == 'vacaciones' %}bg-info
+                                {% elif chofer.estado == 'licencia' %}bg-secondary
+                                {% elif chofer.estado == 'suspendido' %}bg-danger
+                                {% else %}bg-dark{% endif %}">
+                                {{ chofer.get_estado_display }}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información de Contacto -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-address-book me-1"></i>
+                        Información de Contacto
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong>Teléfono:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            {% if chofer.telefono %}
+                                <a href="tel:{{ chofer.telefono }}" class="text-decoration-none">
+                                    <i class="fas fa-phone me-1"></i>{{ chofer.telefono }}
+                                </a>
+                            {% else %}
+                                <span class="text-muted">No especificado</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong>Email:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            {% if chofer.email %}
+                                <a href="mailto:{{ chofer.email }}" class="text-decoration-none">
+                                    <i class="fas fa-envelope me-1"></i>{{ chofer.email }}
+                                </a>
+                            {% else %}
+                                <span class="text-muted">No especificado</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong>Dirección:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            {% if chofer.direccion %}
+                                {{ chofer.direccion }}
+                            {% else %}
+                                <span class="text-muted">No especificada</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información Laboral -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-briefcase me-1"></i>
+                        Información Laboral
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong>Legajo:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            <code>{{ chofer.legajo }}</code>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong>Fecha de Ingreso:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            {{ chofer.fecha_ingreso|date:"d/m/Y" }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong>Camión Asignado:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            {% if chofer.camion_asignado %}
+                                <a href="{% url 'transportes:detalle_camion' chofer.camion_asignado.pk %}" 
+                                   class="text-decoration-none">
+                                    <i class="fas fa-truck me-1"></i>{{ chofer.camion_asignado.patente }}
+                                </a>
+                            {% else %}
+                                <span class="text-muted">Sin asignación</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong>Creado por:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            {{ chofer.creado_por.get_full_name|default:chofer.creado_por.username }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong>Fecha de Alta:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            {{ chofer.fecha_alta|date:"d/m/Y H:i" }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información de Licencia -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-id-card me-1"></i>
+                        Licencia de Conducir
+                    </h6>
+                </div>
+                <div class="card-body">
+                    {% if chofer.tipo_licencia %}
+                        <div class="row mb-3">
+                            <div class="col-sm-4">
+                                <strong>Tipo de Licencia:</strong>
+                            </div>
+                            <div class="col-sm-8">
+                                <span class="badge bg-primary">{{ chofer.get_tipo_licencia_display }}</span>
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-sm-4">
+                                <strong>Número:</strong>
+                            </div>
+                            <div class="col-sm-8">
+                                {% if chofer.numero_licencia %}
+                                    <code>{{ chofer.numero_licencia }}</code>
+                                {% else %}
+                                    <span class="text-muted">No especificado</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-sm-4">
+                                <strong>Vencimiento:</strong>
+                            </div>
+                            <div class="col-sm-8">
+                                {% if chofer.fecha_vencimiento_licencia %}
+                                    {{ chofer.fecha_vencimiento_licencia|date:"d/m/Y" }}
+                                    {% if chofer.licencia_vencida %}
+                                        <span class="badge bg-danger ms-2">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>Vencida
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-success ms-2">
+                                            <i class="fas fa-check me-1"></i>Vigente
+                                        </span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">No especificada</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-info-circle fa-2x mb-3"></i>
+                            <p>No se ha registrado información de licencia para este chofer.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contacto de Emergencia -->
+    {% if chofer.contacto_emergencia_nombre or chofer.contacto_emergencia_telefono %}
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-phone me-1"></i>
+                        Contacto de Emergencia
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong>Nombre:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            {{ chofer.contacto_emergencia_nombre|default:"No especificado" }}
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-sm-4">
+                            <strong>Teléfono:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            {% if chofer.contacto_emergencia_telefono %}
+                                <a href="tel:{{ chofer.contacto_emergencia_telefono }}" class="text-decoration-none">
+                                    <i class="fas fa-phone me-1"></i>{{ chofer.contacto_emergencia_telefono }}
+                                </a>
+                            {% else %}
+                                <span class="text-muted">No especificado</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Viajes Recientes -->
+    {% if viajes_recientes %}
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-route me-1"></i>
+                        Viajes Recientes
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Número</th>
+                                    <th>Fecha</th>
+                                    <th>Origen</th>
+                                    <th>Destino</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for viaje in viajes_recientes %}
+                                <tr>
+                                    <td>{{ viaje.numero_viaje }}</td>
+                                    <td>{{ viaje.fecha_programada|date:"d/m/Y" }}</td>
+                                    <td>{{ viaje.origen }}</td>
+                                    <td>{{ viaje.destino }}</td>
+                                    <td>
+                                        <span class="badge 
+                                            {% if viaje.estado == 'planificado' %}bg-secondary
+                                            {% elif viaje.estado == 'en_curso' %}bg-primary
+                                            {% elif viaje.estado == 'completado' %}bg-success
+                                            {% elif viaje.estado == 'cancelado' %}bg-danger
+                                            {% elif viaje.estado == 'demorado' %}bg-warning
+                                            {% else %}bg-dark{% endif %}">
+                                            {{ viaje.get_estado_display }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'transportes:detalle_viaje' viaje.pk %}" 
+                                           class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

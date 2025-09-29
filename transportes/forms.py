@@ -130,12 +130,8 @@ class ChoferForm(forms.ModelForm):
     class Meta:
         model = Chofer
         fields = [
-            'nombre', 'apellido', 'dni', 'fecha_nacimiento',
-            'telefono', 'email', 'direccion', 'legajo',
-            'fecha_ingreso', 'tipo_licencia', 'numero_licencia',
-            'fecha_vencimiento_licencia', 'estado', 'camion_asignado',
-            'contacto_emergencia_nombre', 'contacto_emergencia_telefono',
-            'activo'
+            'nombre', 'apellido', 'cuit',
+            'telefono', 'email', 'direccion', 'activo'
         ]
         widgets = {
             'nombre': forms.TextInput(attrs={
@@ -146,59 +142,23 @@ class ChoferForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Apellido del chofer'
             }),
-            'dni': forms.TextInput(attrs={
+            'cuit': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': '12345678'
-            }),
-            'fecha_nacimiento': forms.DateInput(attrs={
-                'class': 'form-control',
-                'type': 'date'
+                'placeholder': '20-12345678-9',
+                'maxlength': '13'
             }),
             'telefono': forms.TextInput(attrs={
                 'class': 'form-control',
-                'placeholder': '+54 9 11 1234-5678'
+                'placeholder': '+54 9 11 1234-5678 (opcional)'
             }),
             'email': forms.EmailInput(attrs={
                 'class': 'form-control',
-                'placeholder': 'email@ejemplo.com'
+                'placeholder': 'email@ejemplo.com (opcional)'
             }),
             'direccion': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Dirección completa'
-            }),
-            'legajo': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Número de legajo'
-            }),
-            'fecha_ingreso': forms.DateInput(attrs={
-                'class': 'form-control',
-                'type': 'date'
-            }),
-            'tipo_licencia': forms.Select(attrs={
-                'class': 'form-select'
-            }),
-            'numero_licencia': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Número de licencia'
-            }),
-            'fecha_vencimiento_licencia': forms.DateInput(attrs={
-                'class': 'form-control',
-                'type': 'date'
-            }),
-            'estado': forms.Select(attrs={
-                'class': 'form-select'
-            }),
-            'camion_asignado': forms.Select(attrs={
-                'class': 'form-select'
-            }),
-            'contacto_emergencia_nombre': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Nombre del contacto de emergencia'
-            }),
-            'contacto_emergencia_telefono': forms.TextInput(attrs={
-                'class': 'form-control',
-                'placeholder': 'Teléfono de emergencia'
+                'placeholder': 'Dirección completa (opcional)'
             }),
             'activo': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'
@@ -207,29 +167,39 @@ class ChoferForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['camion_asignado'].queryset = Camion.objects.filter(activo=True)
-        self.fields['camion_asignado'].empty_label = "Sin camión asignado"
     
-    def clean_dni(self):
-        dni = self.cleaned_data['dni']
-        if not dni.isdigit():
-            raise ValidationError('El DNI debe contener solo números.')
-        if len(dni) < 7 or len(dni) > 8:
-            raise ValidationError('El DNI debe tener 7 u 8 dígitos.')
-        return dni
-    
-    def clean_fecha_nacimiento(self):
-        fecha_nacimiento = self.cleaned_data['fecha_nacimiento']
-        edad = (date.today() - fecha_nacimiento).days // 365
-        if edad < 18:
-            raise ValidationError('El chofer debe ser mayor de edad.')
-        if edad > 70:
-            raise ValidationError('El chofer no puede tener más de 70 años.')
-        return fecha_nacimiento
+    def clean_cuit(self):
+        cuit = self.cleaned_data['cuit']
+        # Remover guiones para validación
+        cuit_numerico = cuit.replace('-', '')
+        
+        # Verificar que tenga 11 dígitos
+        if not cuit_numerico.isdigit() or len(cuit_numerico) != 11:
+            raise ValidationError('El CUIT debe tener el formato XX-XXXXXXXX-X (11 dígitos).')
+        
+        # Validación básica del dígito verificador
+        base = [5, 4, 3, 2, 7, 6, 5, 4, 3, 2]
+        suma = 0
+        for i in range(10):
+            suma += int(cuit_numerico[i]) * base[i]
+        
+        resto = suma % 11
+        if resto < 2:
+            digito_verificador = resto
+        else:
+            digito_verificador = 11 - resto
+        
+        if int(cuit_numerico[10]) != digito_verificador:
+            raise ValidationError('El CUIT ingresado no es válido.')
+        
+        # Devolver con formato
+        if len(cuit) == 11:  # Si no tiene guiones, los agregamos
+            return f"{cuit[:2]}-{cuit[2:10]}-{cuit[10]}"
+        return cuit
     
     def clean_fecha_vencimiento_licencia(self):
         fecha_vencimiento = self.cleaned_data['fecha_vencimiento_licencia']
-        if fecha_vencimiento < date.today():
+        if fecha_vencimiento and fecha_vencimiento < date.today():
             raise ValidationError('La licencia no puede estar vencida.')
         return fecha_vencimiento
 
@@ -304,7 +274,6 @@ class ViajeForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['camion'].queryset = Camion.objects.filter(
-            estado='disponible', 
             activo=True
         )
         self.fields['chofer'].queryset = Chofer.objects.filter(

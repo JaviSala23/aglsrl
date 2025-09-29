@@ -25,7 +25,9 @@
     <link rel="stylesheet" href="{% static 'cuentas/css/custom.css' %}">
     
     <!-- CSS específico por módulo -->
-    {% if request.resolver_match.namespace == 'agenda' %}
+    {% if request.resolver_match.namespace == 'tickets' %}
+        <link rel="stylesheet" href="{% static 'tickets/css/tickets.css' %}">
+    {% elif request.resolver_match.namespace == 'agenda' %}
         <link rel="stylesheet" href="{% static 'agenda/css/agenda.css' %}">
     {% elif request.resolver_match.namespace == 'transportes' %}
         <link rel="stylesheet" href="{% static 'transportes/css/transportes.css' %}">
@@ -40,12 +42,12 @@
 <body class="bg-light">
     <!-- Navbar -->
     {% if user.is_authenticated %}
-    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+    <nav class="navbar navbar-expand-lg navbar-dark shadow-sm" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%)">
         <div class="container-fluid">
             <!-- Brand -->
-            <a class="navbar-brand fw-bold" href="{% url 'cuentas:dashboard' %}">
-                <i class="bi bi-building-gear me-2"></i>
-                AGL SRL
+            <a class="navbar-brand fw-bold" href="{% url 'tickets:dashboard' %}">
+                <i class="fas fa-truck me-2"></i>
+                AGL SRL - Tickets
             </a>
             
             <!-- Toggle button for mobile -->
@@ -56,139 +58,45 @@
             <!-- Navigation items -->
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
+                    <!-- Panel Principal -->
                     <li class="nav-item">
                         <a class="nav-link {% if request.resolver_match.url_name == 'panel' %}active{% endif %}" 
                            href="{% url 'main:panel' %}">
-                            <i class="bi bi-house-door me-1"></i>Panel Principal
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' and request.resolver_match.namespace == 'cuentas' %}active{% endif %}" 
-                           href="{% url 'cuentas:dashboard' %}">
-                            <i class="bi bi-speedometer2 me-1"></i>Dashboard Cuentas
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'lista_cuentas' %}active{% endif %}" 
-                           href="{% url 'cuentas:lista_cuentas' %}">
-                            <i class="bi bi-people-fill me-1"></i>Cuentas
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'crear_cuenta' %}active{% endif %}" 
-                           href="{% url 'cuentas:crear_cuenta' %}">
-                            <i class="bi bi-person-plus-fill me-1"></i>Nueva Cuenta
+                            <i class="fas fa-home me-1"></i>Panel Principal
                         </a>
                     </li>
                     
-                    <!-- Mercaderías Dropdown -->
+                    <!-- Tickets de Transporte - Menú Principal -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if request.resolver_match.namespace == 'mercaderias' %}active{% endif %}" 
-                           href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-seedling me-1"></i>Mercaderías
+                        <a class="nav-link dropdown-toggle {% if request.resolver_match.namespace == 'tickets' %}active{% endif %}" 
+                           href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"
+                           style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; padding: 8px 12px; margin-right: 8px;">
+                            <i class="fas fa-ticket-alt me-1"></i>Tickets de Transporte
                         </a>
                         <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{% url 'mercaderias:dashboard' %}">
-                                <i class="bi bi-speedometer2 me-2"></i>Dashboard Mercaderías
-                            </a></li>
-                            <li><a class="dropdown-item" href="{% url 'mercaderias:clasificacion:panel' %}">
-                                <i class="fas fa-clipboard-list me-2 text-warning"></i><strong>Clasificación</strong>
+                            <li><a class="dropdown-item" href="{% url 'tickets:dashboard' %}">
+                                <i class="fas fa-tachometer-alt me-2" style="color: #667eea;"></i>Dashboard
                             </a></li>
                             <li><hr class="dropdown-divider"></li>
                             
-                            <li class="dropdown-header">Inventario</li>
-                            <li><a class="dropdown-item" href="{% url 'mercaderias:mercaderias_list' %}">
-                                <i class="fas fa-boxes me-2"></i>Ver Mercaderías
+                            <li class="dropdown-header">Gestión de Tickets</li>
+                            <li><a class="dropdown-item" href="{% url 'tickets:lista_tickets' %}">
+                                <i class="fas fa-list me-2" style="color: #667eea;"></i>Ver Todos los Tickets
                             </a></li>
-                            <li><a class="dropdown-item" href="{% url 'mercaderias:stocks_list' %}">
-                                <i class="fas fa-warehouse me-2"></i>Control de Stock
+                            <li><a class="dropdown-item" href="{% url 'tickets:crear_ticket' %}">
+                                <i class="fas fa-plus-circle me-2" style="color: #28a745;"></i>Crear Nuevo Ticket
                             </a></li>
                             <li><hr class="dropdown-divider"></li>
                             
-                            <li class="dropdown-header">Ubicaciones</li>
-                            <li><a class="dropdown-item" href="{% url 'almacenamiento:ubicaciones_list' %}">
-                                <i class="fas fa-map-marker-alt me-2"></i>Ver Ubicaciones
+                            <li class="dropdown-header">Análisis y Reportes</li>
+                            <li><a class="dropdown-item" href="{% url 'tickets:estadisticas' %}">
+                                <i class="fas fa-chart-bar me-2" style="color: #fd7e14;"></i>Estadísticas Avanzadas
                             </a></li>
                             <li><hr class="dropdown-divider"></li>
                             
                             <li class="dropdown-header">Administración</li>
-                            <li><a class="dropdown-item" href="{% url 'admin:mercaderias_mercaderia_changelist' %}" target="_blank">
-                                <i class="fas fa-cog me-2"></i>Admin Mercaderías
-                            </a></li>
-                        </ul>
-                    </li>
-
-                    <!-- Almacenamiento Dropdown -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if request.resolver_match.namespace == 'almacenamiento' %}active{% endif %}" 
-                           href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-warehouse me-1"></i>Almacenamiento
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{% url 'almacenamiento:dashboard' %}">
-                                <i class="bi bi-speedometer2 me-2"></i>Dashboard Almacenamiento
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Ubicaciones</li>
-                            <li><a class="dropdown-item" href="{% url 'almacenamiento:ubicaciones_list' %}">
-                                <i class="fas fa-map-marker-alt me-2"></i>Ver Ubicaciones
-                            </a></li>
-                            <li><a class="dropdown-item" href="{% url 'almacenamiento:almacenajes_list' %}">
-                                <i class="fas fa-warehouse me-2"></i>Ver Almacenajes
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Stock</li>
-                            <li><a class="dropdown-item" href="{% url 'almacenamiento:stocks_list' %}">
-                                <i class="fas fa-boxes me-2"></i>Control de Stock
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Administración</li>
-                            <li><a class="dropdown-item" href="{% url 'admin:almacenamiento_ubicacion_changelist' %}" target="_blank">
-                                <i class="fas fa-cog me-2"></i>Admin Almacenamiento
-                            </a></li>
-                        </ul>
-                    </li>
-
-                    <!-- Transportes Dropdown -->
-                    <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if request.resolver_match.namespace == 'transportes' %}active{% endif %}" 
-                           href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="fas fa-truck me-1"></i>Transportes
-                        </a>
-                        <ul class="dropdown-menu">
-                            <li><a class="dropdown-item" href="{% url 'transportes:dashboard' %}">
-                                <i class="bi bi-speedometer2 me-2"></i>Dashboard Transportes
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Camiones</li>
-                            <li><a class="dropdown-item" href="{% url 'transportes:lista_camiones' %}">
-                                <i class="fas fa-truck me-2"></i>Ver Camiones
-                            </a></li>
-                            <li><a class="dropdown-item" href="{% url 'transportes:crear_camion' %}">
-                                <i class="fas fa-plus me-2"></i>Nuevo Camión
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Choferes</li>
-                            <li><a class="dropdown-item" href="{% url 'transportes:lista_choferes' %}">
-                                <i class="fas fa-users me-2"></i>Ver Choferes
-                            </a></li>
-                            <li><a class="dropdown-item" href="{% url 'transportes:crear_chofer' %}">
-                                <i class="fas fa-user-plus me-2"></i>Nuevo Chofer
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li class="dropdown-header">Operaciones</li>
-                            <li><a class="dropdown-item" href="{% url 'transportes:lista_viajes' %}">
-                                <i class="fas fa-route me-2"></i>Ver Viajes
-                            </a></li>
-                            <li><a class="dropdown-item" href="{% url 'transportes:crear_viaje' %}">
-                                <i class="fas fa-plus-circle me-2"></i>Nuevo Viaje
-                            </a></li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li><a class="dropdown-item" href="{% url 'transportes:lista_tickets' %}">
-                                <i class="fas fa-balance-scale me-2"></i>Tickets Balanza
-                            </a></li>
-                            <li><a class="dropdown-item" href="{% url 'transportes:crear_ticket' %}">
-                                <i class="fas fa-weight-hanging me-2"></i>Nuevo Ticket
+                            <li><a class="dropdown-item" href="{% url 'admin:tickets_ticket_changelist' %}" target="_blank">
+                                <i class="fas fa-cog me-2" style="color: #6c757d;"></i>Admin Tickets
                             </a></li>
                         </ul>
                     </li>

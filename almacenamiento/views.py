@@ -583,3 +583,134 @@ def toggle_almacenaje_activo(request, pk):
         })
     
     return JsonResponse({'success': False, 'message': 'Método no permitido.'})
+
+
+def ingresar_stock(request):
+    """Vista para ingresar nuevo stock"""
+    from django.contrib import messages
+    from .forms import StockForm
+    
+    if request.method == 'POST':
+        form = StockForm(request.POST)
+        
+        # Actualizar querysets del formulario basado en los datos POST
+        ubicacion_id = request.POST.get('ubicacion')
+        if ubicacion_id:
+            try:
+                ubicacion = Ubicacion.objects.get(pk=ubicacion_id, activo=True)
+                # Actualizar queryset de almacenajes para esa ubicación
+                form.fields['almacenaje'].queryset = Almacenaje.objects.filter(
+                    ubicacion=ubicacion, activo=True
+                ).order_by('codigo')
+            except Ubicacion.DoesNotExist:
+                pass
+        
+        if form.is_valid():
+            stock = form.save(commit=False)
+            # Verificar si ya existe stock para esa combinación
+            stock_existente = Stock.objects.filter(
+                ubicacion=stock.ubicacion,
+                almacenaje=stock.almacenaje,
+                mercaderia=stock.mercaderia
+            ).first()
+            
+            if stock_existente:
+                # Actualizar stock existente
+                stock_existente.cantidad_kg += stock.cantidad_kg
+                stock_existente.save()
+                messages.success(
+                    request, 
+                    f'Stock actualizado: +{stock.cantidad_kg}kg de {stock.mercaderia} '
+                    f'en {stock.almacenaje.codigo}. Total: {stock_existente.cantidad_kg}kg'
+                )
+            else:
+                # Crear nuevo registro de stock
+                stock.save()
+                messages.success(
+                    request, 
+                    f'Stock ingresado: {stock.cantidad_kg}kg de {stock.mercaderia} '
+                    f'en {stock.almacenaje.codigo}'
+                )
+            
+            return redirect('almacenamiento:stocks_list')
+        else:
+            # Mostrar errores para debug
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f'Error en {field}: {error}')
+    else:
+        form = StockForm()
+        
+        # Si viene con parámetros preseleccionados
+        ubicacion_id = request.GET.get('ubicacion')
+        almacenaje_id = request.GET.get('almacenaje')
+        
+        if ubicacion_id:
+            try:
+                ubicacion = Ubicacion.objects.get(pk=ubicacion_id, activo=True)
+                form.fields['ubicacion'].initial = ubicacion
+                # Filtrar almacenajes de esa ubicación
+                form.fields['almacenaje'].queryset = Almacenaje.objects.filter(
+                    ubicacion=ubicacion, activo=True
+                ).order_by('codigo')
+            except Ubicacion.DoesNotExist:
+                pass
+                
+        if almacenaje_id:
+            try:
+                almacenaje = Almacenaje.objects.get(pk=almacenaje_id, activo=True)
+                form.fields['almacenaje'].initial = almacenaje
+                form.fields['ubicacion'].initial = almacenaje.ubicacion
+            except Almacenaje.DoesNotExist:
+                pass
+    
+    context = {
+        'form': form,
+        'titulo': 'Ingresar Stock',
+        'subtitulo': 'Registre el ingreso de mercadería a un almacenaje',
+        'boton_texto': 'Ingresar Stock',
+        'cancelar_url': 'almacenamiento:stocks_list'
+    }
+    
+    return render(request, 'almacenamiento/ingresar_stock.html', context)
+
+
+def get_almacenajes_by_ubicacion(request):
+    """Vista AJAX para obtener almacenajes filtrados por ubicación"""
+    ubicacion_id = request.GET.get('ubicacion_id')
+    
+    if ubicacion_id:
+        almacenajes = Almacenaje.objects.filter(
+            ubicacion_id=ubicacion_id, 
+            activo=True
+        ).order_by('codigo').values('id', 'codigo', 'tipo', 'capacidad_kg')
+        
+        almacenajes_list = list(almacenajes)
+        
+        # Agregar información adicional
+        for almacenaje in almacenajes_list:
+            almacenaje['tipo_display'] = dict(TipoAlmacenaje.choices)[almacenaje['tipo']]
+            
+            # Calcular stock actual
+            stock_actual = Stock.objects.filter(
+                almacenaje_id=almacenaje['id']
+            ).aggregate(total=Sum('cantidad_kg'))['total'] or 0
+            
+            almacenaje['stock_actual'] = float(stock_actual)
+            
+            if almacenaje['capacidad_kg']:
+                almacenaje['capacidad_disponible'] = float(almacenaje['capacidad_kg']) - float(stock_actual)
+                almacenaje['porcentaje_ocupacion'] = round((float(stock_actual) / float(almacenaje['capacidad_kg'])) * 100, 1)
+            else:
+                almacenaje['capacidad_disponible'] = None
+                almacenaje['porcentaje_ocupacion'] = None
+        
+        return JsonResponse({
+            'success': True,
+            'almacenajes': almacenajes_list
+        })
+    
+    return JsonResponse({
+        'success': False,
+        'almacenajes': []
+    })

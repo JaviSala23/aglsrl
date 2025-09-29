@@ -1,0 +1,361 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Ticket {{ ticket.numero_ticket }} - AGL SRL{% endblock %}
+
+{% block extra_css %}
+<style>
+    .ticket-header {
+        background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+        color: white;
+        padding: 2rem;
+        border-radius: 15px 15px 0 0;
+        margin-bottom: 0;
+    }
+    
+    .ticket-body {
+        background: white;
+        padding: 2rem;
+        border-radius: 0 0 15px 15px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+    
+    .info-card {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 1.5rem;
+        margin-bottom: 1rem;
+        border-left: 4px solid var(--gradient-end);
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.25rem;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .info-value {
+        font-size: 1.1rem;
+        color: #212529;
+    }
+    
+    .peso-card {
+        background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+        border: none;
+        border-radius: 10px;
+        padding: 1.5rem;
+    }
+    
+    .peso-value {
+        font-size: 2rem;
+        font-weight: 700;
+        color: #1976d2;
+    }
+    
+    .estado-badge {
+        padding: 10px 20px;
+        border-radius: 25px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: inline-block;
+    }
+    
+    .timeline {
+        position: relative;
+        padding-left: 2rem;
+    }
+    
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 15px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #dee2e6;
+    }
+    
+    .timeline-item {
+        position: relative;
+        margin-bottom: 1.5rem;
+        padding-left: 1rem;
+    }
+    
+    .timeline-item::before {
+        content: '';
+        position: absolute;
+        left: -8px;
+        top: 8px;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--gradient-end);
+        border: 3px solid white;
+        box-shadow: 0 0 0 3px #dee2e6;
+    }
+    
+    .mercaderia-item {
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Botón volver -->
+            <div class="mb-3">
+                <a href="{% url 'tickets:lista_tickets' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-2"></i>Volver a Lista
+                </a>
+            </div>
+
+            <!-- Header del Ticket -->
+            <div class="ticket-header">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h1 class="mb-1">
+                            <i class="fas fa-ticket-alt me-3"></i>
+                            Ticket {{ ticket.numero_ticket }}
+                        </h1>
+                        <p class="mb-0 opacity-75">
+                            {{ ticket.tipo_movimiento.nombre }} - {{ ticket.patente_camion }}
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="estado-badge" style="background-color: {{ ticket.estado.color }}; color: white;">
+                            {{ ticket.estado.nombre }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información Principal -->
+            <div class="ticket-body">
+                <div class="row">
+                    <!-- Información del Transporte -->
+                    <div class="col-lg-6">
+                        <h5 class="mb-3">
+                            <i class="fas fa-truck me-2 text-primary"></i>
+                            Información del Transporte
+                        </h5>
+                        
+                        <div class="info-card">
+                            <div class="info-label">Patente del Camión</div>
+                            <div class="info-value">
+                                <strong>{{ ticket.patente_camion }}</strong>
+                            </div>
+                        </div>
+                        
+                        {% if ticket.chofer %}
+                        <div class="info-card">
+                            <div class="info-label">Chofer</div>
+                            <div class="info-value">{{ ticket.chofer.nombre_completo }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if ticket.cuenta_transporte %}
+                        <div class="info-card">
+                            <div class="info-label">Empresa de Transporte</div>
+                            <div class="info-value">{{ ticket.cuenta_transporte.nombre }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="info-card">
+                            <div class="info-label">Fecha de Llegada</div>
+                            <div class="info-value">{{ ticket.fecha_llegada|date:"d/m/Y H:i" }}</div>
+                        </div>
+                    </div>
+
+                    <!-- Origen y Destino -->
+                    <div class="col-lg-6">
+                        <h5 class="mb-3">
+                            <i class="fas fa-route me-2 text-primary"></i>
+                            Origen y Destino
+                        </h5>
+                        
+                        {% if ticket.origen %}
+                        <div class="info-card">
+                            <div class="info-label">Origen</div>
+                            <div class="info-value">{{ ticket.origen.nombre }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if ticket.destinatario %}
+                        <div class="info-card">
+                            <div class="info-label">Destinatario</div>
+                            <div class="info-value">{{ ticket.destinatario.nombre }}</div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="info-card">
+                            <div class="info-label">Creado por</div>
+                            <div class="info-value">{{ ticket.creado_por.get_full_name|default:ticket.creado_por.username }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pesos -->
+                {% if ticket.peso_bruto or ticket.peso_tara %}
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h5 class="mb-3">
+                            <i class="fas fa-weight me-2 text-primary"></i>
+                            Información de Pesos
+                        </h5>
+                    </div>
+                    
+                    {% if ticket.peso_bruto %}
+                    <div class="col-md-4">
+                        <div class="peso-card">
+                            <div class="info-label">Peso Bruto</div>
+                            <div class="peso-value">{{ ticket.peso_bruto|floatformat:2 }} kg</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if ticket.peso_tara %}
+                    <div class="col-md-4">
+                        <div class="peso-card">
+                            <div class="info-label">Peso Tara</div>
+                            <div class="peso-value">{{ ticket.peso_tara|floatformat:2 }} kg</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if ticket.peso_neto %}
+                    <div class="col-md-4">
+                        <div class="peso-card" style="background: linear-gradient(135deg, #e8f5e8, #c8e6c9);">
+                            <div class="info-label">Peso Neto</div>
+                            <div class="peso-value" style="color: #2e7d32;">{{ ticket.peso_neto|floatformat:2 }} kg</div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- Mercaderías -->
+                {% if ticket.detalle_mercaderias.exists %}
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h5 class="mb-3">
+                            <i class="fas fa-boxes me-2 text-primary"></i>
+                            Mercaderías
+                        </h5>
+                        
+                        {% for detalle in ticket.detalle_mercaderias.all %}
+                        <div class="mercaderia-item">
+                            <div class="row align-items-center">
+                                <div class="col-md-4">
+                                    <div class="info-label">Mercadería</div>
+                                    <div class="info-value">{{ detalle.mercaderia.nombre }}</div>
+                                </div>
+                                <div class="col-md-2">
+                                    <div class="info-label">Cantidad</div>
+                                    <div class="info-value">{{ detalle.cantidad_kg|floatformat:2 }} kg</div>
+                                </div>
+                                {% if detalle.calidad_clasificacion %}
+                                <div class="col-md-3">
+                                    <div class="info-label">Clasificación</div>
+                                    <div class="info-value">{{ detalle.calidad_clasificacion.nombre }}</div>
+                                </div>
+                                {% endif %}
+                                {% if detalle.ubicacion_almacenaje %}
+                                <div class="col-md-3">
+                                    <div class="info-label">Ubicación</div>
+                                    <div class="info-value">{{ detalle.ubicacion_almacenaje.codigo }}</div>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% if detalle.observaciones %}
+                            <div class="mt-2">
+                                <div class="info-label">Observaciones</div>
+                                <div class="info-value">{{ detalle.observaciones }}</div>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Observaciones -->
+                {% if ticket.observaciones %}
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h5 class="mb-3">
+                            <i class="fas fa-comment me-2 text-primary"></i>
+                            Observaciones
+                        </h5>
+                        <div class="info-card">
+                            <div class="info-value">{{ ticket.observaciones|linebreaks }}</div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Historial -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h5 class="mb-3">
+                            <i class="fas fa-history me-2 text-primary"></i>
+                            Historial del Ticket
+                        </h5>
+                        
+                        <div class="timeline">
+                            <div class="timeline-item">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <strong>Ticket Creado</strong>
+                                        <br>
+                                        <small class="text-muted">por {{ ticket.creado_por.get_full_name|default:ticket.creado_por.username }}</small>
+                                    </div>
+                                    <div class="text-muted">
+                                        {{ ticket.fecha_creacion|date:"d/m/Y H:i" }}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% if ticket.fecha_actualizacion != ticket.fecha_creacion %}
+                            <div class="timeline-item">
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <strong>Última Actualización</strong>
+                                    </div>
+                                    <div class="text-muted">
+                                        {{ ticket.fecha_actualizacion|date:"d/m/Y H:i" }}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Acciones -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-end">
+                            <a href="{% url 'tickets:lista_tickets' %}" class="btn btn-outline-secondary me-2">
+                                <i class="fas fa-list me-2"></i>Ver Todos
+                            </a>
+                            <button class="btn btn-primary">
+                                <i class="fas fa-edit me-2"></i>Editar Ticket
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

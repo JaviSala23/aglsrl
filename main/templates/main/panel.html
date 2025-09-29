@@ -319,7 +319,7 @@
         }
         
         .module-card.tickets {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%) !important;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
         }
         
         .module-card.camiones {
@@ -536,30 +536,30 @@
                 </a>
                 
                 <!-- Módulo de Tickets -->
-                <div class="module-card tickets coming-soon">
+                <a href="{% url 'tickets:dashboard' %}" class="module-card tickets">
                     <div class="module-icon">
-                        <i class="bi bi-truck"></i>
+                        <i class="fas fa-ticket-alt"></i>
                     </div>
                     <h3 class="module-title">Tickets de Operación</h3>
                     <p class="module-description">
-                        Gestión de tickets de entrada y salida de mercaderías. 
-                        Control de vehículos, pesajes, almacenajes y trazabilidad completa.
+                        Sistema integral de tickets para gestión de incidencias, 
+                        mantenimiento, solicitudes y operaciones generales.
                     </p>
                     <div class="module-stats">
                         <div class="stat-item">
-                            <span class="stat-number">-</span>
-                            <span class="stat-label">Entradas</span>
+                            <span class="stat-number">{{ total_tickets|default:0 }}</span>
+                            <span class="stat-label">Total</span>
                         </div>
                         <div class="stat-item">
-                            <span class="stat-number">-</span>
-                            <span class="stat-label">Salidas</span>
+                            <span class="stat-number">{{ tickets_abiertos|default:0 }}</span>
+                            <span class="stat-label">Abiertos</span>
                         </div>
                     </div>
                     <div class="module-action">
-                        <span class="action-text">En desarrollo</span>
-                        <i class="bi bi-hourglass-split action-arrow"></i>
+                        <span class="action-text">Acceder al módulo</span>
+                        <i class="bi bi-arrow-right action-arrow"></i>
                     </div>
-                </div>
+                </a>
                 
                 <!-- Módulo de Agenda -->
                 <a href="{% url 'agenda:dashboard' %}" class="module-card agenda">

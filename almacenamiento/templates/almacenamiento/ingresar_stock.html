@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="es" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ingresar Stock - AGL SRL</title>
+    
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <style>
+        .navbar-dark.bg-almacenamiento {
+            background: linear-gradient(135deg, #fd7e14, #e76500) !important;
+        }
+        
+        .form-section {
+            background-color: #f8f9fa;
+            border-left: 4px solid #28a745;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            border-radius: 0.375rem;
+        }
+        
+        .info-card {
+            background: linear-gradient(135deg, #17a2b8, #138496);
+            color: white;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-almacenamiento">
+        <div class="container-fluid">
+            <a class="navbar-brand fw-bold" href="/">
+                <i class="fas fa-warehouse me-2"></i>
+                AGL SRL - Almacenamiento
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="/almacenamiento/">
+                            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/almacenamiento/ubicaciones/">
+                            <i class="fas fa-map-marker-alt me-1"></i>Ubicaciones
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/almacenamiento/almacenajes/">
+                            <i class="fas fa-warehouse me-1"></i>Almacenajes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="/almacenamiento/stocks/">
+                            <i class="fas fa-boxes me-1"></i>Stock
+                        </a>
+                    </li>
+                </ul>
+                
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user me-1"></i>Usuario
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="/admin/"><i class="fas fa-cog me-2"></i>Admin</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="/logout/"><i class="fas fa-sign-out-alt me-2"></i>Salir</a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="bg-light border-bottom">
+        <div class="container-fluid">
+            <ol class="breadcrumb mb-0 py-2">
+                <li class="breadcrumb-item">
+                    <a href="/almacenamiento/"><i class="fas fa-home me-1"></i>Almacenamiento</a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="/almacenamiento/stocks/">Stock</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">Ingresar</li>
+            </ol>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container-fluid py-4">
+        <div class="row">
+            <div class="col-xl-8 col-lg-10 mx-auto">
+                <!-- Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h1 class="h3 mb-1">
+                            <i class="fas fa-plus-circle text-success me-2"></i>
+                            {{ titulo|default:"Ingresar Stock" }}
+                        </h1>
+                        <p class="text-muted mb-0">{{ subtitulo|default:"Registre el ingreso de mercadería a un almacenaje" }}</p>
+                    </div>
+                    <a href="{% url 'almacenamiento:stocks_list' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Volver
+                    </a>
+                </div>
+
+                <div class="row">
+                    <!-- Formulario -->
+                    <div class="col-lg-8">
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-success text-white">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-boxes me-2"></i>
+                                    Información del Stock
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <form method="post" class="needs-validation" novalidate>
+                                    {% csrf_token %}
+                                    
+                                    <!-- Ubicación y Almacenaje -->
+                                    <div class="form-section">
+                                        <h6 class="mb-3">
+                                            <i class="fas fa-map-marker-alt text-primary me-2"></i>
+                                            Destino del Stock
+                                        </h6>
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <label for="id_ubicacion_stock" class="form-label fw-bold">
+                                                    <i class="fas fa-building text-primary me-1"></i>
+                                                    Ubicación *
+                                                </label>
+                                                {{ form.ubicacion }}
+                                                {% if form.ubicacion.help_text %}
+                                                    <small class="form-text text-muted">{{ form.ubicacion.help_text }}</small>
+                                                {% endif %}
+                                                {% if form.ubicacion.errors %}
+                                                    <div class="text-danger mt-1">
+                                                        {{ form.ubicacion.errors.0 }}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for="id_almacenaje_stock" class="form-label fw-bold">
+                                                    <i class="fas fa-warehouse text-info me-1"></i>
+                                                    Almacenaje *
+                                                </label>
+                                                {{ form.almacenaje }}
+                                                {% if form.almacenaje.help_text %}
+                                                    <small class="form-text text-muted">{{ form.almacenaje.help_text }}</small>
+                                                {% endif %}
+                                                {% if form.almacenaje.errors %}
+                                                    <div class="text-danger mt-1">
+                                                        {{ form.almacenaje.errors.0 }}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Mercadería -->
+                                    <div class="form-section">
+                                        <h6 class="mb-3">
+                                            <i class="fas fa-seedling text-success me-2"></i>
+                                            Información de la Mercadería
+                                        </h6>
+                                        <div class="mb-3">
+                                            <label for="id_mercaderia" class="form-label fw-bold">
+                                                <i class="fas fa-tags text-warning me-1"></i>
+                                                Mercadería *
+                                            </label>
+                                            {{ form.mercaderia }}
+                                            {% if form.mercaderia.help_text %}
+                                                <small class="form-text text-muted">{{ form.mercaderia.help_text }}</small>
+                                            {% endif %}
+                                            {% if form.mercaderia.errors %}
+                                                <div class="text-danger mt-1">
+                                                    {{ form.mercaderia.errors.0 }}
+                                                </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+
+                                    <!-- Cantidad -->
+                                    <div class="form-section">
+                                        <h6 class="mb-3">
+                                            <i class="fas fa-weight text-danger me-2"></i>
+                                            Cantidad a Ingresar
+                                        </h6>
+                                        <div class="row mb-3">
+                                            <div class="col-md-6">
+                                                <label for="id_cantidad_kg" class="form-label fw-bold">
+                                                    <i class="fas fa-balance-scale text-success me-1"></i>
+                                                    Cantidad (kg) *
+                                                </label>
+                                                {{ form.cantidad_kg }}
+                                                {% if form.cantidad_kg.help_text %}
+                                                    <small class="form-text text-muted">{{ form.cantidad_kg.help_text }}</small>
+                                                {% endif %}
+                                                {% if form.cantidad_kg.errors %}
+                                                    <div class="text-danger mt-1">
+                                                        {{ form.cantidad_kg.errors.0 }}
+                                                    </div>
+                                                {% endif %}
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="mt-4" id="capacidad-info" style="display: none;">
+                                                    <div class="alert alert-info mb-0">
+                                                        <small>
+                                                            <i class="fas fa-info-circle me-1"></i>
+                                                            <span id="capacidad-texto"></span>
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+
+
+                                    <!-- Errores generales -->
+                                    {% if form.non_field_errors %}
+                                        <div class="alert alert-danger">
+                                            <h6><i class="fas fa-exclamation-circle me-2"></i>Errores en el formulario:</h6>
+                                            <ul class="mb-0">
+                                                {% for error in form.non_field_errors %}
+                                                    <li>{{ error }}</li>
+                                                {% endfor %}
+                                            </ul>
+                                        </div>
+                                    {% endif %}
+
+                                    <!-- Botones -->
+                                    <div class="d-flex justify-content-between pt-3 border-top">
+                                        <a href="{% url 'almacenamiento:stocks_list' %}" class="btn btn-outline-secondary">
+                                            <i class="fas fa-arrow-left me-2"></i>Cancelar
+                                        </a>
+                                        <button type="submit" class="btn btn-success btn-lg">
+                                            <i class="fas fa-save me-2"></i>{{ boton_texto|default:"Ingresar Stock" }}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Panel de información -->
+                    <div class="col-lg-4">
+                        <div class="info-card mb-4">
+                            <h6 class="mb-3">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Información de Ingreso
+                            </h6>
+                            <p class="mb-3 opacity-75">
+                                Complete todos los campos para registrar el ingreso de mercadería al almacenaje seleccionado.
+                            </p>
+                            <ul class="list-unstyled mb-0">
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle me-2"></i>
+                                    Se validará la capacidad disponible
+                                </li>
+                                <li class="mb-2">
+                                    <i class="fas fa-check-circle me-2"></i>
+                                    Se actualizará el stock automáticamente
+                                </li>
+                                <li class="mb-0">
+                                    <i class="fas fa-check-circle me-2"></i>
+                                    Se registrará la fecha de ingreso
+                                </li>
+                            </ul>
+                        </div>
+                        
+                        <div class="card shadow-sm">
+                            <div class="card-header bg-warning text-dark">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>
+                                    Consideraciones Importantes
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-unstyled mb-0">
+                                    <li class="mb-2">
+                                        <span class="badge bg-primary me-2">1</span>
+                                        Seleccione primero la ubicación
+                                    </li>
+                                    <li class="mb-2">
+                                        <span class="badge bg-primary me-2">2</span>
+                                        Luego elija el almacenaje disponible
+                                    </li>
+                                    <li class="mb-2">
+                                        <span class="badge bg-primary me-2">3</span>
+                                        Verifique la mercadería y cantidad
+                                    </li>
+                                    <li class="mb-0">
+                                        <span class="badge bg-success me-2">✓</span>
+                                        El sistema validará automáticamente
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Agregar clases de Bootstrap a los campos del formulario
+            const formFields = document.querySelectorAll('select, input[type="text"], input[type="number"], textarea');
+            formFields.forEach(field => {
+                if (field.tagName.toLowerCase() === 'select') {
+                    field.classList.add('form-select');
+                } else {
+                    field.classList.add('form-control');
+                }
+            });
+            
+            // Manejar cambio de ubicación para filtrar almacenajes
+            const ubicacionSelect = document.getElementById('id_ubicacion_stock');
+            const almacenajeSelect = document.getElementById('id_almacenaje_stock');
+            
+            if (ubicacionSelect && almacenajeSelect) {
+                ubicacionSelect.addEventListener('change', function() {
+                    const ubicacionId = this.value;
+                    
+                    if (ubicacionId) {
+                        // Deshabilitar almacenaje mientras carga
+                        almacenajeSelect.disabled = true;
+                        almacenajeSelect.innerHTML = '<option value="">Cargando almacenajes...</option>';
+                        
+                        // Llamada AJAX para obtener almacenajes filtrados
+                        fetch(`/almacenamiento/ajax/almacenajes-by-ubicacion/?ubicacion_id=${ubicacionId}`)
+                            .then(response => response.json())
+                            .then(data => {
+                                // Limpiar opciones actuales
+                                almacenajeSelect.innerHTML = '<option value="">-- Seleccione un almacenaje --</option>';
+                                
+                                if (data.success && data.almacenajes.length > 0) {
+                                    // Agregar opciones de almacenajes
+                                    data.almacenajes.forEach(almacenaje => {
+                                        const option = document.createElement('option');
+                                        option.value = almacenaje.id;
+                                        
+                                        // Texto descriptivo con información de capacidad
+                                        let texto = `${almacenaje.codigo} - ${almacenaje.tipo_display}`;
+                                        if (almacenaje.capacidad_kg) {
+                                            texto += ` (${almacenaje.porcentaje_ocupacion}% ocupado)`;
+                                        }
+                                        
+                                        option.textContent = texto;
+                                        
+                                        // Deshabilitar si está al 100% de capacidad
+                                        if (almacenaje.porcentaje_ocupacion >= 100) {
+                                            option.disabled = true;
+                                            option.textContent += ' - LLENO';
+                                        }
+                                        
+                                        almacenajeSelect.appendChild(option);
+                                    });
+                                } else {
+                                    almacenajeSelect.innerHTML = '<option value="">No hay almacenajes disponibles</option>';
+                                }
+                                
+                                // Habilitar el select
+                                almacenajeSelect.disabled = false;
+                            })
+                            .catch(error => {
+                                console.error('Error al cargar almacenajes:', error);
+                                almacenajeSelect.innerHTML = '<option value="">Error al cargar almacenajes</option>';
+                                almacenajeSelect.disabled = false;
+                            });
+                    } else {
+                        // Si no hay ubicación seleccionada, deshabilitar almacenaje
+                        almacenajeSelect.disabled = true;
+                        almacenajeSelect.innerHTML = '<option value="">-- Seleccione primero una ubicación --</option>';
+                    }
+                });
+                
+                // Inicializar estado
+                if (!ubicacionSelect.value) {
+                    almacenajeSelect.disabled = true;
+                    almacenajeSelect.innerHTML = '<option value="">-- Seleccione primero una ubicación --</option>';
+                }
+            }
+            
+            // Mostrar información de capacidad del almacenaje
+            if (almacenajeSelect) {
+                almacenajeSelect.addEventListener('change', function() {
+                    const capacidadInfo = document.getElementById('capacidad-info');
+                    const capacidadTexto = document.getElementById('capacidad-texto');
+                    const almacenajeId = this.value;
+                    
+                    if (almacenajeId && capacidadInfo && capacidadTexto) {
+                        // Buscar información del almacenaje seleccionado en los datos cargados
+                        const ubicacionId = ubicacionSelect.value;
+                        
+                        if (ubicacionId) {
+                            capacidadTexto.textContent = 'Verificando capacidad disponible...';
+                            capacidadInfo.style.display = 'block';
+                            
+                            // Obtener información actualizada del almacenaje
+                            fetch(`/almacenamiento/ajax/almacenajes-by-ubicacion/?ubicacion_id=${ubicacionId}`)
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        const almacenaje = data.almacenajes.find(a => a.id == almacenajeId);
+                                        if (almacenaje) {
+                                            if (almacenaje.capacidad_kg) {
+                                                const capacidadDisponible = almacenaje.capacidad_disponible;
+                                                const porcentajeOcupacion = almacenaje.porcentaje_ocupacion;
+                                                
+                                                capacidadTexto.innerHTML = `
+                                                    <strong>Capacidad total:</strong> ${almacenaje.capacidad_kg.toLocaleString()} kg<br>
+                                                    <strong>Stock actual:</strong> ${almacenaje.stock_actual.toLocaleString()} kg (${porcentajeOcupacion}%)<br>
+                                                    <strong>Disponible:</strong> ${capacidadDisponible.toLocaleString()} kg
+                                                `;
+                                                
+                                                // Cambiar color según disponibilidad
+                                                const alertDiv = capacidadInfo.querySelector('.alert');
+                                                alertDiv.className = 'alert mb-0';
+                                                if (porcentajeOcupacion >= 90) {
+                                                    alertDiv.classList.add('alert-warning');
+                                                } else if (porcentajeOcupacion >= 100) {
+                                                    alertDiv.classList.add('alert-danger');
+                                                } else {
+                                                    alertDiv.classList.add('alert-info');
+                                                }
+                                            } else {
+                                                capacidadTexto.textContent = 'Este almacenaje no tiene capacidad definida';
+                                            }
+                                        }
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error al obtener información de capacidad:', error);
+                                    capacidadTexto.textContent = 'Error al obtener información de capacidad';
+                                });
+                        }
+                    } else if (capacidadInfo) {
+                        capacidadInfo.style.display = 'none';
+                    }
+                });
+            }
+            
+            // Validación del formulario
+            const form = document.querySelector('.needs-validation');
+            if (form) {
+                form.addEventListener('submit', function(event) {
+                    if (!form.checkValidity()) {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }
+                    form.classList.add('was-validated');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

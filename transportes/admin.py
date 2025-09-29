@@ -58,7 +58,7 @@ class ChoferAdmin(admin.ModelAdmin):
     list_display = [
         'legajo',
         'nombre_completo_display',
-        'dni',
+        'cuit',
         'tipo_licencia',
         'estado_display',
         'licencia_status',
@@ -72,13 +72,13 @@ class ChoferAdmin(admin.ModelAdmin):
         'fecha_vencimiento_licencia',
         'fecha_ingreso'
     ]
-    search_fields = ['nombre', 'apellido', 'dni', 'legajo', 'numero_licencia']
+    search_fields = ['nombre', 'apellido', 'cuit', 'legajo', 'numero_licencia']
     ordering = ['apellido', 'nombre']
     date_hierarchy = 'fecha_ingreso'
     
     fieldsets = (
         ('Información Personal', {
-            'fields': ('nombre', 'apellido', 'dni', 'fecha_nacimiento', 'telefono', 'email', 'direccion')
+            'fields': ('nombre', 'apellido', 'cuit', 'fecha_nacimiento', 'telefono', 'email', 'direccion')
         }),
         ('Información Laboral', {
             'fields': ('legajo', 'fecha_ingreso', 'tipo_licencia', 'numero_licencia', 'fecha_vencimiento_licencia')

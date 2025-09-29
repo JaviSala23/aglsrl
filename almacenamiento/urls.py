@@ -30,6 +30,8 @@ urlpatterns = [
     
     # Stocks
     path('stocks/', views.stocks_list, name='stocks_list'),
+    path('stocks/ingresar/', views.ingresar_stock, name='ingresar_stock'),
+    path('ajax/almacenajes-by-ubicacion/', views.get_almacenajes_by_ubicacion, name='get_almacenajes_by_ubicacion'),
     
     # APIs AJAX
     path('api/dashboard-data/', views.dashboard_data, name='dashboard_data'),

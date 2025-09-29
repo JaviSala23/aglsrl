@@ -91,6 +91,16 @@ class MainPanelView(LoginRequiredMixin, TemplateView):
             context['total_ubicaciones'] = 0
             context['total_almacenajes'] = 0
         
+        # Estadísticas de tickets
+        try:
+            from tickets.models import Ticket
+            context['total_tickets'] = Ticket.objects.count()
+            context['tickets_abiertos'] = Ticket.objects.filter(estado__es_final=False).count()
+        except ImportError:
+            # El módulo de tickets no está disponible
+            context['total_tickets'] = 0
+            context['tickets_abiertos'] = 0
+        
         # Información del usuario
         context['usuario'] = self.request.user
         

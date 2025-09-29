@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.models import User
-from .models import Ubicacion, TipoUbicacion, Almacenaje, TipoAlmacenaje, EstadoAlmacenaje
+from .models import Ubicacion, TipoUbicacion, Almacenaje, TipoAlmacenaje, EstadoAlmacenaje, Stock
 
 class UbicacionForm(forms.ModelForm):
     """Formulario para crear y editar ubicaciones"""
@@ -249,5 +249,107 @@ class AlmacenajeForm(forms.ModelForm):
                 raise forms.ValidationError("La longitud en metros es requerida para silo bolsa.")
             if not sentido:
                 raise forms.ValidationError("El sentido de orientación es requerido para silo bolsa.")
+        
+        return cleaned_data
+
+
+class StockForm(forms.ModelForm):
+    """Formulario para ingresar stock en almacenajes"""
+    
+    class Meta:
+        model = Stock
+        fields = ['ubicacion', 'almacenaje', 'mercaderia', 'cantidad_kg']
+        widgets = {
+            'ubicacion': forms.Select(attrs={
+                'class': 'form-select',
+                'id': 'id_ubicacion_stock'
+            }),
+            'almacenaje': forms.Select(attrs={
+                'class': 'form-select',
+                'id': 'id_almacenaje_stock'
+            }),
+            'mercaderia': forms.Select(attrs={
+                'class': 'form-select'
+            }),
+            'cantidad_kg': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Cantidad en kilogramos',
+                'min': '0.1',
+                'step': '0.1'
+            })
+        }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        
+        # Filtrar ubicaciones activas
+        self.fields['ubicacion'].queryset = Ubicacion.objects.filter(activo=True).order_by('nombre')
+        
+        # Si hay datos (POST o initial), configurar almacenajes apropiadamente
+        if args and args[0]:  # hay datos POST
+            ubicacion_id = args[0].get('ubicacion')
+            if ubicacion_id:
+                self.fields['almacenaje'].queryset = Almacenaje.objects.filter(
+                    ubicacion_id=ubicacion_id, activo=True
+                ).order_by('codigo')
+            else:
+                self.fields['almacenaje'].queryset = Almacenaje.objects.none()
+        else:
+            # Inicialmente no mostrar almacenajes hasta que se seleccione una ubicación
+            self.fields['almacenaje'].queryset = Almacenaje.objects.none()
+        
+        # Importar y filtrar mercaderías disponibles
+        try:
+            from mercaderias.models import Mercaderia
+            self.fields['mercaderia'].queryset = Mercaderia.objects.select_related('grano').order_by('grano__nombre')
+        except ImportError:
+            # Si no existe el modelo Mercaderia, crear un queryset vacío
+            self.fields['mercaderia'].queryset = Stock.objects.none()
+        
+        # Hacer campos requeridos
+        self.fields['ubicacion'].required = True
+        self.fields['almacenaje'].required = True
+        self.fields['mercaderia'].required = True
+        self.fields['cantidad_kg'].required = True
+        
+        # Labels personalizados
+        self.fields['ubicacion'].label = 'Ubicación'
+        self.fields['almacenaje'].label = 'Almacenaje'
+        self.fields['mercaderia'].label = 'Mercadería'
+        self.fields['cantidad_kg'].label = 'Cantidad (kg)'
+        
+        # Help texts
+        self.fields['cantidad_kg'].help_text = 'Cantidad a ingresar en kilogramos'
+        self.fields['almacenaje'].help_text = 'Seleccione primero la ubicación para filtrar almacenajes'
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        ubicacion = cleaned_data.get('ubicacion')
+        almacenaje = cleaned_data.get('almacenaje')
+        cantidad_kg = cleaned_data.get('cantidad_kg')
+        
+        # Validar que el almacenaje pertenezca a la ubicación seleccionada
+        if ubicacion and almacenaje:
+            if almacenaje.ubicacion != ubicacion:
+                raise forms.ValidationError("El almacenaje seleccionado no pertenece a la ubicación elegida.")
+        
+        # Validar que el almacenaje esté activo y disponible
+        if almacenaje:
+            if not almacenaje.activo:
+                raise forms.ValidationError("El almacenaje seleccionado no está activo.")
+            
+            # Verificar capacidad si está definida
+            if almacenaje.capacidad_kg and cantidad_kg:
+                from django.db.models import Sum
+                stock_actual = Stock.objects.filter(almacenaje=almacenaje).aggregate(
+                    total=Sum('cantidad_kg')
+                )['total'] or 0
+                
+                if (stock_actual + cantidad_kg) > almacenaje.capacidad_kg:
+                    capacidad_disponible = almacenaje.capacidad_kg - stock_actual
+                    raise forms.ValidationError(
+                        f"La cantidad excede la capacidad disponible del almacenaje. "
+                        f"Capacidad disponible: {capacidad_disponible:.1f} kg"
+                    )
         
         return cleaned_data

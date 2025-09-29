@@ -266,6 +266,11 @@ def crear_chofer(request):
         if form.is_valid():
             chofer = form.save(commit=False)
             chofer.creado_por = request.user
+            # Asignar valores por defecto para campos no incluidos en el formulario
+            chofer.legajo = f"CH{chofer.cuit[-4:]}"  # Generar legajo automático basado en CUIT
+            chofer.fecha_ingreso = timezone.now().date()  # Fecha actual
+            chofer.fecha_nacimiento = timezone.now().date().replace(year=timezone.now().year - 30)  # Fecha por defecto (30 años)
+            chofer.estado = 'disponible'  # Estado por defecto
             chofer.save()
             messages.success(request, f'Chofer {chofer.nombre_completo} creado exitosamente.')
             return redirect('transportes:detalle_chofer', pk=chofer.pk)

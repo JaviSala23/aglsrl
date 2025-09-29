@@ -1,0 +1,645 @@
+{% extends 'tickets/base.html' %}
+
+{% block title %}Dashboard Tickets - AGL SRL{% endblock %}
+
+{% block extra_css %}
+<style>
+    .dashboard-header {
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+        border-radius: 15px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        border: 1px solid rgba(102, 126, 234, 0.1);
+    }
+    
+    .metric-card {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        border: 1px solid rgba(0,0,0,0.05);
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .metric-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+    }
+    
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: var(--gradient-primary);
+    }
+    
+    .metric-value {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin-bottom: 0.5rem;
+        background: var(--gradient-primary);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .metric-label {
+        color: #666;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+    
+    .metric-change {
+        font-size: 0.8rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+    }
+    
+    .metric-change.positive {
+        color: #28a745;
+    }
+    
+    .metric-change.negative {
+        color: #dc3545;
+    }
+    
+    .quick-actions {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        margin-bottom: 2rem;
+    }
+    
+    .quick-action-btn {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 10px;
+        color: white;
+        padding: 1rem 1.5rem;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        transition: all 0.3s ease;
+        font-weight: 500;
+    }
+    
+    .quick-action-btn:hover {
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+    }
+    
+    .priority-indicator {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 0.5rem;
+    }
+    
+    .activity-item {
+        padding: 1rem;
+        border-radius: 10px;
+        background: rgba(102, 126, 234, 0.05);
+        margin-bottom: 0.75rem;
+        border-left: 4px solid var(--primary-color);
+    }
+    
+    .progress-ring {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .progress-ring-circle {
+        stroke: #e9ecef;
+        stroke-width: 4;
+        fill: transparent;
+        r: 26;
+        cx: 30;
+        cy: 30;
+    }
+    
+    .progress-ring-progress {
+        stroke: #667eea;
+        stroke-width: 4;
+        fill: transparent;
+        r: 26;
+        cx: 30;
+        cy: 30;
+        stroke-dasharray: 163.36;
+        stroke-dashoffset: 163.36;
+        transform: rotate(-90deg);
+        transform-origin: 50% 50%;
+        transition: stroke-dashoffset 0.3s ease;
+    }
+    
+    .chart-container {
+        background: white;
+        border-radius: 15px;
+        padding: 1.5rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        height: 400px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header Mejorado -->
+<div class="dashboard-header">
+    <div class="row align-items-center">
+        <div class="col">
+            <h1 class="h2 mb-2 text-dark fw-bold">
+                <i class="fas fa-tachometer-alt me-3"></i>
+                Dashboard de Tickets
+            </h1>
+            <p class="mb-0 text-muted fs-5">
+                Centro de control para gestión de tickets de operación
+            </p>
+            <div class="mt-2">
+                <span class="badge bg-primary me-2">
+                    <i class="fas fa-clock me-1"></i>
+                    Última actualización: {{ "now"|date:"H:i" }}
+                </span>
+                <span class="badge bg-success">
+                    <i class="fas fa-user me-1"></i>
+                    {{ user.get_full_name|default:user.username }}
+                </span>
+            </div>
+        </div>
+        <div class="col-auto">
+            <a href="{% url 'tickets:crear_ticket' %}" class="btn btn-lg quick-action-btn">
+                <i class="fas fa-plus-circle"></i>
+                Crear Nuevo Ticket
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Acciones Rápidas -->
+<div class="quick-actions">
+    <h5 class="mb-3 fw-bold">
+        <i class="fas fa-bolt me-2"></i>
+        Acciones Rápidas
+    </h5>
+    <div class="row g-3">
+        <div class="col-md-3">
+            <a href="{% url 'tickets:lista_tickets' %}?estado=" class="quick-action-btn d-block text-center">
+                <i class="fas fa-list"></i>
+                Ver Todos los Tickets
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="{% url 'tickets:mis_tickets' %}" class="quick-action-btn d-block text-center">
+                <i class="fas fa-user-check"></i>
+                Mis Tickets Asignados
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="{% url 'tickets:lista_tickets' %}?asignado=sin_asignar" class="quick-action-btn d-block text-center">
+                <i class="fas fa-exclamation-circle"></i>
+                Tickets Sin Asignar
+            </a>
+        </div>
+        <div class="col-md-3">
+            <a href="{% url 'tickets:lista_tickets' %}?prioridad=4" class="quick-action-btn d-block text-center">
+                <i class="fas fa-fire"></i>
+                Tickets Urgentes
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Métricas Principales Mejoradas -->
+<div class="row g-4 mb-4">
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="metric-value">{{ total_tickets }}</div>
+                    <div class="metric-label">Total de Tickets</div>
+                    <div class="metric-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        12% más que el mes pasado
+                    </div>
+                </div>
+                <div class="text-primary" style="font-size: 3rem; opacity: 0.3;">
+                    <i class="fas fa-ticket-alt"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="metric-value text-success">{{ tickets_abiertos }}</div>
+                    <div class="metric-label">Tickets Abiertos</div>
+                    <div class="metric-change negative">
+                        <i class="fas fa-arrow-down"></i>
+                        5% menos que ayer
+                    </div>
+                </div>
+                <div class="text-success" style="font-size: 3rem; opacity: 0.3;">
+                    <i class="fas fa-folder-open"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="metric-value text-warning">{{ tickets_asignados_usuario }}</div>
+                    <div class="metric-label">Asignados a Mí</div>
+                    <div class="metric-change positive">
+                        <i class="fas fa-arrow-up"></i>
+                        3 nuevos hoy
+                    </div>
+                </div>
+                <div class="text-warning" style="font-size: 3rem; opacity: 0.3;">
+                    <i class="fas fa-user-check"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6">
+        <div class="metric-card">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <div class="metric-value text-danger">{{ tickets_vencidos }}</div>
+                    <div class="metric-label">Tickets Vencidos</div>
+                    <div class="metric-change {% if tickets_vencidos > 0 %}negative{% else %}positive{% endif %}">
+                        <i class="fas fa-{% if tickets_vencidos > 0 %}exclamation-triangle{% else %}check-circle{% endif %}"></i>
+                        {% if tickets_vencidos > 0 %}Requiere atención{% else %}¡Excelente!{% endif %}
+                    </div>
+                </div>
+                <div class="text-danger" style="font-size: 3rem; opacity: 0.3;">
+                    <i class="fas fa-exclamation-triangle"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Métricas Adicionales -->
+<div class="row g-4 mb-4">
+    <div class="col-xl-4">
+        <div class="metric-card text-center">
+            <div class="progress-ring mx-auto mb-3">
+                <svg class="progress-ring">
+                    <circle class="progress-ring-circle"></circle>
+                    <circle class="progress-ring-progress" 
+                            style="stroke-dashoffset: {{ progreso_offset }};">
+                    </circle>
+                </svg>
+                <div class="position-absolute top-50 start-50 translate-middle">
+                    <div class="fw-bold text-primary">
+                        {{ tasa_resolucion }}%
+                    </div>
+                </div>
+            </div>
+            <div class="metric-label">Tasa de Resolución</div>
+            <small class="text-muted">
+                {% if total_tickets > 0 %}
+                    {{ tickets_cerrados }} de {{ total_tickets }} resueltos
+                {% else %}
+                    Sin datos disponibles
+                {% endif %}
+            </small>
+        </div>
+    </div>
+    
+    <div class="col-xl-4">
+        <div class="metric-card">
+            <h6 class="fw-bold mb-3">
+                <i class="fas fa-clock me-2"></i>
+                Tiempo Promedio de Resolución
+            </h6>
+            <div class="metric-value text-info">2.5</div>
+            <div class="metric-label">días promedio</div>
+            <div class="progress mt-2" style="height: 6px;">
+                <div class="progress-bar bg-info" style="width: 75%"></div>
+            </div>
+            <small class="text-muted mt-1 d-block">Meta: 3 días</small>
+        </div>
+    </div>
+    
+    <div class="col-xl-4">
+        <div class="metric-card">
+            <h6 class="fw-bold mb-3">
+                <i class="fas fa-star me-2"></i>
+                Satisfacción del Cliente
+            </h6>
+            <div class="metric-value text-success">4.8</div>
+            <div class="metric-label">de 5 estrellas</div>
+            <div class="d-flex mt-2">
+                <i class="fas fa-star text-warning"></i>
+                <i class="fas fa-star text-warning"></i>
+                <i class="fas fa-star text-warning"></i>
+                <i class="fas fa-star text-warning"></i>
+                <i class="fas fa-star text-warning"></i>
+            </div>
+            <small class="text-muted mt-1 d-block">Basado en 127 evaluaciones</small>
+        </div>
+    </div>
+        </div>
+        <div class="stat-number text-danger">{{ tickets_vencidos }}</div>
+        <div class="stat-label">Tickets Vencidos</div>
+    </div>
+</div>
+
+<!-- Tarjetas de Tipo de Movimiento -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 50%, #a5d6a7 100%); border-left: 4px solid #4caf50 !important;">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h3 class="card-title text-success fw-bold mb-2">
+                            <i class="fas fa-arrow-down me-2"></i>
+                            Recepción de Mercadería
+                        </h3>
+                        <p class="text-success-emphasis mb-3">
+                            Registro de ingreso de camiones y mercadería al depósito
+                        </p>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="me-4">
+                                <div class="fs-2 fw-bold text-success">{{ recepciones_mes }}</div>
+                                <small class="text-success-emphasis">Este mes</small>
+                            </div>
+                            <div>
+                                <div class="fs-4 fw-bold text-success">{{ sin_salir }}</div>
+                                <small class="text-success-emphasis">Sin salir</small>
+                            </div>
+                        </div>
+                        <a href="{% url 'tickets:crear_ticket' %}?tipo=REC" class="btn btn-success btn-lg shadow-sm">
+                            <i class="fas fa-plus me-2"></i>
+                            Crear Ticket de Recepción
+                        </a>
+                    </div>
+                    <div class="text-success opacity-25" style="font-size: 4rem;">
+                        <i class="fas fa-truck-loading"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 50%, #90caf9 100%); border-left: 4px solid #2196f3 !important;">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <h3 class="card-title text-primary fw-bold mb-2">
+                            <i class="fas fa-arrow-up me-2"></i>
+                            Envío de Mercadería
+                        </h3>
+                        <p class="text-primary-emphasis mb-3">
+                            Registro de salida de camiones y mercadería del depósito
+                        </p>
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="me-4">
+                                <div class="fs-2 fw-bold text-primary">{{ envios_mes }}</div>
+                                <small class="text-primary-emphasis">Este mes</small>
+                            </div>
+                            <div>
+                                <div class="fs-4 fw-bold text-primary">{{ pendientes }}</div>
+                                <small class="text-primary-emphasis">Pendientes</small>
+                            </div>
+                        </div>
+                        <a href="{% url 'tickets:crear_ticket' %}?tipo=ENV" class="btn btn-primary btn-lg shadow-sm">
+                            <i class="fas fa-plus me-2"></i>
+                            Crear Ticket de Envío
+                        </a>
+                    </div>
+                    <div class="text-primary opacity-25" style="font-size: 4rem;">
+                        <i class="fas fa-shipping-fast"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Gráficos de Estado y Prioridad -->
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <div class="ticket-card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    Tickets por Estado
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for estado in tickets_por_estado %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="d-flex align-items-center">
+                        <span class="badge-custom" style="background-color: {{ estado.color }}; color: white;">
+                            {{ estado.nombre }}
+                        </span>
+                    </div>
+                    <span class="fw-bold">{{ estado.cantidad }}</span>
+                </div>
+                {% empty %}
+                <p class="text-muted text-center">No hay datos disponibles</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <div class="ticket-card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="fas fa-exclamation-circle me-2"></i>
+                    Tickets por Prioridad
+                </h5>
+            </div>
+            <div class="card-body">
+                {% for prioridad in tickets_por_prioridad %}
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="d-flex align-items-center">
+                        <span class="badge-custom" style="background-color: {{ prioridad.color }}; color: white;">
+                            <i class="fas fa-flag me-1"></i>
+                            {{ prioridad.nombre }}
+                        </span>
+                    </div>
+                    <span class="fw-bold">{{ prioridad.cantidad }}</span>
+                </div>
+                {% empty %}
+                <p class="text-muted text-center">No hay datos disponibles</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mis Tickets Pendientes -->
+{% if mis_tickets %}
+<div class="row mb-4">
+    <div class="col">
+        <div class="ticket-card">
+            <div class="card-header bg-light">
+                <h5 class="mb-0">
+                    <i class="fas fa-user-clock me-2"></i>
+                    Mis Tickets Pendientes
+                </h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Ticket</th>
+                                <th>Título</th>
+                                <th>Tipo</th>
+                                <th>Prioridad</th>
+                                <th>Estado</th>
+                                <th>Fecha</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ticket in mis_tickets %}
+                            <tr>
+                                <td>
+                                    <span class="fw-bold text-primary">{{ ticket.numero_ticket }}</span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'tickets:detalle_ticket' ticket.pk %}" class="text-decoration-none">
+                                        {{ ticket.titulo|truncatechars:50 }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="badge-custom" style="background-color: {{ ticket.tipo.color }}; color: white;">
+                                        <i class="{{ ticket.tipo.icono }} me-1"></i>
+                                        {{ ticket.tipo.nombre }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge-custom" style="background-color: {{ ticket.prioridad.color }}; color: white;">
+                                        {{ ticket.prioridad.nombre }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge-custom" style="background-color: {{ ticket.estado.color }}; color: white;">
+                                        {{ ticket.estado.nombre }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ ticket.fecha_creacion|date:"d/m/Y H:i" }}</small>
+                                </td>
+                                <td>
+                                    <a href="{% url 'tickets:detalle_ticket' ticket.pk %}" class="btn btn-sm btn-outline-primary btn-ticket">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer text-center">
+                <a href="{% url 'tickets:mis_tickets' %}" class="btn btn-outline-primary btn-ticket">
+                    Ver Todos Mis Tickets
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Tickets Recientes -->
+<div class="row">
+    <div class="col">
+        <div class="ticket-card">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-clock me-2"></i>
+                    Tickets Recientes
+                </h5>
+                <a href="{% url 'tickets:lista_tickets' %}" class="btn btn-sm btn-outline-primary btn-ticket">
+                    Ver Todos
+                </a>
+            </div>
+            <div class="card-body p-0">
+                {% if tickets_recientes %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Ticket</th>
+                                <th>Título</th>
+                                <th>Solicitante</th>
+                                <th>Asignado</th>
+                                <th>Estado</th>
+                                <th>Prioridad</th>
+                                <th>Fecha</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ticket in tickets_recientes %}
+                            <tr onclick="window.location='{% url 'tickets:detalle_ticket' ticket.pk %}'" style="cursor: pointer;">
+                                <td>
+                                    <span class="fw-bold text-primary">{{ ticket.numero_ticket }}</span>
+                                    {% if ticket.esta_vencido %}
+                                    <i class="fas fa-exclamation-triangle text-danger ms-1" title="Vencido"></i>
+                                    {% endif %}
+                                </td>
+                                <td>{{ ticket.titulo|truncatechars:50 }}</td>
+                                <td>
+                                    <small>{{ ticket.solicitante.get_full_name|default:ticket.solicitante.username }}</small>
+                                </td>
+                                <td>
+                                    {% if ticket.asignado_a %}
+                                    <small>{{ ticket.asignado_a.get_full_name|default:ticket.asignado_a.username }}</small>
+                                    {% else %}
+                                    <span class="text-muted">Sin asignar</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge-custom" style="background-color: {{ ticket.estado.color }}; color: white;">
+                                        {{ ticket.estado.nombre }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge-custom" style="background-color: {{ ticket.prioridad.color }}; color: white;">
+                                        {{ ticket.prioridad.nombre }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ ticket.fecha_creacion|date:"d/m/Y H:i" }}</small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No hay tickets recientes</p>
+                    <a href="{% url 'tickets:crear_ticket' %}" class="btn btn-primary btn-ticket">
+                        <i class="fas fa-plus me-2"></i>
+                        Crear Primer Ticket
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

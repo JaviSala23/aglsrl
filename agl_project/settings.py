@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'agenda',
     'transportes',
     'mercaderias',
+    'tickets',
     'almacenamiento',
     'procesamiento',
     # 'usuarios',  # Comentado temporalmente hasta arreglar modelos
@@ -167,6 +168,11 @@ LANGUAGE_CODE = 'es-ar'
 TIME_ZONE = 'America/Argentina/Buenos_Aires'
 USE_I18N = True
 USE_TZ = True
+
+# Configuración de autenticación
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/panel/'
+LOGOUT_REDIRECT_URL = '/login/'
 
 # Modelo de usuario personalizado (comentado temporalmente)
 # AUTH_USER_MODEL = 'usuarios.Usuario'

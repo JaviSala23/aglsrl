@@ -160,18 +160,18 @@ class Chofer(models.Model):
     # Información personal
     nombre = models.CharField(max_length=100)
     apellido = models.CharField(max_length=100)
-    dni = models.CharField(max_length=10, unique=True)
+    cuit = models.CharField(max_length=13, unique=True, help_text='CUIT en formato XX-XXXXXXXX-X')
     fecha_nacimiento = models.DateField()
-    telefono = models.CharField(max_length=20)
+    telefono = models.CharField(max_length=20, blank=True, null=True)
     email = models.EmailField(blank=True)
-    direccion = models.TextField(max_length=200)
+    direccion = models.TextField(max_length=200, blank=True, null=True)
     
     # Información laboral
     legajo = models.CharField(max_length=20, unique=True)
     fecha_ingreso = models.DateField()
-    tipo_licencia = models.CharField(max_length=5, choices=TIPO_LICENCIA_CHOICES)
-    numero_licencia = models.CharField(max_length=20)
-    fecha_vencimiento_licencia = models.DateField()
+    tipo_licencia = models.CharField(max_length=5, choices=TIPO_LICENCIA_CHOICES, blank=True, null=True)
+    numero_licencia = models.CharField(max_length=20, blank=True, null=True)
+    fecha_vencimiento_licencia = models.DateField(blank=True, null=True)
     
     # Estado y disponibilidad
     estado = models.CharField(max_length=15, choices=ESTADO_CHOICES, default='disponible')
@@ -198,7 +198,7 @@ class Chofer(models.Model):
         verbose_name_plural = 'Choferes'
         ordering = ['apellido', 'nombre']
         indexes = [
-            models.Index(fields=['dni']),
+            models.Index(fields=['cuit']),
             models.Index(fields=['legajo']),
             models.Index(fields=['estado']),
         ]
@@ -213,11 +213,13 @@ class Chofer(models.Model):
     @property
     def licencia_vencida(self):
         """Verifica si la licencia está vencida."""
+        if not self.fecha_vencimiento_licencia:
+            return False  # Si no tiene fecha de vencimiento, no está vencida
         return self.fecha_vencimiento_licencia < timezone.now().date()
     
     @property
     def puede_manejar(self):
-        """Verifica si el chofer puede manejar (licencia vigente)."""
+        """Verifica si el chofer puede manejar (licencia vigente o sin licencia requerida)."""
         return not self.licencia_vencida and self.activo and self.estado in ['disponible', 'en_viaje']
 
 

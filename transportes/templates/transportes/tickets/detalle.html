@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ticket de Balanza - AGL SRL</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            background-color: #f5f5f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .ticket-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            color: white;
+            margin: 2rem auto;
+            max-width: 600px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .ticket-header {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            padding: 1.5rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .ticket-number {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .ticket-type {
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            display: inline-block;
+            padding: 0.3rem 1rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        
+        .ticket-body {
+            padding: 2rem;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .info-row:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            font-weight: 500;
+            opacity: 0.8;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .info-value {
+            font-weight: 600;
+            text-align: right;
+        }
+        
+        .peso-section {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+            backdrop-filter: blur(5px);
+        }
+        
+        .peso-title {
+            text-align: center;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            opacity: 0.9;
+        }
+        
+        .peso-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1rem;
+            text-align: center;
+        }
+        
+        .peso-item {
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 1rem;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        
+        .peso-label {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            margin-bottom: 0.5rem;
+        }
+        
+        .peso-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        
+        .peso-neto {
+            background: rgba(40, 167, 69, 0.3) !important;
+            border-color: rgba(40, 167, 69, 0.5) !important;
+        }
+        
+        .ticket-footer {
+            background: rgba(0,0,0,0.2);
+            padding: 1rem 2rem;
+            text-align: center;
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+        
+        .decorative-corner {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 0;
+            height: 0;
+            border-left: 50px solid transparent;
+            border-top: 50px solid rgba(255,255,255,0.1);
+        }
+        
+        @media print {
+            body {
+                background: white !important;
+            }
+            .ticket-card {
+                box-shadow: none !important;
+                margin: 0 !important;
+                max-width: none !important;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .ticket-card {
+                margin: 1rem;
+                border-radius: 10px;
+            }
+            
+            .peso-grid {
+                grid-template-columns: 1fr;
+                gap: 0.5rem;
+            }
+            
+            .info-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 0.3rem;
+            }
+            
+            .info-value {
+                text-align: left;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="ticket-card">
+            <div class="decorative-corner"></div>
+            
+            <!-- Header del Ticket -->
+            <div class="ticket-header">
+                <div class="ticket-number">
+                    <i class="fas fa-weight-hanging me-2"></i>
+                    {{ ticket.numero_ticket }}
+                </div>
+                <div class="ticket-type">
+                    <i class="fas fa-tag me-1"></i>
+                    {{ ticket.get_tipo_pesaje_display }}
+                </div>
+            </div>
+            
+            <!-- Cuerpo del Ticket -->
+            <div class="ticket-body">
+                <!-- Información Básica -->
+                <div class="info-row">
+                    <div class="info-label">
+                        <i class="fas fa-calendar-alt"></i>
+                        Fecha y Hora
+                    </div>
+                    <div class="info-value">
+                        {{ ticket.fecha_pesaje|date:"d/m/Y H:i" }}
+                    </div>
+                </div>
+                
+                <div class="info-row">
+                    <div class="info-label">
+                        <i class="fas fa-truck"></i>
+                        Camión
+                    </div>
+                    <div class="info-value">
+                        {{ ticket.camion.patente }}
+                        {% if ticket.camion.acoplado_1 %}
+                            + {{ ticket.camion.acoplado_1 }}
+                        {% endif %}
+                        {% if ticket.camion.acoplado_2 %}
+                            + {{ ticket.camion.acoplado_2 }}
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="info-row">
+                    <div class="info-label">
+                        <i class="fas fa-user"></i>
+                        Chofer
+                    </div>
+                    <div class="info-value">
+                        {{ ticket.chofer.nombre }} {{ ticket.chofer.apellido }}
+                    </div>
+                </div>
+                
+                {% if ticket.viaje %}
+                <div class="info-row">
+                    <div class="info-label">
+                        <i class="fas fa-route"></i>
+                        Viaje
+                    </div>
+                    <div class="info-value">
+                        {{ ticket.viaje.numero_viaje }}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="info-row">
+                    <div class="info-label">
+                        <i class="fas fa-boxes"></i>
+                        Producto
+                    </div>
+                    <div class="info-value">
+                        {{ ticket.producto }}
+                    </div>
+                </div>
+                
+                <div class="info-row">
+                    <div class="info-label">
+                        <i class="fas fa-building"></i>
+                        Cliente
+                    </div>
+                    <div class="info-value">
+                        {{ ticket.cliente_carga.nombre }}
+                    </div>
+                </div>
+                
+                <div class="info-row">
+                    <div class="info-label">
+                        <i class="fas fa-map-marker-alt"></i>
+                        Destino
+                    </div>
+                    <div class="info-value">
+                        {{ ticket.destino_carga }}
+                    </div>
+                </div>
+                
+                <!-- Sección de Pesos -->
+                <div class="peso-section">
+                    <div class="peso-title">
+                        <i class="fas fa-balance-scale me-2"></i>
+                        Información de Pesaje
+                    </div>
+                    <div class="peso-grid">
+                        <div class="peso-item">
+                            <div class="peso-label">Peso Bruto</div>
+                            <div class="peso-value">{{ ticket.peso_bruto|floatformat:0 }} kg</div>
+                            <div class="peso-label mt-1">{{ ticket.peso_bruto_toneladas|floatformat:2 }} tn</div>
+                        </div>
+                        <div class="peso-item">
+                            <div class="peso-label">Tara</div>
+                            <div class="peso-value">{{ ticket.peso_tara|floatformat:0 }} kg</div>
+                            <div class="peso-label mt-1">{{ ticket.peso_tara|floatformat:3 }} tn</div>
+                        </div>
+                        <div class="peso-item peso-neto">
+                            <div class="peso-label">Peso Neto</div>
+                            <div class="peso-value">{{ ticket.peso_neto|floatformat:0 }} kg</div>
+                            <div class="peso-label mt-1">{{ ticket.peso_neto_toneladas|floatformat:2 }} tn</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="info-row">
+                    <div class="info-label">
+                        <i class="fas fa-user-tie"></i>
+                        Operador de Balanza
+                    </div>
+                    <div class="info-value">
+                        {{ ticket.balanza_operador }}
+                    </div>
+                </div>
+                
+                {% if ticket.observaciones %}
+                <div class="info-row">
+                    <div class="info-label">
+                        <i class="fas fa-comment-alt"></i>
+                        Observaciones
+                    </div>
+                    <div class="info-value">
+                        {{ ticket.observaciones }}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <!-- Footer del Ticket -->
+            <div class="ticket-footer">
+                <div>
+                    <i class="fas fa-building me-1"></i>
+                    AGL SRL - Sistema de Gestión Integral
+                </div>
+                <div class="mt-1">
+                    Generado el {{ ticket.fecha_creacion|date:"d/m/Y H:i" }} por {{ ticket.creado_por.get_full_name|default:ticket.creado_por.username }}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Botones de Acción -->
+        <div class="text-center mt-3 mb-4">
+            <a href="/transportes/tickets/" class="btn btn-outline-secondary me-2">
+                <i class="fas fa-arrow-left me-2"></i>
+                Volver a Tickets
+            </a>
+            <button onclick="window.print()" class="btn btn-outline-primary">
+                <i class="fas fa-print me-2"></i>
+                Imprimir Ticket
+            </button>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        // Auto-print si viene de creación
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('print') === 'true') {
+            setTimeout(() => {
+                window.print();
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

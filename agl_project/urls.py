@@ -41,6 +41,9 @@ urlpatterns = [
     # App de mercaderías
     path('mercaderias/', include('mercaderias.urls')),
     
+    # App de tickets de operación
+    path('tickets/', include('tickets.urls')),
+    
     # App de almacenamiento
     path('almacenamiento/', include('almacenamiento.urls')),
     

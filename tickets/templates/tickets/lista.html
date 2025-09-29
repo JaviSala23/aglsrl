@@ -1,0 +1,412 @@
+{% extends 'tickets/base.html' %}
+
+{% block title %}Lista de Tickets - AGL SRL{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="page-title">
+                    <i class="fas fa-list me-2"></i>
+                    Lista de Tickets
+                </h1>
+                <p class="text-muted mb-0">Gestión completa de tickets de operación</p>
+            </div>
+            <a href="{% url 'tickets:crear_ticket' %}" class="btn btn-primary btn-action">
+                <i class="fas fa-plus me-2"></i>
+                Nuevo Ticket
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Filtros -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="filter-card">
+            <div class="filter-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-filter me-2"></i>
+                    Filtros
+                </h5>
+            </div>
+            <div class="filter-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="estado" class="form-label">Estado</label>
+                        <select name="estado" id="estado" class="form-select">
+                            <option value="">Todos los estados</option>
+                            {% for estado in estados %}
+                                <option value="{{ estado.id }}" {% if request.GET.estado == estado.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ estado.nombre }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="tipo" class="form-label">Tipo</label>
+                        <select name="tipo" id="tipo" class="form-select">
+                            <option value="">Todos los tipos</option>
+                            {% for tipo in tipos %}
+                                <option value="{{ tipo.id }}" {% if request.GET.tipo == tipo.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ tipo.nombre }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="prioridad" class="form-label">Prioridad</label>
+                        <select name="prioridad" id="prioridad" class="form-select">
+                            <option value="">Todas las prioridades</option>
+                            {% for prioridad in prioridades %}
+                                <option value="{{ prioridad.id }}" {% if request.GET.prioridad == prioridad.id|stringformat:"s" %}selected{% endif %}>
+                                    {{ prioridad.nombre }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="buscar" class="form-label">Buscar</label>
+                        <div class="input-group">
+                            <input type="text" name="buscar" id="buscar" class="form-control" 
+                                   placeholder="Título o número..." value="{{ request.GET.buscar }}">
+                            <button class="btn btn-outline-primary" type="submit">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tabla de Tickets -->
+<div class="row">
+    <div class="col-12">
+        <div class="ticket-card">
+            <div class="ticket-body p-0">
+                {% if tickets %}
+                    <div class="table-responsive">
+                        <table class="table table-hover ticket-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Número</th>
+                                    <th>Título</th>
+                                    <th>Tipo</th>
+                                    <th>Prioridad</th>
+                                    <th>Estado</th>
+                                    <th>Asignado</th>
+                                    <th>Fecha Creación</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for ticket in tickets %}
+                                <tr class="ticket-row" data-ticket-id="{{ ticket.id }}">
+                                    <td>
+                                        <span class="ticket-number-badge">
+                                            {{ ticket.numero_ticket }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="ticket-title-cell">
+                                            <strong>{{ ticket.titulo|truncatechars:40 }}</strong>
+                                            {% if ticket.descripcion %}
+                                                <small class="text-muted d-block">
+                                                    {{ ticket.descripcion|truncatechars:60 }}
+                                                </small>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">
+                                            <i class="{{ ticket.tipo.icono }} me-1"></i>
+                                            {{ ticket.tipo.nombre }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge priority-{{ ticket.prioridad.nivel }}">
+                                            {{ ticket.prioridad.nombre }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge estado-{{ ticket.estado.codigo }}">
+                                            {{ ticket.estado.nombre }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% if ticket.asignado_a %}
+                                            <div class="user-avatar">
+                                                <i class="fas fa-user-circle me-1"></i>
+                                                {{ ticket.asignado_a.get_full_name|default:ticket.asignado_a.username }}
+                                            </div>
+                                        {% else %}
+                                            <span class="text-muted">Sin asignar</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="date-cell">
+                                            <strong>{{ ticket.fecha_creacion|date:"d/m/Y" }}</strong>
+                                            <small class="text-muted d-block">
+                                                {{ ticket.fecha_creacion|time:"H:i" }}
+                                            </small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="action-buttons">
+                                            <a href="{% url 'tickets:detalle_ticket' ticket.pk %}" 
+                                               class="btn btn-sm btn-outline-primary" title="Ver detalles">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="{% url 'tickets:editar_ticket' ticket.pk %}" 
+                                               class="btn btn-sm btn-outline-secondary" title="Editar">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            {% if ticket.estado.codigo != 'resuelto' %}
+                                                <button class="btn btn-sm btn-outline-success cambiar-estado" 
+                                                        data-ticket-id="{{ ticket.id }}" 
+                                                        data-estado="resuelto" 
+                                                        title="Marcar como resuelto">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Paginación -->
+                    {% if is_paginated %}
+                        <div class="d-flex justify-content-center mt-4 p-3">
+                            <nav aria-label="Paginación de tickets">
+                                <ul class="pagination pagination-lg">
+                                    {% if page_obj.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page=1{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.prioridad %}&prioridad={{ request.GET.prioridad }}{% endif %}{% if request.GET.buscar %}&buscar={{ request.GET.buscar }}{% endif %}">
+                                                <i class="fas fa-angle-double-left"></i>
+                                            </a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.prioridad %}&prioridad={{ request.GET.prioridad }}{% endif %}{% if request.GET.buscar %}&buscar={{ request.GET.buscar }}{% endif %}">
+                                                <i class="fas fa-angle-left"></i>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+
+                                    {% for num in page_obj.paginator.page_range %}
+                                        {% if page_obj.number == num %}
+                                            <li class="page-item active">
+                                                <span class="page-link">{{ num }}</span>
+                                            </li>
+                                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                            <li class="page-item">
+                                                <a class="page-link" href="?page={{ num }}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.prioridad %}&prioridad={{ request.GET.prioridad }}{% endif %}{% if request.GET.buscar %}&buscar={{ request.GET.buscar }}{% endif %}">{{ num }}</a>
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+
+                                    {% if page_obj.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.prioridad %}&prioridad={{ request.GET.prioridad }}{% endif %}{% if request.GET.buscar %}&buscar={{ request.GET.buscar }}{% endif %}">
+                                                <i class="fas fa-angle-right"></i>
+                                            </a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}{% if request.GET.tipo %}&tipo={{ request.GET.tipo }}{% endif %}{% if request.GET.prioridad %}&prioridad={{ request.GET.prioridad }}{% endif %}{% if request.GET.buscar %}&buscar={{ request.GET.buscar }}{% endif %}">
+                                                <i class="fas fa-angle-double-right"></i>
+                                            </a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        </div>
+                    {% endif %}
+                {% else %}
+                    <div class="empty-state">
+                        <i class="fas fa-ticket-alt empty-icon"></i>
+                        <h3>No se encontraron tickets</h3>
+                        <p class="text-muted">No hay tickets que coincidan con los filtros seleccionados.</p>
+                        <a href="{% url 'tickets:crear_ticket' %}" class="btn btn-primary">
+                            <i class="fas fa-plus me-2"></i>
+                            Crear Primer Ticket
+                        </a>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.filter-card {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.filter-header {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    padding: 1rem 1.5rem;
+    border-radius: 15px 15px 0 0;
+}
+
+.filter-body {
+    padding: 1.5rem;
+}
+
+.ticket-table {
+    font-size: 14px;
+}
+
+.ticket-table thead th {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    color: white;
+    border: none;
+    font-weight: 600;
+    padding: 1rem;
+}
+
+.ticket-row {
+    border-bottom: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.ticket-row:hover {
+    background: rgba(102, 126, 234, 0.1);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.ticket-number-badge {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+.ticket-title-cell {
+    max-width: 200px;
+}
+
+.priority-1 { background-color: #dc3545; }
+.priority-2 { background-color: #fd7e14; }
+.priority-3 { background-color: #ffc107; color: #000; }
+.priority-4 { background-color: #20c997; }
+.priority-5 { background-color: #6c757d; }
+
+.estado-nuevo { background-color: #17a2b8; }
+.estado-en_proceso { background-color: #ffc107; color: #000; }
+.estado-en_espera { background-color: #6c757d; }
+.estado-resuelto { background-color: #28a745; }
+.estado-cerrado { background-color: #343a40; }
+
+.user-avatar {
+    color: #667eea;
+    font-weight: 500;
+}
+
+.date-cell {
+    min-width: 80px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.action-buttons .btn {
+    border-radius: 50%;
+    width: 35px;
+    height: 35px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.action-buttons .btn:hover {
+    transform: scale(1.1);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    color: #e9ecef;
+    margin-bottom: 1rem;
+}
+
+.pagination .page-link {
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 0.25rem;
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+}
+
+.pagination .page-item.active .page-link {
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    border-color: var(--primary-color);
+}
+
+.pagination .page-link:hover {
+    background: var(--primary-color);
+    color: white;
+    transform: scale(1.1);
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Funcionalidad para cambiar estado
+    document.querySelectorAll('.cambiar-estado').forEach(button => {
+        button.addEventListener('click', function() {
+            const ticketId = this.dataset.ticketId;
+            const nuevoEstado = this.dataset.estado;
+            
+            if (confirm('¿Está seguro de cambiar el estado del ticket?')) {
+                fetch(`/tickets/${ticketId}/cambiar-estado/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                    },
+                    body: JSON.stringify({
+                        estado: nuevoEstado
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error al cambiar el estado: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al cambiar el estado del ticket');
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,291 @@
+{% extends 'tickets/base.html' %}
+
+{% block title %}
+{% if ticket %}Editar Ticket {{ ticket.numero_ticket }}{% else %}Crear Nuevo Ticket{% endif %} - AGL SRL
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="ticket-card">
+            <!-- Header -->
+            <div class="ticket-header text-center">
+                <h1 class="ticket-number">
+                    <i class="fas fa-plus-circle me-2"></i>
+                    {% if ticket %}
+                        Editar Ticket
+                    {% else %}
+                        Nuevo Ticket
+                    {% endif %}
+                </h1>
+                <p class="ticket-title mb-0">
+                    {% if ticket %}
+                        Modificar ticket {{ ticket.numero_ticket }}
+                    {% else %}
+                        Complete la información del ticket
+                    {% endif %}
+                </p>
+            </div>
+
+            <!-- Formulario -->
+            <div class="ticket-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <!-- Información Básica -->
+                    <div class="row">
+                        <div class="col-12">
+                            <h5 class="section-header mb-4">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Información Básica
+                            </h5>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label for="{{ form.titulo.id_for_label }}" class="form-label fw-bold">
+                                {{ form.titulo.label }}
+                                {% if form.titulo.field.required %}<span class="text-danger">*</span>{% endif %}
+                            </label>
+                            {{ form.titulo }}
+                            {% if form.titulo.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.titulo.errors %}
+                                        <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label for="{{ form.descripcion.id_for_label }}" class="form-label fw-bold">
+                                {{ form.descripcion.label }}
+                                {% if form.descripcion.field.required %}<span class="text-danger">*</span>{% endif %}
+                            </label>
+                            {{ form.descripcion }}
+                            {% if form.descripcion.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.descripcion.errors %}
+                                        <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Clasificación -->
+                    <div class="row">
+                        <div class="col-12">
+                            <h5 class="section-header mb-4">
+                                <i class="fas fa-tags me-2"></i>
+                                Clasificación
+                            </h5>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="{{ form.tipo.id_for_label }}" class="form-label fw-bold">
+                                {{ form.tipo.label }}
+                                {% if form.tipo.field.required %}<span class="text-danger">*</span>{% endif %}
+                            </label>
+                            {{ form.tipo }}
+                            {% if form.tipo.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.tipo.errors %}
+                                        <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="{{ form.prioridad.id_for_label }}" class="form-label fw-bold">
+                                {{ form.prioridad.label }}
+                                {% if form.prioridad.field.required %}<span class="text-danger">*</span>{% endif %}
+                            </label>
+                            {{ form.prioridad }}
+                            {% if form.prioridad.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.prioridad.errors %}
+                                        <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="{{ form.asignado_a.id_for_label }}" class="form-label fw-bold">
+                                {{ form.asignado_a.label }}
+                            </label>
+                            {{ form.asignado_a }}
+                            {% if form.asignado_a.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.asignado_a.errors %}
+                                        <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Detalles Adicionales -->
+                    <div class="row">
+                        <div class="col-12">
+                            <h5 class="section-header mb-4">
+                                <i class="fas fa-cog me-2"></i>
+                                Detalles Adicionales
+                            </h5>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.ubicacion.id_for_label }}" class="form-label fw-bold">
+                                {{ form.ubicacion.label }}
+                            </label>
+                            {{ form.ubicacion }}
+                            {% if form.ubicacion.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.ubicacion.errors %}
+                                        <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="{{ form.equipo_afectado.id_for_label }}" class="form-label fw-bold">
+                                {{ form.equipo_afectado.label }}
+                            </label>
+                            {{ form.equipo_afectado }}
+                            {% if form.equipo_afectado.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.equipo_afectado.errors %}
+                                        <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="{{ form.fecha_limite.id_for_label }}" class="form-label fw-bold">
+                                {{ form.fecha_limite.label }}
+                            </label>
+                            {{ form.fecha_limite }}
+                            {% if form.fecha_limite.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.fecha_limite.errors %}
+                                        <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="{{ form.tiempo_estimado_horas.id_for_label }}" class="form-label fw-bold">
+                                {{ form.tiempo_estimado_horas.label }}
+                            </label>
+                            <div class="input-group">
+                                {{ form.tiempo_estimado_horas }}
+                                <span class="input-group-text">horas</span>
+                            </div>
+                            {% if form.tiempo_estimado_horas.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.tiempo_estimado_horas.errors %}
+                                        <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-4">
+                            <label for="{{ form.costo_estimado.id_for_label }}" class="form-label fw-bold">
+                                {{ form.costo_estimado.label }}
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">$</span>
+                                {{ form.costo_estimado }}
+                            </div>
+                            {% if form.costo_estimado.errors %}
+                                <div class="text-danger small mt-1">
+                                    {% for error in form.costo_estimado.errors %}
+                                        <i class="fas fa-exclamation-circle me-1"></i>{{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Botones de Acción -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <hr class="my-4">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <a href="{% if ticket %}{% url 'tickets:detalle_ticket' ticket.pk %}{% else %}{% url 'tickets:dashboard' %}{% endif %}" class="btn btn-outline-secondary btn-ticket">
+                                    <i class="fas fa-arrow-left me-2"></i>
+                                    {% if ticket %}Volver al Ticket{% else %}Cancelar{% endif %}
+                                </a>
+                                <button type="submit" class="btn btn-primary btn-ticket">
+                                    <i class="fas fa-save me-2"></i>
+                                    {% if ticket %}Actualizar Ticket{% else %}Crear Ticket{% endif %}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.section-header {
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.form-label {
+    color: #555;
+    margin-bottom: 0.5rem;
+}
+
+.form-control, .form-select {
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 0.75rem;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.input-group-text {
+    background: var(--primary-color);
+    color: white;
+    border: 2px solid var(--primary-color);
+    font-weight: 500;
+}
+
+.btn-ticket {
+    border-radius: 25px;
+    padding: 0.75rem 2rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-ticket:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+</style>
+{% endblock %}
