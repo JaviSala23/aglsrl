@@ -261,21 +261,17 @@ def detalle_chofer(request, pk):
 @login_required
 def crear_chofer(request):
     """Crear un nuevo chofer."""
+    from .forms import ChoferForm3
     if request.method == 'POST':
-        form = ChoferForm(request.POST)
+        form = ChoferForm3(request.POST)
         if form.is_valid():
             chofer = form.save(commit=False)
             chofer.creado_por = request.user
-            # Asignar valores por defecto para campos no incluidos en el formulario
-            chofer.legajo = f"CH{chofer.cuit[-4:]}"  # Generar legajo automático basado en CUIT
-            chofer.fecha_ingreso = timezone.now().date()  # Fecha actual
-            chofer.fecha_nacimiento = timezone.now().date().replace(year=timezone.now().year - 30)  # Fecha por defecto (30 años)
-            chofer.estado = 'disponible'  # Estado por defecto
             chofer.save()
-            messages.success(request, f'Chofer {chofer.nombre_completo} creado exitosamente.')
+            messages.success(request, f'Chofer {chofer.nombre} creado exitosamente.')
             return redirect('transportes:detalle_chofer', pk=chofer.pk)
     else:
-        form = ChoferForm()
+        form = ChoferForm3()
     
     context = {
         'form': form,
@@ -290,14 +286,17 @@ def editar_chofer(request, pk):
     """Editar un chofer existente."""
     chofer = get_object_or_404(Chofer, pk=pk)
     
+    from .forms import ChoferForm3
     if request.method == 'POST':
-        form = ChoferForm(request.POST, instance=chofer)
+        form = ChoferForm3(request.POST, instance=chofer)
         if form.is_valid():
-            form.save()
-            messages.success(request, f'Chofer {chofer.nombre_completo} actualizado exitosamente.')
+            chofer = form.save(commit=False)
+            chofer.creado_por = request.user
+            chofer.save()
+            messages.success(request, f'Chofer {chofer.nombre} actualizado exitosamente.')
             return redirect('transportes:detalle_chofer', pk=chofer.pk)
     else:
-        form = ChoferForm(instance=chofer)
+        form = ChoferForm3(instance=chofer)
     
     context = {
         'form': form,

@@ -1,0 +1,342 @@
+{% extends 'transportes/base_transportes.html' %}
+
+{% block title %}Lista de Choferes - Transportes{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1><i class="fas fa-id-badge"></i> Lista de Choferes</h1>
+                    <p class="text-muted">Gestión de conductores registrados</p>
+                </div>
+                <div>
+                    <a href="{% url 'transportes:crear_chofer' %}" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Nuevo Chofer
+                    </a>
+                </div>
+            </div>
+
+            <!-- Filtros -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Buscar por nombre o documento</label>
+                            <input type="text" class="form-control" name="q" 
+                                   value="{{ request.GET.q }}" placeholder="Nombre o documento...">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Estado</label>
+                            <select class="form-select" name="activo">
+                                <option value="">Todos</option>
+                                <option value="true" {% if request.GET.activo == 'true' %}selected{% endif %}>Activos</option>
+                                <option value="false" {% if request.GET.activo == 'false' %}selected{% endif %}>Inactivos</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Empresa</label>
+                            <select class="form-select" name="empresa">
+                                <option value="">Todas las empresas</option>
+                                {% for empresa in empresas %}
+                                    <option value="{{ empresa.pk }}" 
+                                        {% if request.GET.empresa == empresa.pk|stringformat:"s" %}selected{% endif %}>
+                                        {{ empresa.razon_social }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-search"></i> Buscar
+                            </button>
+                            <a href="{% url 'transportes:lista_choferes' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-times"></i>
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Estadísticas -->
+            {% if stats %}
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h3>{{ stats.total_choferes }}</h3>
+                                    <p class="mb-0">Total Choferes</p>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-id-badge fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h3>{{ stats.choferes_activos }}</h3>
+                                    <p class="mb-0">Activos</p>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-check-circle fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h3>{{ stats.choferes_con_viajes }}</h3>
+                                    <p class="mb-0">Con Viajes</p>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-route fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-dark">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h3>{{ stats.licencias_por_vencer }}</h3>
+                                    <p class="mb-0">Licencias por Vencer</p>
+                                </div>
+                                <div class="align-self-center">
+                                    <i class="fas fa-exclamation-triangle fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Lista de Choferes -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list"></i> Choferes Registrados
+                        {% if choferes.paginator %}
+                            <span class="badge bg-primary">{{ choferes.paginator.count }} total</span>
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if choferes %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Chofer</th>
+                                        <th>Documento</th>
+                                        <th>Teléfono</th>
+                                        <th>Empresa</th>
+                                        <th>Licencia</th>
+                                        <th>Estado</th>
+                                        <th>Último Viaje</th>
+                                        <th class="text-center">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for chofer in choferes %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-circle me-3">
+                                                    <i class="fas fa-user"></i>
+                                                </div>
+                                                <div>
+                                                    <strong>{{ chofer.nombre }}</strong>
+                                                    {% if chofer.apellido %}
+                                                        {{ chofer.apellido }}
+                                                    {% endif %}
+                                                    <br>
+                                                    <small class="text-muted">
+                                                        Registrado: {{ chofer.fecha_registro|date:"d/m/Y" }}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <strong>{{ chofer.documento }}</strong>
+                                            {% if chofer.tipo_documento %}
+                                                <br><small class="text-muted">{{ chofer.tipo_documento }}</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if chofer.telefono %}
+                                                <i class="fas fa-phone text-muted"></i> {{ chofer.telefono }}
+                                            {% else %}
+                                                <small class="text-muted">No registrado</small>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if chofer.empresa %}
+                                                <strong>{{ chofer.empresa.razon_social }}</strong>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Sin empresa</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if chofer.numero_licencia %}
+                                                <div>
+                                                    <strong>{{ chofer.numero_licencia }}</strong>
+                                                    {% if chofer.vencimiento_licencia %}
+                                                        <br>
+                                                        <small class="text-muted">
+                                                            Vence: {{ chofer.vencimiento_licencia|date:"d/m/Y" }}
+                                                        </small>
+                                                    {% endif %}
+                                                </div>
+                                            {% else %}
+                                                <span class="badge bg-warning">Sin licencia</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if chofer.activo %}
+                                                <span class="badge bg-success">Activo</span>
+                                            {% else %}
+                                                <span class="badge bg-danger">Inactivo</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if chofer.ultimo_viaje %}
+                                                {{ chofer.ultimo_viaje|date:"d/m/Y" }}
+                                            {% else %}
+                                                <small class="text-muted">Sin viajes</small>
+                                            {% endif %}
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="btn-group" role="group">
+                                                <a href="{% url 'transportes:detalle_chofer' chofer.pk %}" 
+                                                   class="btn btn-sm btn-outline-info" title="Ver detalle">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="{% url 'transportes:editar_chofer' chofer.pk %}" 
+                                                   class="btn btn-sm btn-outline-primary" title="Editar">
+                                                    <i class="fas fa-edit"></i>
+                                                </a>
+                                                {% if chofer.activo %}
+                                                    <button type="button" class="btn btn-sm btn-outline-warning" 
+                                                            onclick="desactivarChofer({{ chofer.pk }})" title="Desactivar">
+                                                        <i class="fas fa-pause"></i>
+                                                    </button>
+                                                {% else %}
+                                                    <button type="button" class="btn btn-sm btn-outline-success" 
+                                                            onclick="activarChofer({{ chofer.pk }})" title="Activar">
+                                                        <i class="fas fa-play"></i>
+                                                    </button>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-id-badge fa-3x text-muted mb-3"></i>
+                            <h5>No hay choferes registrados</h5>
+                            <p class="text-muted">Comienza agregando el primer chofer al sistema</p>
+                            <a href="{% url 'transportes:crear_chofer' %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Crear Primer Chofer
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Paginación -->
+            {% if choferes.has_other_pages %}
+            <nav aria-label="Navegación de páginas" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if choferes.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{{ request.GET.urlencode }}&page=1">Primera</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?{{ request.GET.urlencode }}&page={{ choferes.previous_page_number }}">Anterior</a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in choferes.paginator.page_range %}
+                        {% if choferes.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > choferes.number|add:'-3' and num < choferes.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{{ request.GET.urlencode }}&page={{ num }}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if choferes.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{{ request.GET.urlencode }}&page={{ choferes.next_page_number }}">Siguiente</a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?{{ request.GET.urlencode }}&page={{ choferes.paginator.num_pages }}">Última</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+<style>
+.avatar-circle {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: #007bff;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0,123,255,.075);
+}
+</style>
+
+<script>
+function desactivarChofer(choferId) {
+    if (confirm('¿Está seguro de que desea desactivar este chofer?')) {
+        // Aquí iría la lógica para desactivar
+        console.log('Desactivando chofer:', choferId);
+        // Ejemplo: hacer una petición AJAX o redirigir a una URL
+    }
+}
+
+function activarChofer(choferId) {
+    if (confirm('¿Está seguro de que desea activar este chofer?')) {
+        // Aquí iría la lógica para activar
+        console.log('Activando chofer:', choferId);
+        // Ejemplo: hacer una petición AJAX o redirigir a una URL
+    }
+}
+</script>
+
+{% endblock %}

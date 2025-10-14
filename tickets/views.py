@@ -113,6 +113,7 @@ def dashboard_tickets(request):
         'stats': stats,
         'tickets_por_estado': tickets_por_estado,
         'tickets_recientes': tickets_recientes,
+        'mis_tickets': tickets_recientes,  # Alias para compatibilidad con template
         'chart_labels': json.dumps(chart_labels),
         'chart_recepciones': json.dumps(chart_recepciones),
         'chart_envios': json.dumps(chart_envios),
@@ -348,6 +349,22 @@ def crear_ticket(request):
     except:
         ubicaciones = Almacenaje.objects.all()
     
+    # Construir datos agrupados para el JS
+    datos_transporte = {}
+    import json
+    for cuenta_obj in cuentas:
+        datos_transporte[str(cuenta_obj.pk)] = {
+            'choferes': [
+                {
+                    'id': chofer.pk,
+                    'nombre': f"{chofer.nombre} {chofer.apellido}",
+                    'documento': chofer.cuit
+                }
+                for chofer in choferes if chofer.cuenta_asociada_id == cuenta_obj.pk
+            ],
+            'patentes': [camion.patente for camion in getattr(cuenta_obj, 'camion_set', []).all()]
+        }
+
     context = {
         'form': form,
         'formset': formset,
@@ -357,10 +374,98 @@ def crear_ticket(request):
         'mercaderias': mercaderias,
         'calidades': calidades,
         'ubicaciones': ubicaciones,
+        'datos_transporte_json': json.dumps(datos_transporte),
     }
     
     return render(request, 'tickets/crear_ticket.html', context)
 
+
+@login_required
+def crear_ticket_entrada(request):
+    """Crear ticket de entrada específico."""
+    # Reutilizar la lógica de crear_ticket pero con tipo predefinido
+    if request.method == 'POST':
+        # Forzar el tipo de movimiento a REC (entrada)
+        form_data = request.POST.copy()
+        form_data['tipo_movimiento_codigo'] = 'REC'
+        request.POST = form_data
+        
+    # Obtener datos necesarios para el template
+    from transportes.models import Chofer, Camion
+    from cuentas.models import cuenta
+    from mercaderias.models import Mercaderia, ClasificacionCalidad
+    from almacenamiento.models import Almacenaje
+    
+    try:
+        choferes = Chofer.objects.filter(activo=True)
+        camiones = Camion.objects.filter(activo=True)
+        clientes = cuenta.objects.filter(activo=True)
+        mercaderias = Mercaderia.objects.filter(activo=True)
+        calidades = ClasificacionCalidad.objects.filter(activo=True)
+        ubicaciones = Almacenaje.objects.filter(activo=True)
+    except:
+        choferes = Chofer.objects.all()
+        camiones = Camion.objects.all()
+        clientes = cuenta.objects.all()
+        mercaderias = Mercaderia.objects.all()
+        calidades = ClasificacionCalidad.objects.all()
+        ubicaciones = Almacenaje.objects.all()
+    
+    context = {
+        'tipo_ticket': 'entrada',
+        'choferes': choferes,
+        'camiones': camiones,
+        'clientes': clientes,
+        'mercaderias': mercaderias,
+        'calidades': calidades,
+        'ubicaciones': ubicaciones,
+    }
+    
+    return render(request, 'tickets/crear_ticket.html', context)
+
+
+@login_required
+def crear_ticket_salida(request):
+    """Crear ticket de salida específico."""
+    # Reutilizar la lógica de crear_ticket pero con tipo predefinido
+    if request.method == 'POST':
+        # Forzar el tipo de movimiento a ENV (salida)
+        form_data = request.POST.copy()
+        form_data['tipo_movimiento_codigo'] = 'ENV'
+        request.POST = form_data
+        
+    # Obtener datos necesarios para el template
+    from transportes.models import Chofer, Camion
+    from cuentas.models import cuenta
+    from mercaderias.models import Mercaderia, ClasificacionCalidad
+    from almacenamiento.models import Almacenaje
+    
+    try:
+        choferes = Chofer.objects.filter(activo=True)
+        camiones = Camion.objects.filter(activo=True)
+        clientes = cuenta.objects.filter(activo=True)
+        mercaderias = Mercaderia.objects.filter(activo=True)
+        calidades = ClasificacionCalidad.objects.filter(activo=True)
+        ubicaciones = Almacenaje.objects.filter(activo=True)
+    except:
+        choferes = Chofer.objects.all()
+        camiones = Camion.objects.all()
+        clientes = cuenta.objects.all()
+        mercaderias = Mercaderia.objects.all()
+        calidades = ClasificacionCalidad.objects.all()
+        ubicaciones = Almacenaje.objects.all()
+    
+    context = {
+        'tipo_ticket': 'salida',
+        'choferes': choferes,
+        'camiones': camiones,
+        'clientes': clientes,
+        'mercaderias': mercaderias,
+        'calidades': calidades,
+        'ubicaciones': ubicaciones,
+    }
+    
+    return render(request, 'tickets/crear_ticket.html', context)
 
 
 @login_required

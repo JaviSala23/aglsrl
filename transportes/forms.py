@@ -5,6 +5,64 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from datetime import date, timedelta
+from .models import TipoCamion, Camion, Chofer, Viaje, TicketBalanza
+
+# ...existing code...
+
+# Formulario extendido para Chofer (ChoferForm3)
+class ChoferForm3(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from cuentas.models import cuenta
+        self.fields['cuenta_asociada'].queryset = cuenta.objects.filter(activo=True)
+        self.fields['cuenta_asociada'].empty_label = "Seleccionar cuenta/empresa"
+        # Hacer opcionales los campos
+        self.fields['fecha_nacimiento'].required = False
+        self.fields['legajo'].required = False
+        self.fields['fecha_ingreso'].required = False
+        self.fields['estado'].required = False
+        self.fields['contacto_emergencia_nombre'].required = False
+        self.fields['contacto_emergencia_telefono'].required = False
+
+    def clean_estado(self):
+        estado = self.cleaned_data.get('estado')
+        return estado or 'disponible'
+    """Formulario completo para choferes, incluyendo cuenta asociada y todos los datos relevantes."""
+    class Meta:
+        model = Chofer
+        fields = [
+            'nombre', 'apellido', 'cuit', 'fecha_nacimiento', 'telefono', 'email', 'direccion',
+            'legajo', 'fecha_ingreso', 'tipo_licencia', 'numero_licencia', 'fecha_vencimiento_licencia',
+            'estado', 'cuenta_asociada', 'camion_asignado',
+            'contacto_emergencia_nombre', 'contacto_emergencia_telefono', 'activo'
+        ]
+        widgets = {
+            'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre del chofer'}),
+            'apellido': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Apellido del chofer'}),
+            'cuit': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '20-12345678-9', 'maxlength': '13'}),
+            'fecha_nacimiento': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'telefono': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '+54 9 11 1234-5678 (opcional)'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'email@ejemplo.com (opcional)'}),
+            'direccion': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Dirección completa (opcional)'}),
+            'legajo': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Legajo interno'}),
+            'fecha_ingreso': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'tipo_licencia': forms.Select(attrs={'class': 'form-select'}),
+            'numero_licencia': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Número de licencia'}),
+            'fecha_vencimiento_licencia': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'estado': forms.Select(attrs={'class': 'form-select'}),
+            'cuenta_asociada': forms.Select(attrs={'class': 'form-select'}),
+            'camion_asignado': forms.Select(attrs={'class': 'form-select'}),
+            'contacto_emergencia_nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nombre contacto emergencia'}),
+            'contacto_emergencia_telefono': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Teléfono contacto emergencia'}),
+            'activo': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+"""
+Formularios para el módulo de transportes.
+"""
+from django import forms
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+from datetime import date, timedelta
 
 from .models import TipoCamion, Camion, Chofer, Viaje, TicketBalanza
 from cuentas.models import cuenta
@@ -131,7 +189,7 @@ class ChoferForm(forms.ModelForm):
         model = Chofer
         fields = [
             'nombre', 'apellido', 'cuit',
-            'telefono', 'email', 'direccion', 'activo'
+            'telefono', 'email', 'direccion', 'cuenta_asociada', 'activo'
         ]
         widgets = {
             'nombre': forms.TextInput(attrs={
@@ -159,6 +217,9 @@ class ChoferForm(forms.ModelForm):
                 'class': 'form-control',
                 'rows': 3,
                 'placeholder': 'Dirección completa (opcional)'
+            }),
+            'cuenta_asociada': forms.Select(attrs={
+                'class': 'form-select',
             }),
             'activo': forms.CheckboxInput(attrs={
                 'class': 'form-check-input'

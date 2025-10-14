@@ -13,6 +13,8 @@ urlpatterns = [
     # Gestión de tickets
     path('lista/', views.lista_tickets, name='lista_tickets'),
     path('crear/', views.crear_ticket, name='crear_ticket'),
+    path('crear/entrada/', views.crear_ticket_entrada, name='crear_ticket_entrada'),
+    path('crear/salida/', views.crear_ticket_salida, name='crear_ticket_salida'),
     path('nuevo/', views.crear_ticket, name='crear_ticket_nuevo'),  # URL limpia sin caché
     path('<int:pk>/', views.detalle_ticket, name='detalle_ticket'),
     

@@ -161,20 +161,27 @@ class Chofer(models.Model):
     nombre = models.CharField(max_length=100)
     apellido = models.CharField(max_length=100)
     cuit = models.CharField(max_length=13, unique=True, help_text='CUIT en formato XX-XXXXXXXX-X')
-    fecha_nacimiento = models.DateField()
+    fecha_nacimiento = models.DateField(null=True, blank=True)
     telefono = models.CharField(max_length=20, blank=True, null=True)
     email = models.EmailField(blank=True)
     direccion = models.TextField(max_length=200, blank=True, null=True)
     
     # Información laboral
-    legajo = models.CharField(max_length=20, unique=True)
-    fecha_ingreso = models.DateField()
+    legajo = models.CharField(max_length=20, unique=True, null=True, blank=True)
+    fecha_ingreso = models.DateField(null=True, blank=True)
     tipo_licencia = models.CharField(max_length=5, choices=TIPO_LICENCIA_CHOICES, blank=True, null=True)
     numero_licencia = models.CharField(max_length=20, blank=True, null=True)
     fecha_vencimiento_licencia = models.DateField(blank=True, null=True)
     
     # Estado y disponibilidad
-    estado = models.CharField(max_length=15, choices=ESTADO_CHOICES, default='disponible')
+    estado = models.CharField(max_length=15, choices=ESTADO_CHOICES, default='disponible', null=True, blank=True)
+    cuenta_asociada = models.ForeignKey(
+        cuenta,
+        on_delete=models.PROTECT,
+        help_text='Cuenta/empresa a la que pertenece el chofer',
+        null=False,
+        blank=False
+    )
     camion_asignado = models.ForeignKey(
         Camion,
         on_delete=models.SET_NULL,
@@ -184,8 +191,8 @@ class Chofer(models.Model):
     )
     
     # Datos de emergencia
-    contacto_emergencia_nombre = models.CharField(max_length=100)
-    contacto_emergencia_telefono = models.CharField(max_length=20)
+    contacto_emergencia_nombre = models.CharField(max_length=100, null=True, blank=True)
+    contacto_emergencia_telefono = models.CharField(max_length=20, null=True, blank=True)
     
     # Control
     activo = models.BooleanField(default=True)

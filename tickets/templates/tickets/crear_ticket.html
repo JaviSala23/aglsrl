@@ -1,687 +1,445 @@
 {% extends 'tickets/base.html' %}
 
-{% block title %}Crear Ticket - AGL SRL{% endblock %}
+{% block title %}
+{% if tipo_ticket == 'entrada' %}
+    Ticket de ENTRADA - AGL SRL
+{% elif tipo_ticket == 'salida' %}
+    Ticket de SALIDA - AGL SRL
+{% else %}
+    Crear Ticket - AGL SRL
+{% endif %}
+{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <div class="row justify-content-center">
-        <div class="col-md-10">
+    <div class="row">
+        <div class="col-12">
             
-            <div class="text-center mb-4">
-                <div class="alert alert-primary">
-                    <h1><i class="fas fa-ticket-alt"></i> Crear Nuevo Ticket</h1>
-                    <p class="lead">Template desde: /tickets/templates/tickets/</p>
+            <!-- ============= INDICADOR PRINCIPAL DEL TIPO DE TICKET ============= -->
+            {% if tipo_ticket == 'entrada' %}
+                <div class="alert alert-success border-0 shadow-sm mb-4">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <div class="bg-success text-white rounded-circle p-3">
+                                <i class="fas fa-truck-loading fa-2x"></i>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <h4 class="alert-heading mb-1">
+                                <strong>🟢 TICKET DE ENTRADA</strong>
+                            </h4>
+                            <p class="mb-0">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Registrando mercadería que <strong>INGRESA</strong> a AGL S.R.L.
+                                <br><small class="text-muted">
+                                    📍 Flujo: Cliente/Proveedor → AGL (Planta Propia)
+                                </small>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            {% elif tipo_ticket == 'salida' %}
+                <div class="alert alert-danger border-0 shadow-sm mb-4">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <div class="bg-danger text-white rounded-circle p-3">
+                                <i class="fas fa-shipping-fast fa-2x"></i>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <h4 class="alert-heading mb-1">
+                                <strong>🔴 TICKET DE SALIDA</strong>
+                            </h4>
+                            <p class="mb-0">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Registrando mercadería que <strong>SALE</strong> de AGL S.R.L.
+                                <br><small class="text-muted">
+                                    📍 Flujo: AGL (Planta Propia) → Cliente
+                                </small>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                <div class="alert alert-warning border-0 shadow-sm mb-4">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            <div class="bg-warning text-white rounded-circle p-3">
+                                <i class="fas fa-question fa-2x"></i>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <h4 class="alert-heading mb-1">
+                                <strong>⚠️ TIPO DE TICKET NO DEFINIDO</strong>
+                            </h4>
+                            <p class="mb-0">
+                                <i class="fas fa-exclamation-triangle me-1"></i>
+                                Debe acceder por "Ticket de Entrada" o "Ticket de Salida"
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            
+            <!-- ============= FORMULARIO PRINCIPAL ============= -->
+            <div class="card shadow-sm">
+                <div class="card-header {% if tipo_ticket == 'entrada' %}bg-success{% elif tipo_ticket == 'salida' %}bg-danger{% else %}bg-warning{% endif %} text-white">
+                    <div class="row align-items-center">
+                        <div class="col">
+                            <h3 class="mb-0">
+                                {% if tipo_ticket == 'entrada' %}
+                                    <i class="fas fa-truck-loading me-2"></i>Formulario de Entrada
+                                {% elif tipo_ticket == 'salida' %}
+                                    <i class="fas fa-shipping-fast me-2"></i>Formulario de Salida
+                                {% else %}
+                                    <i class="fas fa-ticket-alt me-2"></i>Crear Ticket
+                                {% endif %}
+                            </h3>
+                        </div>
+                        <div class="col-auto">
+                            <span class="badge {% if tipo_ticket == 'entrada' %}bg-light text-success{% elif tipo_ticket == 'salida' %}bg-light text-danger{% else %}bg-light text-warning{% endif %} fs-6">
+                                {% if tipo_ticket == 'entrada' %}
+                                    RECEPCIÓN
+                                {% elif tipo_ticket == 'salida' %}
+                                    ENVÍO
+                                {% else %}
+                                    NO DEFINIDO
+                                {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card-body">
+                    <form method="post" id="ticketForm">
+                        {% csrf_token %}
+                        
+                        <input type="hidden" name="tipo_movimiento" id="tipo_movimiento" 
+                               value="{% if tipo_ticket == 'entrada' %}1{% elif tipo_ticket == 'salida' %}2{% endif %}">
+
+                        <div class="row">
+                            <!-- COLUMNA IZQUIERDA: TRANSPORTE -->
+                            <div class="col-md-6">
+                                <div class="card h-100">
+                                    <div class="card-header bg-light">
+                                        <h5 class="mb-0">
+                                            <i class="fas fa-truck me-2"></i>Información del Transporte
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <!-- Patente del Camión -->
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Patente del Camión *</label>
+                                            <div class="input-group">
+                                                <select id="patente_select" class="form-select" onchange="cambiarPatente()">
+                                                    <option value="">-- Elegir camión registrado --</option>
+                                                    {% for camion in camiones %}
+                                                        <option value="{{ camion.patente }}" data-tara="{{ camion.tara|default:'' }}">
+                                                            {{ camion.patente }}
+                                                            {% if camion.acoplado_1 %} + {{ camion.acoplado_1 }}{% endif %}
+                                                            {% if camion.acoplado_2 %} + {{ camion.acoplado_2 }}{% endif %}
+                                                            - {{ camion.cuenta_asociada.nombre }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                                <button type="button" class="btn btn-outline-secondary" onclick="limpiarPatente()">
+                                                    <i class="fas fa-eraser"></i>
+                                                </button>
+                                            </div>
+                                            <input type="text" name="patente_camion" id="patente_input" 
+                                                   class="form-control mt-2" placeholder="O escribir patente manualmente..." required>
+                                            <div class="form-text">Seleccione de la lista o escriba manualmente</div>
+                                        </div>
+
+                                        <!-- Chofer -->
+                                        <div class="mb-3">
+                                            <label class="form-label fw-bold">Chofer</label>
+                                            <select name="chofer" id="chofer_select" class="form-select">
+                                                <option value="">-- Seleccionar Chofer --</option>
+                                                {% for chofer in choferes %}
+                                                    <option value="{{ chofer.pk }}" data-cuenta="{{ chofer.cuenta_asociada.pk|default:'' }}">
+                                                        {{ chofer.nombre }} {{ chofer.apellido }}
+                                                        {% if chofer.cuit %} - {{ chofer.cuit }}{% endif %}
+                                                        {% if chofer.cuenta_asociada %} ({{ chofer.cuenta_asociada.nombre }}){% endif %}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                            <div class="form-text">Opcional - Se puede completar después</div>
+                                        </div>
+
+                                        <!-- Tara del Camión -->
+                                        <div class="mb-3">
+                                            <label class="form-label">Tara del Camión (kg)</label>
+                                            <input type="number" name="tara_camion" id="tara_input" 
+                                                   class="form-control" step="1" min="0" placeholder="0">
+                                            <div class="form-text">Se auto-completa al seleccionar camión registrado</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- COLUMNA DERECHA: ORIGEN/DESTINO -->
+                            <div class="col-md-6">
+                                <div class="card h-100">
+                                    <div class="card-header {% if tipo_ticket == 'entrada' %}bg-success{% elif tipo_ticket == 'salida' %}bg-danger{% else %}bg-warning{% endif %} text-white">
+                                        <h5 class="mb-0">
+                                            {% if tipo_ticket == 'entrada' %}
+                                                <i class="fas fa-arrow-right me-2"></i>Origen y Destino (ENTRADA)
+                                            {% elif tipo_ticket == 'salida' %}
+                                                <i class="fas fa-arrow-left me-2"></i>Origen y Destino (SALIDA)
+                                            {% else %}
+                                                <i class="fas fa-exchange-alt me-2"></i>Origen y Destino
+                                            {% endif %}
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        {% if tipo_ticket == 'entrada' %}
+                                            <!-- ENTRADA: Origen = Cliente, Destino = AGL -->
+                                            <div class="mb-3">
+                                                <label class="form-label fw-bold">Origen (Cliente/Proveedor) *</label>
+                                                <select name="origen" class="form-select" required>
+                                                    <option value="">-- ¿Quién envía la mercadería? --</option>
+                                                    {% for cliente in clientes %}
+                                                        <option value="{{ cliente.pk }}">{{ cliente.nombre }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <div class="form-text text-success">
+                                                    <i class="fas fa-info-circle"></i> ¿De qué cliente viene la mercadería?
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label fw-bold">Destino (AGL)</label>
+                                                <input type="text" name="destinatario_nombre" class="form-control" 
+                                                       value="AGL S.R.L. (Planta Propia)" readonly>
+                                                <input type="hidden" name="destinatario" value="1">
+                                                <div class="form-text text-success">
+                                                    <i class="fas fa-check-circle"></i> Automático - La mercadería llega a nuestra planta
+                                                </div>
+                                            </div>
+                                        
+                                        {% elif tipo_ticket == 'salida' %}
+                                            <!-- SALIDA: Origen = AGL, Destino = Cliente -->
+                                            <div class="mb-3">
+                                                <label class="form-label fw-bold">Origen (AGL)</label>
+                                                <input type="text" name="origen_nombre" class="form-control" 
+                                                       value="AGL S.R.L. (Planta Propia)" readonly>
+                                                <input type="hidden" name="origen" value="1">
+                                                <div class="form-text text-danger">
+                                                    <i class="fas fa-check-circle"></i> Automático - La mercadería sale de nuestra planta
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="mb-3">
+                                                <label class="form-label fw-bold">Destino (Cliente) *</label>
+                                                <select name="destinatario" class="form-select" required>
+                                                    <option value="">-- ¿A quién se envía? --</option>
+                                                    {% for cliente in clientes %}
+                                                        <option value="{{ cliente.pk }}">{{ cliente.nombre }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <div class="form-text text-danger">
+                                                    <i class="fas fa-info-circle"></i> ¿A qué cliente se envía la mercadería?
+                                                </div>
+                                            </div>
+                                        
+                                        {% else %}
+                                            <!-- GENERAL: Ambos selectables -->
+                                            <div class="alert alert-warning">
+                                                <i class="fas fa-exclamation-triangle"></i>
+                                                <strong>Acceso no válido:</strong> Debe ingresar por "Ticket de Entrada" o "Ticket de Salida"
+                                            </div>
+                                        {% endif %}
+
+                                        <!-- Observaciones Generales -->
+                                        <div class="mb-3">
+                                            <label class="form-label">Observaciones Generales</label>
+                                            <textarea name="observaciones" class="form-control" rows="3" 
+                                                      placeholder="Observaciones generales del ticket..."></textarea>
+                                            <div class="form-text">Información adicional relevante para el ticket</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- SECCIÓN DE MERCADERÍA -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header {% if tipo_ticket == 'entrada' %}bg-success{% elif tipo_ticket == 'salida' %}bg-danger{% else %}bg-warning{% endif %} text-white">
+                                        <h5 class="mb-0">
+                                            <i class="fas fa-seedling me-2"></i>
+                                            Mercadería 
+                                            {% if tipo_ticket == 'entrada' %}
+                                                (que ingresa a AGL)
+                                            {% elif tipo_ticket == 'salida' %}
+                                                (que sale de AGL)
+                                            {% else %}
+                                                (no definida)
+                                            {% endif %}
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <label class="form-label fw-bold">Tipo de Mercadería *</label>
+                                                <select name="form-0-mercaderia" id="mercaderia_select" class="form-select" required>
+                                                    <option value="">-- Seleccionar Mercadería --</option>
+                                                    {% for mercaderia in mercaderias %}
+                                                        <option value="{{ mercaderia.pk }}">{{ mercaderia.nombre }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <div class="form-text">Tipo de grano o producto</div>
+                                            </div>
+                                            
+                                            <div class="col-md-3">
+                                                <label class="form-label fw-bold">Cantidad Estimada (kg)</label>
+                                                <input type="number" name="form-0-cantidad_kg" id="cantidad_kg" 
+                                                       class="form-control" step="0.01" min="0.01" 
+                                                       placeholder="0.00">
+                                                <div class="form-text">Se confirmará al pesar</div>
+                                            </div>
+                                            
+                                            <div class="col-md-3">
+                                                <label class="form-label">Calidad/Clasificación</label>
+                                                <select name="form-0-calidad_clasificacion" class="form-select">
+                                                    <option value="">-- Sin clasificar --</option>
+                                                    {% for calidad in calidades %}
+                                                        <option value="{{ calidad.pk }}">{{ calidad.nombre }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <div class="form-text">Se definirá en análisis</div>
+                                            </div>
+                                            
+                                            <div class="col-md-2">
+                                                <label class="form-label">Presentación</label>
+                                                <select name="form-0-presentacion" class="form-select">
+                                                    <option value="GRANEL" selected>Granel</option>
+                                                    <option value="BOLSA_25">Bolsa 25kg</option>
+                                                    <option value="BOLSA_50">Bolsa 50kg</option>
+                                                    <option value="BIGBAG_500">BigBag 500kg</option>
+                                                    <option value="BIGBAG_1000">BigBag 1000kg</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Planta de Descarga/Carga (Por Mercadería) -->
+                                        <div class="row mt-3">
+                                            <div class="col-md-6">
+                                                <label class="form-label fw-bold">
+                                                    {% if tipo_ticket == 'entrada' %}
+                                                        <i class="fas fa-map-marker-alt text-success me-1"></i>Planta de Descarga *
+                                                    {% elif tipo_ticket == 'salida' %}
+                                                        <i class="fas fa-shipping-fast text-danger me-1"></i>Planta de Carga *
+                                                    {% else %}
+                                                        <i class="fas fa-map-marker-alt text-warning me-1"></i>Planta/Ubicación *
+                                                    {% endif %}
+                                                </label>
+                                                <select name="form-0-planta_descarga" id="planta_descarga" class="form-select" required>
+                                                    <option value="">-- Seleccionar Planta --</option>
+                                                    {% for ubicacion in ubicaciones %}
+                                                        <option value="{{ ubicacion.pk }}">
+                                                            {{ ubicacion.nombre }} 
+                                                            {% if ubicacion.encargado %}({{ ubicacion.encargado.get_full_name }}){% endif %}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                                <div class="form-text">
+                                                    {% if tipo_ticket == 'entrada' %}
+                                                        <span class="text-success"><i class="fas fa-info-circle"></i> ¿En qué planta se descargará esta mercadería?</span>
+                                                    {% elif tipo_ticket == 'salida' %}
+                                                        <span class="text-danger"><i class="fas fa-info-circle"></i> ¿De qué planta sale esta mercadería?</span>
+                                                    {% else %}
+                                                        Ubicación donde se maneja esta mercadería específica
+                                                    {% endif %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Observaciones de Mercadería -->
+                                        <div class="row mt-3">
+                                            <div class="col-md-12">
+                                                <label class="form-label">Observaciones de la Mercadería</label>
+                                                <textarea name="form-0-observaciones" class="form-control" rows="2" 
+                                                          placeholder="Estado, calidad, condiciones especiales..."></textarea>
+                                                <div class="form-text">Observaciones específicas de esta mercadería</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Management form para Django formset (una sola mercadería) -->
+                                <input type="hidden" name="form-TOTAL_FORMS" value="1" id="id_form-TOTAL_FORMS">
+                                <input type="hidden" name="form-INITIAL_FORMS" value="0" id="id_form-INITIAL_FORMS">
+                                <input type="hidden" name="form-MIN_NUM_FORMS" value="1" id="id_form-MIN_NUM_FORMS">
+                                <input type="hidden" name="form-MAX_NUM_FORMS" value="1" id="id_form-MAX_NUM_FORMS">
+                            </div>
+                        </div>
+
+                        <!-- BOTONES DE ACCIÓN -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <a href="{% url 'tickets:dashboard' %}" class="btn btn-outline-secondary">
+                                            <i class="fas fa-arrow-left me-2"></i>Volver al Dashboard
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <button type="button" class="btn btn-outline-warning me-2" onclick="limpiarFormulario()">
+                                            <i class="fas fa-eraser me-2"></i>Limpiar
+                                        </button>
+                                        {% if tipo_ticket == 'entrada' or tipo_ticket == 'salida' %}
+                                            <button type="submit" class="btn {% if tipo_ticket == 'entrada' %}btn-success{% elif tipo_ticket == 'salida' %}btn-danger{% endif %}">
+                                                <i class="fas fa-save me-2"></i>
+                                                Crear Ticket de {% if tipo_ticket == 'entrada' %}Entrada{% else %}Salida{% endif %}
+                                            </button>
+                                        {% else %}
+                                            <button type="button" class="btn btn-secondary" disabled>
+                                                <i class="fas fa-ban me-2"></i>Tipo de ticket no válido
+                                            </button>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
                 </div>
             </div>
-
-            <form method="post" id="ticketForm">
-                {% csrf_token %}
-                
-                <input type="hidden" name="tipo_movimiento_codigo" id="tipo_movimiento_codigo" value="{{ tipo_seleccionado|default:'' }}">
-                
-                <!-- Management form para mercaderías (Django formset) -->
-                <input type="hidden" name="form-TOTAL_FORMS" value="1" id="id_form-TOTAL_FORMS">
-                <input type="hidden" name="form-INITIAL_FORMS" value="0" id="id_form-INITIAL_FORMS">
-                <input type="hidden" name="form-MIN_NUM_FORMS" value="1" id="id_form-MIN_NUM_FORMS">
-                <input type="hidden" name="form-MAX_NUM_FORMS" value="10" id="id_form-MAX_NUM_FORMS">
-
-                <div class="card mb-4">
-                    <div class="card-header bg-primary text-white">
-                        <h4><i class="fas fa-exchange-alt"></i> Seleccionar Tipo de Movimiento</h4>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            
-                            <div class="col-md-6">
-                                <div class="movement-card border-2 border-success p-4 text-center rounded shadow-sm"
-                                     data-tipo="recibido" 
-                                     onclick="seleccionar('recibido')"
-                                     style="cursor: pointer; border: 2px solid #28a745 !important; transition: all 0.3s;">
-                                    
-                                    <i class="fas fa-truck-loading fa-4x text-success mb-3"></i>
-                                    <h3 class="text-success">RECIBIDO</h3>
-                                    <p class="text-muted">Mercadería que ingresa al depósito</p>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6">
-                                <div class="movement-card border-2 border-danger p-4 text-center rounded shadow-sm"
-                                     data-tipo="enviado"
-                                     onclick="seleccionar('enviado')" 
-                                     style="cursor: pointer; border: 2px solid #dc3545 !important; transition: all 0.3s;">
-                                    
-                                    <i class="fas fa-shipping-fast fa-4x text-danger mb-3"></i>
-                                    <h3 class="text-danger">ENVIADO</h3>
-                                    <p class="text-muted">Mercadería que sale del depósito</p>
-                                </div>
-                            </div>
-
-                        </div>
-
-                        <div id="resultado" class="mt-4 text-center" style="display: none;">
-                            <div class="alert" id="alert-resultado">
-                                <strong id="mensaje-resultado"></strong>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Campos del ticket (solo aparecen cuando se selecciona tipo) -->
-                <div id="campos-ticket" class="mt-4" style="display: none;">
-                    
-                    <!-- Información del Transporte -->
-                    <div class="card mb-4">
-                        <div class="card-header bg-info text-white">
-                            <h5><i class="fas fa-truck"></i> Información del Transporte</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <label for="patente_camion" class="form-label">Patente del Camión *</label>
-                                    <input type="text" class="form-control text-uppercase" 
-                                           id="patente_camion" name="patente_camion" 
-                                           placeholder="Ej: ABC123" required style="text-transform: uppercase;"
-                                           value="{{ form_data.patente_camion|default:'' }}">
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="chofer" class="form-label">Chofer</label>
-                                    <select class="form-select" id="chofer" name="chofer">
-                                        <option value="">-- Seleccionar Chofer (Opcional) --</option>
-                                        {% for chofer in choferes %}
-                                            <option value="{{ chofer.pk }}"
-                                                {% if form_data.chofer == chofer.pk|stringformat:"s" %}selected{% endif %}>
-                                                {{ chofer.nombre }} - {{ chofer.documento }}
-                                            </option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="cuenta_transporte" class="form-label">Empresa de Transporte</label>
-                                    <select class="form-select" id="cuenta_transporte" name="cuenta_transporte">
-                                        <option value="">-- Seleccionar Empresa (Opcional) --</option>
-                                        {% for cuenta in cuentas %}
-                                            <option value="{{ cuenta.pk }}"
-                                                {% if form_data.cuenta_transporte == cuenta.pk|stringformat:"s" %}selected{% endif %}>
-                                                {{ cuenta.razon_social }}
-                                            </option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Información de Origen y Destino -->
-                    <div class="card mb-4">
-                        <div class="card-header bg-secondary text-white">
-                            <h5><i class="fas fa-map-marker-alt"></i> Origen y Destino</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <label for="origen" class="form-label">Origen</label>
-                                    <select class="form-select" id="origen" name="origen">
-                                        <option value="">-- Seleccionar Origen --</option>
-                                        {% for cuenta in cuentas %}
-                                            <option value="{{ cuenta.pk }}"
-                                                {% if form_data.origen == cuenta.pk|stringformat:"s" %}selected{% endif %}>
-                                                {{ cuenta.razon_social }} - {{ cuenta.localidad }}
-                                            </option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label for="destinatario" class="form-label">Destinatario</label>
-                                    <select class="form-select" id="destinatario" name="destinatario">
-                                        <option value="">-- Seleccionar Destinatario --</option>
-                                        {% for cuenta in cuentas %}
-                                            <option value="{{ cuenta.pk }}"
-                                                {% if form_data.destinatario == cuenta.pk|stringformat:"s" %}selected{% endif %}>
-                                                {{ cuenta.razon_social }} - {{ cuenta.localidad }}
-                                            </option>
-                                        {% endfor %}
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Información de Peso (opcional) -->
-                    <div class="card mb-4">
-                        <div class="card-header bg-warning text-dark">
-                            <h5><i class="fas fa-weight"></i> Información de Pesaje (Opcional)</h5>
-                        </div>
-                        <div class="card-body">
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <label for="peso_bruto" class="form-label">Peso Bruto (kg)</label>
-                                    <input type="number" class="form-control" 
-                                           id="peso_bruto" name="peso_bruto" 
-                                           step="0.01" min="0" placeholder="0.00"
-                                           value="{{ form_data.peso_bruto|default:'' }}">
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="peso_tara" class="form-label">Peso Tara (kg)</label>
-                                    <input type="number" class="form-control" 
-                                           id="peso_tara" name="peso_tara" 
-                                           step="0.01" min="0" placeholder="0.00"
-                                           value="{{ form_data.peso_tara|default:'' }}">
-                                </div>
-                                <div class="col-md-4">
-                                    <label for="peso_neto" class="form-label">Peso Neto (kg)</label>
-                                    <input type="text" class="form-control" 
-                                           id="peso_neto" name="peso_neto" 
-                                           readonly placeholder="Se calcula automáticamente">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Mercaderías -->
-                    <div class="card mb-4">
-                        <div class="card-header bg-success text-white">
-                            <h5><i class="fas fa-boxes"></i> Mercaderías</h5>
-                            <small>Agregue las mercaderías que contiene este ticket</small>
-                        </div>
-                        <div class="card-body">
-                            <div id="mercaderias-container">
-                                <!-- Aquí se cargarán las mercaderías dinámicamente -->
-                                <div class="mercaderia-item border rounded p-3 mb-3" data-index="0">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <h6 class="mb-0"><i class="fas fa-box"></i> Mercadería #1</h6>
-                                        <button type="button" class="btn btn-sm btn-outline-danger d-none" onclick="eliminarMercaderia(0)">
-                                            <i class="fas fa-trash"></i>
-                                        </button>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-4">
-                                            <label class="form-label">Tipo de Mercadería *</label>
-                                            <select class="form-select" name="form-0-mercaderia" id="id_form-0-mercaderia" required>
-                                                <option value="">-- Seleccionar Mercadería --</option>
-                                                {% for mercaderia in mercaderias %}
-                                                    <option value="{{ mercaderia.pk }}">{{ mercaderia.nombre }}</option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label class="form-label">Cantidad (kg) *</label>
-                                            <input type="number" class="form-control" name="form-0-cantidad_kg" id="id_form-0-cantidad_kg" 
-                                                   step="0.01" min="0.01" placeholder="0.00" required>
-                                        </div>
-                                        <div class="col-md-3">
-                                            <label class="form-label">Calidad</label>
-                                            <select class="form-select" name="form-0-calidad_clasificacion" id="id_form-0-calidad_clasificacion">
-                                                <option value="">-- Sin Clasificar --</option>
-                                                {% for calidad in calidades %}
-                                                    <option value="{{ calidad.pk }}">{{ calidad.nombre }}</option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <label class="form-label">Ubicación</label>
-                                            <select class="form-select" name="form-0-ubicacion_almacenaje" id="id_form-0-ubicacion_almacenaje">
-                                                <option value="">-- Ubicación --</option>
-                                                {% for ubicacion in ubicaciones %}
-                                                    <option value="{{ ubicacion.pk }}">{{ ubicacion.nombre }}</option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="row mt-2">
-                                        <div class="col-12">
-                                            <label class="form-label">Observaciones</label>
-                                            <textarea class="form-control" name="form-0-observaciones" id="id_form-0-observaciones" 
-                                                      rows="2" placeholder="Observaciones específicas de esta mercadería..."></textarea>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="text-center mt-3">
-                                <button type="button" class="btn btn-outline-success" onclick="agregarMercaderia()">
-                                    <i class="fas fa-plus"></i> Agregar Otra Mercadería
-                                </button>
-                            </div>
-                            
-                            <div class="alert alert-info mt-3">
-                                <i class="fas fa-info-circle"></i>
-                                <strong>Importante:</strong> Debe agregar al menos una mercadería. Las mercaderías sin análisis 
-                                de calidad serán analizadas posteriormente en laboratorio.
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Observaciones -->
-                    <div class="card mb-4">
-                        <div class="card-header bg-light">
-                            <h5><i class="fas fa-comment"></i> Observaciones Generales</h5>
-                        </div>
-                        <div class="card-body">
-                            <textarea class="form-control" 
-                                      id="observaciones" name="observaciones" 
-                                      rows="3" placeholder="Observaciones generales del ticket...">{{ form_data.observaciones|default:'' }}</textarea>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="text-center">
-                    <button type="button" class="btn btn-outline-info me-3" onclick="verificar()">
-                        <i class="fas fa-eye"></i> Ver Estado
-                    </button>
-                    <button type="button" class="btn btn-outline-warning me-3" onclick="debugFormulario()">
-                        <i class="fas fa-bug"></i> Debug
-                    </button>
-                    <button type="submit" class="btn btn-success" id="btn-crear" disabled>
-                        <i class="fas fa-plus-circle"></i> Crear Ticket
-                    </button>
-                    <a href="{% url 'tickets:dashboard' %}" class="btn btn-outline-secondary ms-3">
-                        <i class="fas fa-arrow-left"></i> Cancelar
-                    </a>
-                </div>
-
-            </form>
         </div>
     </div>
 </div>
 
+<!-- ============= JAVASCRIPT ============= -->
 <script>
-function seleccionar(tipo) {
-    console.log('✅ Seleccionando desde app tickets:', tipo);
+function cambiarPatente() {
+    const select = document.getElementById('patente_select');
+    const input = document.getElementById('patente_input');
+    const taraInput = document.getElementById('tara_input');
     
-    // Debug: Verificar que el campo existe
-    var campoHidden = document.getElementById('tipo_movimiento_codigo');
-    console.log('Campo hidden encontrado:', campoHidden);
-    
-    // Limpiar estilos previos
-    document.querySelectorAll('.movement-card').forEach(function(card) {
-        card.style.backgroundColor = '';
-        card.style.borderColor = '';
-        card.style.color = '';
-        card.style.transform = '';
-    });
-
-    // Aplicar estilo a la tarjeta seleccionada  
-    var selectedCard = document.querySelector('[data-tipo="' + tipo + '"]');
-
-    if (tipo === 'recibido') {
-        selectedCard.style.backgroundColor = '#d4edda';
-        selectedCard.style.borderColor = '#28a745';
-        selectedCard.style.color = '#155724';
-        selectedCard.style.transform = 'scale(1.02)';
-        document.getElementById('tipo_movimiento_codigo').value = 'REC';
-        console.log('Valor asignado REC:', document.getElementById('tipo_movimiento_codigo').value);
-        mostrarResultado('✅ RECEPCIÓN SELECCIONADA', 'alert-success');
-    } else {
-        selectedCard.style.backgroundColor = '#f8d7da';
-        selectedCard.style.borderColor = '#dc3545'; 
-        selectedCard.style.color = '#721c24';
-        selectedCard.style.transform = 'scale(1.02)';
-        document.getElementById('tipo_movimiento_codigo').value = 'ENV';
-        console.log('Valor asignado ENV:', document.getElementById('tipo_movimiento_codigo').value);
-        mostrarResultado('🚚 ENVÍO SELECCIONADO', 'alert-danger');
-    }
-
-    // Mostrar campos adicionales del ticket
-    document.getElementById('campos-ticket').style.display = 'block';
-    
-    // Hacer scroll suave hacia los campos
-    setTimeout(function() {
-        document.getElementById('campos-ticket').scrollIntoView({
-            behavior: 'smooth',
-            block: 'start'
-        });
-    }, 300);
-
-    // Habilitar botón
-    document.getElementById('btn-crear').disabled = false;
-}
-
-function mostrarResultado(mensaje, clase) {
-    var div = document.getElementById('resultado');
-    var alert = document.getElementById('alert-resultado');
-    var texto = document.getElementById('mensaje-resultado');
-
-    alert.className = 'alert ' + clase;
-    texto.textContent = mensaje;
-    div.style.display = 'block';
-}
-
-// Función de debug para verificar el estado del formulario
-function debugFormulario() {
-    var tipoMovimiento = document.getElementById('tipo_movimiento_codigo');
-    
-    Swal.fire({
-        title: '🔍 Debug del Formulario',
-        html: `
-            <div class="text-start">
-                <p><strong>Campo Hidden:</strong> ${tipoMovimiento ? 'Encontrado' : 'NO ENCONTRADO'}</p>
-                <p><strong>ID:</strong> ${tipoMovimiento ? tipoMovimiento.id : 'N/A'}</p>
-                <p><strong>Name:</strong> ${tipoMovimiento ? tipoMovimiento.name : 'N/A'}</p>
-                <p><strong>Value:</strong> "${tipoMovimiento ? tipoMovimiento.value : 'N/A'}"</p>
-                <p><strong>Valor Booleano:</strong> ${!!tipoMovimiento?.value}</p>
-            </div>
-        `,
-        icon: 'info',
-        confirmButtonColor: '#3085d6'
-    });
-}
-
-function verificar() {
-    var valor = document.getElementById('tipo_movimiento_codigo').value;
-    var patente = document.getElementById('patente_camion').value;
-    var origenSelect = document.getElementById('origen');
-    var destinatarioSelect = document.getElementById('destinatario');
-    
-    var origenTexto = origenSelect.options[origenSelect.selectedIndex].text || 'No especificado';
-    var destinatarioTexto = destinatarioSelect.options[destinatarioSelect.selectedIndex].text || 'No especificado';
-    
-    var tipoTexto = valor === 'REC' ? 'RECEPCIÓN' : valor === 'ENV' ? 'ENVÍO' : 'No seleccionado';
-    
-    Swal.fire({
-        title: '📋 Resumen del Ticket',
-        html: `
-            <div class="text-start">
-                <p><strong>🎯 Tipo:</strong> ${tipoTexto}</p>
-                <p><strong>🚛 Patente:</strong> ${patente || 'No ingresada'}</p>
-                <p><strong>📍 Origen:</strong> ${origenTexto}</p>
-                <p><strong>🎯 Destinatario:</strong> ${destinatarioTexto}</p>
-                <hr>
-                <small class="text-muted">📁 Template desde: /tickets/templates/tickets/</small>
-            </div>
-        `,
-        icon: 'info',
-        confirmButtonColor: '#3085d6',
-        confirmButtonText: 'Entendido'
-    });
-}
-
-// Función para calcular peso neto automáticamente
-function calcularPesoNeto() {
-    var pesoBruto = parseFloat(document.getElementById('peso_bruto').value) || 0;
-    var pesoTara = parseFloat(document.getElementById('peso_tara').value) || 0;
-    var pesoNeto = pesoBruto - pesoTara;
-    
-    if (pesoBruto > 0 && pesoTara > 0 && pesoNeto > 0) {
-        document.getElementById('peso_neto').value = pesoNeto.toFixed(2);
-    } else {
-        document.getElementById('peso_neto').value = '';
+    if (select.value) {
+        input.value = select.value;
+        const selectedOption = select.options[select.selectedIndex];
+        const tara = selectedOption.getAttribute('data-tara');
+        if (tara) {
+            taraInput.value = tara;
+        }
     }
 }
 
-// Función para validar patente
-function validarPatente() {
-    var patente = document.getElementById('patente_camion').value.toUpperCase();
-    document.getElementById('patente_camion').value = patente;
-    
-    // Validar formato básico de patente argentina (3 letras + 3 números o formato nuevo)
-    var formatoViejo = /^[A-Z]{3}[0-9]{3}$/;
-    var formatoNuevo = /^[A-Z]{2}[0-9]{3}[A-Z]{2}$/;
-    
-    var patenteField = document.getElementById('patente_camion');
-    
-    if (patente.length > 0 && !formatoViejo.test(patente) && !formatoNuevo.test(patente)) {
-        patenteField.style.borderColor = '#dc3545';
-        patenteField.title = 'Formato inválido. Ej: ABC123 o AB123CD';
-    } else {
-        patenteField.style.borderColor = '#28a745';
-        patenteField.title = 'Formato válido';
+function limpiarPatente() {
+    document.getElementById('patente_select').value = '';
+    document.getElementById('patente_input').value = '';
+    document.getElementById('tara_input').value = '';
+}
+
+function limpiarFormulario() {
+    if (confirm('¿Está seguro que desea limpiar todo el formulario?')) {
+        document.getElementById('ticketForm').reset();
+        limpiarPatente();
     }
 }
-
-// Variables globales para mercaderías
-var mercaderiaIndex = 1;
-
-// Función para generar opciones de mercaderías
-function generarOpcionesMercaderias() {
-    var opciones = '<option value="">-- Seleccionar Mercadería --</option>';
-    {% for mercaderia in mercaderias %}
-        opciones += '<option value="{{ mercaderia.pk }}">{{ mercaderia.nombre|escapejs }}</option>';
-    {% endfor %}
-    return opciones;
-}
-
-// Función para generar opciones de calidades
-function generarOpcionesCalidades() {
-    var opciones = '<option value="">-- Sin Clasificar --</option>';
-    {% for calidad in calidades %}
-        opciones += '<option value="{{ calidad.pk }}">{{ calidad.nombre|escapejs }}</option>';
-    {% endfor %}
-    return opciones;
-}
-
-// Función para generar opciones de ubicaciones
-function generarOpcionesUbicaciones() {
-    var opciones = '<option value="">-- Ubicación --</option>';
-    {% for ubicacion in ubicaciones %}
-        opciones += '<option value="{{ ubicacion.pk }}">{{ ubicacion.nombre|escapejs }}</option>';
-    {% endfor %}
-    return opciones;
-}
-
-// Función para agregar nueva mercadería
-function agregarMercaderia() {
-    var container = document.getElementById('mercaderias-container');
-    var nuevaMercaderia = document.createElement('div');
-    nuevaMercaderia.className = 'mercaderia-item border rounded p-3 mb-3';
-    nuevaMercaderia.setAttribute('data-index', mercaderiaIndex);
-    
-    nuevaMercaderia.innerHTML = `
-        <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 class="mb-0"><i class="fas fa-box"></i> Mercadería #${mercaderiaIndex + 1}</h6>
-            <button type="button" class="btn btn-sm btn-outline-danger" onclick="eliminarMercaderia(${mercaderiaIndex})">
-                <i class="fas fa-trash"></i>
-            </button>
-        </div>
-        <div class="row">
-            <div class="col-md-4">
-                <label class="form-label">Tipo de Mercadería *</label>
-                <select class="form-select" name="form-${mercaderiaIndex}-mercaderia" id="id_form-${mercaderiaIndex}-mercaderia" required>
-                    ${generarOpcionesMercaderias()}
-                </select>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Cantidad (kg) *</label>
-                <input type="number" class="form-control" name="form-${mercaderiaIndex}-cantidad_kg" id="id_form-${mercaderiaIndex}-cantidad_kg" 
-                       step="0.01" min="0.01" placeholder="0.00" required>
-            </div>
-            <div class="col-md-3">
-                <label class="form-label">Calidad</label>
-                <select class="form-select" name="form-${mercaderiaIndex}-calidad_clasificacion" id="id_form-${mercaderiaIndex}-calidad_clasificacion">
-                    ${generarOpcionesCalidades()}
-                </select>
-            </div>
-            <div class="col-md-2">
-                <label class="form-label">Ubicación</label>
-                <select class="form-select" name="form-${mercaderiaIndex}-ubicacion_almacenaje" id="id_form-${mercaderiaIndex}-ubicacion_almacenaje">
-                    ${generarOpcionesUbicaciones()}
-                </select>
-            </div>
-        </div>
-        <div class="row mt-2">
-            <div class="col-12">
-                <label class="form-label">Observaciones</label>
-                <textarea class="form-control" name="form-${mercaderiaIndex}-observaciones" id="id_form-${mercaderiaIndex}-observaciones" 
-                          rows="2" placeholder="Observaciones específicas de esta mercadería..."></textarea>
-            </div>
-        </div>
-    `;
-    
-    container.appendChild(nuevaMercaderia);
-    mercaderiaIndex++;
-    
-    // Actualizar total forms del formset
-    actualizarTotalForms();
-    
-    // Mostrar botón eliminar en todas las mercaderías si hay más de una
-    actualizarBotonesEliminar();
-}
-
-// Función para eliminar mercadería
-function eliminarMercaderia(index) {
-    var mercaderia = document.querySelector('[data-index="' + index + '"]');
-    if (mercaderia) {
-        mercaderia.remove();
-        actualizarTotalForms();
-        actualizarBotonesEliminar();
-        renumerarMercaderias();
-    }
-}
-
-// Función para actualizar visibilidad de botones eliminar
-function actualizarBotonesEliminar() {
-    var mercaderias = document.querySelectorAll('.mercaderia-item');
-    var botonesEliminar = document.querySelectorAll('.mercaderia-item .btn-outline-danger');
-    
-    if (mercaderias.length <= 1) {
-        // Si hay solo una mercadería, ocultar botón eliminar
-        botonesEliminar.forEach(function(btn) {
-            btn.classList.add('d-none');
-        });
-    } else {
-        // Si hay más de una, mostrar todos los botones eliminar
-        botonesEliminar.forEach(function(btn) {
-            btn.classList.remove('d-none');
-        });
-    }
-}
-
-// Función para actualizar el total de formularios del formset
-function actualizarTotalForms() {
-    var mercaderias = document.querySelectorAll('.mercaderia-item');
-    document.getElementById('id_form-TOTAL_FORMS').value = mercaderias.length;
-}
-
-// Función para renumerar mercaderías después de eliminar
-function renumerarMercaderias() {
-    var mercaderias = document.querySelectorAll('.mercaderia-item');
-    mercaderias.forEach(function(mercaderia, index) {
-        var titulo = mercaderia.querySelector('h6');
-        titulo.innerHTML = '<i class="fas fa-box"></i> Mercadería #' + (index + 1);
-    });
-}
-
-// Agregar event listeners cuando se carga la página
-document.addEventListener('DOMContentLoaded', function() {
-    // Calcular peso neto automáticamente
-    document.getElementById('peso_bruto').addEventListener('input', calcularPesoNeto);
-    document.getElementById('peso_tara').addEventListener('input', calcularPesoNeto);
-    
-    // Validar patente mientras se escribe
-    document.getElementById('patente_camion').addEventListener('input', validarPatente);
-    
-    // Validación del formulario antes de enviar
-    document.getElementById('ticketForm').addEventListener('submit', function(e) {
-        var tipoMovimiento = document.getElementById('tipo_movimiento_codigo').value;
-        var patente = document.getElementById('patente_camion').value ? document.getElementById('patente_camion').value.trim() : '';
-        
-        console.log('🔍 DEBUG - Validando formulario:');
-        console.log('Tipo movimiento:', `"${tipoMovimiento}"`);
-        console.log('Tipo movimiento length:', tipoMovimiento.length);
-        console.log('Tipo movimiento boolean:', !!tipoMovimiento);
-        console.log('Patente:', `"${patente}"`);
-        console.log('Event:', e);
-        
-        // Debug adicional: mostrar todos los elementos del formulario
-        var formData = new FormData(e.target);
-        console.log('FormData contents:');
-        for (let [key, value] of formData.entries()) {
-            console.log(`${key}: "${value}"`);
-        }
-        
-        if (!tipoMovimiento) {
-            e.preventDefault();
-            Swal.fire({
-                icon: 'warning',
-                title: 'Tipo de Movimiento Requerido',
-                text: 'Debe seleccionar un tipo de movimiento (Recepción o Envío)',
-                confirmButtonColor: '#3085d6'
-            });
-            return false;
-        }
-        
-        if (!patente) {
-            e.preventDefault();
-            Swal.fire({
-                icon: 'warning',
-                title: 'Patente Requerida',
-                text: 'Debe ingresar la patente del camión',
-                confirmButtonColor: '#3085d6'
-            }).then(() => {
-                document.getElementById('patente_camion').focus();
-            });
-            return false;
-        }
-        
-        if (patente.length < 6) {
-            e.preventDefault();
-            Swal.fire({
-                icon: 'warning',
-                title: 'Patente Inválida',
-                text: 'La patente debe tener al menos 6 caracteres',
-                confirmButtonColor: '#3085d6'
-            }).then(() => {
-                document.getElementById('patente_camion').focus();
-            });
-            return false;
-        }
-        
-        // Validar que haya al menos una mercadería
-        var mercaderias = document.querySelectorAll('.mercaderia-item');
-        if (mercaderias.length === 0) {
-            e.preventDefault();
-            Swal.fire({
-                icon: 'warning',
-                title: 'Mercaderías Requeridas',
-                text: 'Debe agregar al menos una mercadería al ticket',
-                confirmButtonColor: '#3085d6'
-            });
-            return false;
-        }
-        
-        // Validar que todas las mercaderías tengan datos obligatorios
-        var mercaderiasValidas = true;
-        var primerError = null;
-        
-        mercaderias.forEach(function(mercaderia, index) {
-            var selectMercaderia = mercaderia.querySelector('select[name*="-mercaderia"]');
-            var inputCantidad = mercaderia.querySelector('input[name*="-cantidad_kg"]');
-            
-            if (!selectMercaderia.value) {
-                mercaderiasValidas = false;
-                if (!primerError) primerError = selectMercaderia;
-            }
-            
-            if (!inputCantidad.value || parseFloat(inputCantidad.value) <= 0) {
-                mercaderiasValidas = false;
-                if (!primerError) primerError = inputCantidad;
-            }
-        });
-        
-        if (!mercaderiasValidas) {
-            e.preventDefault();
-            Swal.fire({
-                icon: 'warning',
-                title: 'Datos de Mercaderías Incompletos',
-                text: 'Todas las mercaderías deben tener tipo y cantidad válidos',
-                confirmButtonColor: '#3085d6'
-            }).then(() => {
-                if (primerError) primerError.focus();
-            });
-            return false;
-        }
-        
-        // Si llega aquí, el formulario es válido
-        return true;
-    });
-    
-    // Restaurar selección si hay errores en el formulario
-    var tipoSeleccionado = '{{ tipo_seleccionado|default:"" }}';
-    if (tipoSeleccionado === 'REC') {
-        seleccionar('recibido');
-    } else if (tipoSeleccionado === 'ENV') {
-        seleccionar('enviado');
-    }
-});
 </script>
 
 {% endblock %}
