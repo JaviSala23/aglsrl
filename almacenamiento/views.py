@@ -1,4 +1,5 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.db.models import Sum, Q, Count
 from django.core.paginator import Paginator
@@ -6,37 +7,58 @@ from .models import Ubicacion, Almacenaje, Stock, TipoAlmacenaje, EstadoAlmacena
 from .forms import UbicacionForm, AlmacenajeForm
 
 
+def _planta_usuario(user):
+    """Retorna la Ubicacion del encargado, o None para admins."""
+    try:
+        from usuarios.decorators import get_planta_usuario
+        return get_planta_usuario(user)
+    except Exception:
+        return None
+
+
+@login_required
 def dashboard(request):
     """Dashboard principal de almacenamiento"""
+    planta = _planta_usuario(request.user)
+
+    qs_stock = Stock.objects.all()
+    qs_almacenaje = Almacenaje.objects.filter(activo=True)
+    qs_ubicacion = Ubicacion.objects.filter(activo=True)
+
+    if planta is not None:
+        qs_stock = qs_stock.filter(ubicacion=planta)
+        qs_almacenaje = qs_almacenaje.filter(ubicacion=planta)
+        qs_ubicacion = qs_ubicacion.filter(pk=planta.pk)
+
     # Estadísticas generales
-    total_ubicaciones = Ubicacion.objects.filter(activo=True).count()
-    total_almacenajes = Almacenaje.objects.filter(activo=True).count()
-    almacenajes_ocupados = Stock.objects.filter(cantidad_kg__gt=0).values('almacenaje').distinct().count()
-    total_stock = Stock.objects.aggregate(total=Sum('cantidad_kg'))['total'] or 0
-    
+    total_ubicaciones = qs_ubicacion.count()
+    total_almacenajes = qs_almacenaje.count()
+    almacenajes_ocupados = qs_stock.filter(cantidad_kg__gt=0).values('almacenaje').distinct().count()
+    total_stock = qs_stock.aggregate(total=Sum('cantidad_kg'))['total'] or 0
+
     # Stock por ubicación
-    stock_por_ubicacion = Stock.objects.select_related('ubicacion').values(
+    stock_por_ubicacion = qs_stock.select_related('ubicacion').values(
         'ubicacion__nombre'
     ).annotate(
         total_kg=Sum('cantidad_kg')
     ).order_by('-total_kg')[:10]
-    
+
     # Ocupación por tipo de almacenaje
-    ocupacion_tipos = Stock.objects.select_related('almacenaje').values(
+    ocupacion_tipos = qs_stock.select_related('almacenaje').values(
         'almacenaje__tipo'
     ).annotate(
         total_kg=Sum('cantidad_kg'),
         count_almacenajes=Count('almacenaje', distinct=True)
     ).order_by('-total_kg')
-    
+
     # Ubicaciones más utilizadas
-    ubicaciones_activas = Stock.objects.select_related('ubicacion').values(
+    ubicaciones_activas = qs_stock.select_related('ubicacion').values(
         'ubicacion__nombre'
     ).annotate(
         total_kg=Sum('cantidad_kg'),
         count_almacenajes=Count('almacenaje', distinct=True)
     ).order_by('-total_kg')[:10]
-    
+
     context = {
         'total_ubicaciones': total_ubicaciones,
         'total_almacenajes': total_almacenajes,
@@ -45,18 +67,26 @@ def dashboard(request):
         'stock_por_ubicacion': stock_por_ubicacion,
         'ocupacion_tipos': ocupacion_tipos,
         'ubicaciones_activas': ubicaciones_activas,
+        'planta_usuario': planta,
     }
-    
+
     return render(request, 'almacenamiento/dashboard.html', context)
 
 
+@login_required
 def ubicaciones_list(request):
     """Lista de ubicaciones con filtros y búsqueda"""
     from django.core.paginator import Paginator
     from django.db.models import Q
     from .forms import UbicacionForm
-    
+
+    planta = _planta_usuario(request.user)
+
     ubicaciones_list = Ubicacion.objects.prefetch_related('almacenajes', 'stocks').all().order_by('nombre')
+
+    # Encargado: solo ve su propia planta
+    if planta is not None:
+        ubicaciones_list = ubicaciones_list.filter(pk=planta.pk)
     
     # Búsqueda
     search = request.GET.get('search', '')
@@ -95,9 +125,17 @@ def ubicaciones_list(request):
     return render(request, 'almacenamiento/ubicaciones_list.html', context)
 
 
+@login_required
 def ubicacion_detail(request, pk):
     """Detalle de una ubicación específica"""
+    planta = _planta_usuario(request.user)
     ubicacion = get_object_or_404(Ubicacion, pk=pk)
+
+    # Encargado: solo puede ver su propia planta
+    if planta is not None and ubicacion.pk != planta.pk:
+        from django.contrib import messages
+        messages.error(request, 'No tenés acceso a esta ubicación.')
+        return redirect('almacenamiento:ubicaciones_list')
     
     # Almacenajes de esta ubicación
     almacenajes = Almacenaje.objects.filter(ubicacion=ubicacion, activo=True).order_by('codigo')
@@ -120,17 +158,25 @@ def ubicacion_detail(request, pk):
     return render(request, 'almacenamiento/ubicacion_detail.html', context)
 
 
+@login_required
 def almacenajes_list(request):
     """Lista de almacenajes con filtros"""
+    planta = _planta_usuario(request.user)
+
     # Obtener parámetros de filtro
     ubicacion_id = request.GET.get('ubicacion')
     tipo = request.GET.get('tipo')
     estado = request.GET.get('estado')
     search = request.GET.get('search')
-    
+
     # Query base
     queryset = Almacenaje.objects.select_related('ubicacion').filter(activo=True)
-    
+
+    # Encargado: forzar filtro a su planta
+    if planta is not None:
+        queryset = queryset.filter(ubicacion=planta)
+        ubicacion_id = str(planta.pk)  # Override any URL param
+
     # Aplicar filtros
     if ubicacion_id:
         queryset = queryset.filter(ubicacion_id=ubicacion_id)
