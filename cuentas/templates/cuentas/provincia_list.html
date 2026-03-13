@@ -1,0 +1,32 @@
+{% extends 'cuentas/base.html' %}
+{% block content %}
+<h2>Provincias</h2>
+<a href="{% url 'cuentas:provincia_create' %}" class="btn btn-primary">Nueva provincia</a>
+<table class="table mt-3">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>Código</th>
+            <th>País</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for provincia in provincias %}
+        <tr>
+            <td>{{ provincia.id_provincia }}</td>
+            <td>{{ provincia.nombre_provincia }}</td>
+            <td>{{ provincia.codigo_provincia }}</td>
+            <td>{{ provincia.pais_idpais.nombre }}</td>
+            <td>
+                <a href="{% url 'cuentas:provincia_update' provincia.pk %}" class="btn btn-sm btn-warning">Editar</a>
+                <a href="{% url 'cuentas:provincia_delete' provincia.pk %}" class="btn btn-sm btn-danger">Eliminar</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5">No hay provincias registradas.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

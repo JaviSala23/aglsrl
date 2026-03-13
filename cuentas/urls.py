@@ -30,6 +30,16 @@ urlpatterns = [
     
     # Dashboard y navegación principal
     path('dashboard/', views.DashboardView.as_view(), name='dashboard'),
+    # CRUD Provincias
+    path('provincias/', views.ProvinciaListView.as_view(), name='provincia_list'),
+    path('provincias/nueva/', views.ProvinciaCreateView.as_view(), name='provincia_create'),
+    path('provincias/<int:pk>/editar/', views.ProvinciaUpdateView.as_view(), name='provincia_update'),
+    path('provincias/<int:pk>/eliminar/', views.ProvinciaDeleteView.as_view(), name='provincia_delete'),
+    # CRUD Localidades
+    path('localidades/', views.LocalidadListView.as_view(), name='localidad_list'),
+    path('localidades/nueva/', views.LocalidadCreateView.as_view(), name='localidad_create'),
+    path('localidades/<int:pk>/editar/', views.LocalidadUpdateView.as_view(), name='localidad_update'),
+    path('localidades/<int:pk>/eliminar/', views.LocalidadDeleteView.as_view(), name='localidad_delete'),
     
     # CRUD de cuentas - Web
     path('cuentas/', views.ListaCuentasView.as_view(), name='lista_cuentas'),

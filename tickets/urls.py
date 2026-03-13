@@ -10,6 +10,13 @@ urlpatterns = [
     # Dashboard principal
     path('', views.dashboard_tickets, name='dashboard'),
     
+    # ── BALANZA RÁPIDA PARA ENCARGADOS ───────────────────────────────────────
+    path('balanza/', views.ticket_balanza_lista, name='balanza_lista'),
+    path('balanza/entrada/', views.ticket_balanza_nuevo, {'tipo': 'entrada'}, name='balanza_entrada'),
+    path('balanza/salida/', views.ticket_balanza_nuevo, {'tipo': 'salida'}, name='balanza_salida'),
+    path('balanza/<int:pk>/segunda-pesada/', views.ticket_balanza_segunda_pesada, name='balanza_segunda_pesada'),
+    path('balanza/cargar-cpe/', views.cargar_cpe, name='cargar_cpe'),
+
     # Gestión de tickets
     path('lista/', views.lista_tickets, name='lista_tickets'),
     path('crear/', views.crear_ticket, name='crear_ticket'),

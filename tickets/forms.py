@@ -6,7 +6,7 @@ from django.forms import inlineformset_factory
 from .models import Ticket, DetalleMercaderia, AnalisisMercaderia, TipoMovimiento, EstadoTicket
 from transportes.models import Chofer
 from cuentas.models import cuenta
-from mercaderias.models import Mercaderia, ClasificacionCalidad
+from mercaderias.models import Mercaderia, ClasificacionCalidad, Grano
 from almacenamiento.models import Almacenaje
 
 
@@ -322,3 +322,145 @@ class FiltroTicketsForm(forms.Form):
             self.fields['estado'].queryset = EstadoTicket.objects.filter(activo=True)
         except:
             self.fields['estado'].queryset = EstadoTicket.objects.all()
+
+
+# ============================================================
+# FORMULARIO RÁPIDO DE BALANZA PARA ENCARGADOS
+# ============================================================
+
+class TicketBalanzaForm(forms.Form):
+    """
+    Formulario rápido para encargados de balanza.
+    Solo los campos esenciales para agilizar el trabajo.
+    """
+
+    patente_camion = forms.CharField(
+        max_length=20,
+        label='Patente del Camión *',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control form-control-lg text-uppercase fw-bold',
+            'placeholder': 'Ej: ABC123DE',
+            'autofocus': True,
+            'style': 'font-size: 1.5rem; letter-spacing: 3px;',
+        })
+    )
+
+    patente_acoplado_1 = forms.CharField(
+        max_length=10,
+        required=False,
+        label='Acoplado 1',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control form-control-lg text-uppercase',
+            'placeholder': 'Ej: XYZ123',
+            'style': 'font-size: 1.2rem;',
+        })
+    )
+
+    patente_acoplado_2 = forms.CharField(
+        max_length=10,
+        required=False,
+        label='Acoplado 2',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control form-control-lg text-uppercase',
+            'placeholder': 'Ej: AAA999',
+            'style': 'font-size: 1.2rem;',
+        })
+    )
+
+    grano = forms.ModelChoiceField(
+        queryset=Grano.objects.filter(activo=True),
+        empty_label='— Seleccionar Mercadería —',
+        label='Mercadería *',
+        widget=forms.Select(attrs={
+            'class': 'form-select form-select-lg fw-bold',
+            'style': 'font-size: 1.3rem;',
+        })
+    )
+
+    primer_pesaje_kg = forms.DecimalField(
+        max_digits=10,
+        decimal_places=0,
+        min_value=0,
+        label='Primera Pesada (kg) *',
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control form-control-lg fw-bold text-center',
+            'placeholder': '0',
+            'style': 'font-size: 2rem; letter-spacing: 2px;',
+            'step': '1',
+            'min': '0',
+        })
+    )
+
+    cuenta_cliente = forms.ModelChoiceField(
+        queryset=cuenta.objects.filter(activo=True),
+        required=False,
+        empty_label='— Sin especificar (completar luego) —',
+        label='Proveedor / Cliente',
+        widget=forms.Select(attrs={
+            'class': 'form-select form-select-lg',
+            'style': 'font-size: 1.1rem;',
+        })
+    )
+
+    chofer = forms.ModelChoiceField(
+        queryset=Chofer.objects.filter(activo=True),
+        required=False,
+        empty_label='— Sin especificar (completar luego) —',
+        label='Chofer',
+        widget=forms.Select(attrs={
+            'class': 'form-select form-select-lg',
+            'style': 'font-size: 1.1rem;',
+        })
+    )
+
+    observaciones = forms.CharField(
+        required=False,
+        label='Observaciones',
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 2,
+            'placeholder': 'Notas breves (opcional)...',
+        })
+    )
+
+    def clean_patente_camion(self):
+        return self.cleaned_data['patente_camion'].upper().replace(' ', '').replace('-', '')
+
+    def clean_patente_acoplado_1(self):
+        val = self.cleaned_data.get('patente_acoplado_1', '')
+        return val.upper().replace(' ', '').replace('-', '') if val else ''
+
+    def clean_patente_acoplado_2(self):
+        val = self.cleaned_data.get('patente_acoplado_2', '')
+        return val.upper().replace(' ', '').replace('-', '') if val else ''
+
+
+class SegundaPesadaForm(forms.Form):
+    """
+    Formulario para completar la segunda pesada de un ticket abierto.
+    """
+
+    segundo_pesaje_kg = forms.DecimalField(
+        max_digits=10,
+        decimal_places=0,
+        min_value=0,
+        label='Segunda Pesada (kg) *',
+        widget=forms.NumberInput(attrs={
+            'class': 'form-control form-control-lg fw-bold text-center',
+            'placeholder': '0',
+            'style': 'font-size: 2rem; letter-spacing: 2px;',
+            'step': '1',
+            'min': '0',
+            'autofocus': True,
+        })
+    )
+
+    observaciones = forms.CharField(
+        required=False,
+        label='Observaciones',
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 2,
+            'placeholder': 'Notas de cierre (opcional)...',
+        })
+    )

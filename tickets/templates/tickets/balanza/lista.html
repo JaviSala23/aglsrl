@@ -1,0 +1,252 @@
+{% extends 'tickets/base.html' %}
+{% load static %}
+
+{% block title %}Balanza — Tickets Abiertos{% endblock %}
+
+{% block extra_css %}
+<style>
+  body { background: #f0f2f5; }
+
+  .balanza-header {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
+    color: #fff;
+    padding: 1.5rem 2rem;
+    border-radius: 0 0 1.5rem 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,.4);
+  }
+
+  .btn-balanza-entrada {
+    background: linear-gradient(135deg, #1b5e20, #2e7d32);
+    color: #fff;
+    border: none;
+    font-size: 1.4rem;
+    font-weight: 700;
+    padding: 1.2rem 2.5rem;
+    border-radius: 1rem;
+    box-shadow: 0 4px 15px rgba(46,125,50,.5);
+    transition: transform .15s, box-shadow .15s;
+  }
+  .btn-balanza-entrada:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(46,125,50,.6); color: #fff; }
+
+  .btn-balanza-salida {
+    background: linear-gradient(135deg, #b71c1c, #c62828);
+    color: #fff;
+    border: none;
+    font-size: 1.4rem;
+    font-weight: 700;
+    padding: 1.2rem 2.5rem;
+    border-radius: 1rem;
+    box-shadow: 0 4px 15px rgba(198,40,40,.5);
+    transition: transform .15s, box-shadow .15s;
+  }
+  .btn-balanza-salida:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(198,40,40,.6); color: #fff; }
+
+  .ticket-card-abierto {
+    border-left: 6px solid #ff9800;
+    background: #fff;
+    border-radius: .75rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,.08);
+    transition: box-shadow .2s;
+  }
+  .ticket-card-abierto:hover { box-shadow: 0 4px 20px rgba(0,0,0,.15); }
+
+  .ticket-card-cerrado {
+    border-left: 6px solid #43a047;
+    background: #fff;
+    border-radius: .75rem;
+    box-shadow: 0 1px 6px rgba(0,0,0,.06);
+  }
+
+  .patente-badge {
+    background: #1a237e;
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 800;
+    letter-spacing: 3px;
+    padding: .35rem .9rem;
+    border-radius: .5rem;
+    font-family: monospace;
+  }
+
+  .peso-valor {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #1a237e;
+  }
+
+  .badge-entrada { background: #1b5e20; }
+  .badge-salida  { background: #b71c1c; }
+
+  .btn-segunda-pesada {
+    background: linear-gradient(135deg, #e65100, #f57c00);
+    color: #fff;
+    border: none;
+    font-size: 1rem;
+    font-weight: 700;
+    padding: .65rem 1.5rem;
+    border-radius: .6rem;
+    box-shadow: 0 3px 10px rgba(230,81,0,.4);
+    transition: transform .15s;
+  }
+  .btn-segunda-pesada:hover { transform: translateY(-2px); color: #fff; }
+
+  .empty-state { text-align: center; padding: 4rem 2rem; color: #9e9e9e; }
+  .empty-state i { font-size: 5rem; opacity: .3; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="balanza-header">
+  <div class="d-flex align-items-center gap-3">
+    <i class="fas fa-weight fa-2x opacity-75"></i>
+    <div>
+      <h2 class="mb-0 fw-bold">Balanza</h2>
+      <small class="opacity-75">Panel de encargados — Tickets abiertos: <strong>{{ total_abiertos }}</strong></small>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid px-4">
+
+  <!-- ─── BOTONES ACCIÓN PRINCIPAL ─── -->
+  <div class="row g-3 mb-4">
+    <div class="col-12 col-md-6">
+      <a href="{% url 'tickets:balanza_entrada' %}" class="btn btn-balanza-entrada w-100 d-flex align-items-center justify-content-center gap-3">
+        <i class="fas fa-truck-loading fa-lg"></i>
+        <span>NUEVO TICKET<br><small style="font-size:.9rem;font-weight:400;">ENTRADA (ingresa mercadería)</small></span>
+      </a>
+    </div>
+    <div class="col-12 col-md-6">
+      <a href="{% url 'tickets:balanza_salida' %}" class="btn btn-balanza-salida w-100 d-flex align-items-center justify-content-center gap-3">
+        <i class="fas fa-shipping-fast fa-lg"></i>
+        <span>NUEVO TICKET<br><small style="font-size:.9rem;font-weight:400;">SALIDA (sale mercadería)</small></span>
+      </a>
+    </div>
+  </div>
+
+  <!-- ─── MENSAJES ─── -->
+  {% for msg in messages %}
+  <div class="alert alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show" role="alert">
+    {{ msg }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endfor %}
+
+  <!-- ─── TICKETS ABIERTOS (en espera segunda pesada) ─── -->
+  <h4 class="fw-bold mb-3">
+    <i class="fas fa-clock text-warning me-2"></i>Esperando segunda pesada
+    {% if total_abiertos > 0 %}
+    <span class="badge bg-warning text-dark ms-2">{{ total_abiertos }}</span>
+    {% endif %}
+  </h4>
+
+  {% if tickets_abiertos %}
+  <div class="row g-3 mb-5">
+    {% for t in tickets_abiertos %}
+    <div class="col-12 col-lg-6">
+      <div class="ticket-card-abierto p-3">
+        <div class="d-flex align-items-start justify-content-between flex-wrap gap-2">
+          <div>
+            <span class="badge {% if t.tipo_movimiento.codigo == 'REC' %}badge-entrada{% else %}badge-salida{% endif %} me-2 fs-6">
+              {% if t.tipo_movimiento.codigo == 'REC' %}⬇ ENTRADA{% else %}⬆ SALIDA{% endif %}
+            </span>
+            <span class="text-muted small">{{ t.numero_ticket }}</span>
+          </div>
+          <span class="text-muted small">{{ t.fecha_creacion|date:"d/m H:i" }}</span>
+        </div>
+
+        <div class="my-2">
+          <span class="patente-badge">{{ t.patente_camion }}</span>
+          {% if t.chofer %}
+          <span class="ms-2 text-muted small"><i class="fas fa-user me-1"></i>{{ t.chofer.nombre_completo }}</span>
+          {% endif %}
+        </div>
+
+        <!-- Mercaderías -->
+        {% for dem in t.detalle_mercaderias.all %}
+        <div class="small text-secondary mb-1">
+          <i class="fas fa-seedling me-1 text-success"></i>
+          <strong>{{ dem.mercaderia.grano.nombre }}</strong>
+        </div>
+        {% endfor %}
+
+        <!-- Pesos registrados -->
+        <div class="d-flex gap-4 my-2 flex-wrap">
+          {% if t.peso_bruto %}
+          <div>
+            <div class="text-muted" style="font-size:.75rem;">BRUTO</div>
+            <div class="peso-valor">{{ t.peso_bruto|floatformat:0 }} <small class="fw-normal fs-6">kg</small></div>
+          </div>
+          {% endif %}
+          {% if t.peso_tara %}
+          <div>
+            <div class="text-muted" style="font-size:.75rem;">TARA</div>
+            <div class="peso-valor">{{ t.peso_tara|floatformat:0 }} <small class="fw-normal fs-6">kg</small></div>
+          </div>
+          {% endif %}
+          {% if t.peso_neto %}
+          <div>
+            <div class="text-muted" style="font-size:.75rem;">NETO</div>
+            <div class="peso-valor text-success">{{ t.peso_neto|floatformat:0 }} <small class="fw-normal fs-6">kg</small></div>
+          </div>
+          {% endif %}
+        </div>
+
+        {% if t.origen %}
+        <div class="small text-muted"><i class="fas fa-map-pin me-1"></i>Origen: {{ t.origen.razon_social }}</div>
+        {% endif %}
+        {% if t.destinatario %}
+        <div class="small text-muted"><i class="fas fa-map-marker-alt me-1"></i>Destino: {{ t.destinatario.razon_social }}</div>
+        {% endif %}
+
+        <div class="mt-3">
+          <a href="{% url 'tickets:balanza_segunda_pesada' t.pk %}" class="btn btn-segunda-pesada">
+            <i class="fas fa-balance-scale me-1"></i>Registrar 2ª Pesada
+          </a>
+          <a href="{% url 'tickets:detalle_ticket' t.pk %}" class="btn btn-outline-secondary btn-sm ms-2">
+            Ver detalle
+          </a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state mb-5">
+    <i class="fas fa-check-circle d-block"></i>
+    <h5 class="mt-3 text-muted">No hay tickets pendientes</h5>
+    <p class="text-muted">Todos los camiones están despachados.</p>
+  </div>
+  {% endif %}
+
+  <!-- ─── TICKETS CERRADOS HOY ─── -->
+  {% if tickets_hoy %}
+  <h4 class="fw-bold mb-3">
+    <i class="fas fa-check-circle text-success me-2"></i>Cerrados hoy
+  </h4>
+  <div class="row g-2">
+    {% for t in tickets_hoy %}
+    <div class="col-12 col-md-6 col-lg-4">
+      <div class="ticket-card-cerrado p-3">
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="badge {% if t.tipo_movimiento.codigo == 'REC' %}badge-entrada{% else %}badge-salida{% endif %}">
+            {% if t.tipo_movimiento.codigo == 'REC' %}⬇ ENTRADA{% else %}⬆ SALIDA{% endif %}
+          </span>
+          <span class="text-muted small">{{ t.fecha_actualizacion|date:"H:i" }}</span>
+        </div>
+        <div class="my-1">
+          <span class="patente-badge" style="font-size:.9rem;">{{ t.patente_camion }}</span>
+        </div>
+        {% if t.peso_neto %}
+        <div class="text-success fw-bold">Neto: {{ t.peso_neto|floatformat:0 }} kg</div>
+        {% endif %}
+        <a href="{% url 'tickets:detalle_ticket' t.pk %}" class="btn btn-outline-secondary btn-sm mt-2">Ver</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

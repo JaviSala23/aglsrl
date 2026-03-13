@@ -1,0 +1,32 @@
+{% extends 'cuentas/base.html' %}
+{% block content %}
+<h2>Localidades</h2>
+<a href="{% url 'cuentas:localidad_create' %}" class="btn btn-primary">Nueva localidad</a>
+<table class="table mt-3">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nombre</th>
+            <th>CP</th>
+            <th>Provincia</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for localidad in localidades %}
+        <tr>
+            <td>{{ localidad.id_localidad }}</td>
+            <td>{{ localidad.nombre_localidad }}</td>
+            <td>{{ localidad.cp_localidad }}</td>
+            <td>{{ localidad.provincia_id_provincia.nombre_provincia }}</td>
+            <td>
+                <a href="{% url 'cuentas:localidad_update' localidad.pk %}" class="btn btn-sm btn-warning">Editar</a>
+                <a href="{% url 'cuentas:localidad_delete' localidad.pk %}" class="btn btn-sm btn-danger">Eliminar</a>
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5">No hay localidades registradas.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

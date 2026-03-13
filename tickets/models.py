@@ -161,9 +161,19 @@ class Ticket(models.Model):
         related_name='tickets_creados'
     )
     
+    # Planta donde se registra el ticket (asignada automáticamente desde el perfil del encargado)
+    planta = models.ForeignKey(
+        'almacenamiento.Ubicacion',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='tickets',
+        help_text='Planta donde se registra el pesaje',
+    )
+
     # Observaciones generales
     observaciones = models.TextField(blank=True, help_text='Observaciones generales del ticket')
-    
+
     class Meta:
         verbose_name = 'Ticket'
         verbose_name_plural = 'Tickets'

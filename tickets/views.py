@@ -598,6 +598,43 @@ def realizar_analisis(request, detalle_id):
 
 
 @login_required
+@require_http_methods(["POST"])
+def cargar_cpe(request):
+    """
+    Endpoint AJAX: recibe un PDF o imagen de CPE y devuelve los datos extraídos
+    junto con los IDs de registros que existen en la BD.
+    """
+    archivo = request.FILES.get('cpe_archivo')
+    if not archivo:
+        return JsonResponse({'success': False, 'error': 'No se recibió ningún archivo.'})
+
+    nombre = archivo.name.lower()
+    TAMANIO_MAX = 10 * 1024 * 1024  # 10 MB
+    if archivo.size > TAMANIO_MAX:
+        return JsonResponse({'success': False, 'error': 'El archivo supera los 10 MB.'})
+
+    EXTENSIONES_VALIDAS = ('.pdf', '.jpg', '.jpeg', '.png', '.tiff', '.tif', '.webp', '.bmp')
+    if not any(nombre.endswith(ext) for ext in EXTENSIONES_VALIDAS):
+        return JsonResponse({'success': False, 'error': 'Formato no soportado. Use PDF o imagen (jpg, png, tiff).'})
+
+    try:
+        from .utils_cpe import parsear_cpe_auto, buscar_o_sugerir_en_bd
+        datos = parsear_cpe_auto(archivo, archivo.name)
+        datos_enriquecidos = buscar_o_sugerir_en_bd(datos)
+        return JsonResponse({'success': True, 'datos': datos_enriquecidos})
+    except ImportError as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Dependencia faltante: {e}. Instalar con pip.'
+        })
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': f'Error al procesar el archivo: {str(e)}'
+        })
+
+
+@login_required
 def estadisticas_avanzadas(request):
     """Estadísticas avanzadas y reportes."""
     
@@ -607,3 +644,257 @@ def estadisticas_avanzadas(request):
     }
     
     return render(request, 'tickets/estadisticas.html', context)
+
+
+# ============================================================
+# VISTAS DE BALANZA RÁPIDA PARA ENCARGADOS
+# ============================================================
+
+@login_required
+def ticket_balanza_lista(request):
+    """Lista de tickets abiertos esperando segunda pesada."""
+    from usuarios.decorators import get_planta_usuario
+
+    planta_usuario = get_planta_usuario(request.user)
+
+    # Filtro base: tickets abiertos
+    qs_abiertos = Ticket.objects.select_related(
+        'tipo_movimiento', 'estado', 'origen', 'destinatario', 'chofer', 'planta'
+    ).prefetch_related(
+        'detalle_mercaderias__mercaderia__grano'
+    ).filter(estado__es_final=False).order_by('-fecha_creacion')
+
+    if planta_usuario is not None:
+        qs_abiertos = qs_abiertos.filter(planta=planta_usuario)
+
+    tickets_abiertos = qs_abiertos
+
+    # Tickets completados hoy
+    hoy = timezone.now().date()
+    qs_hoy = Ticket.objects.filter(
+        estado__es_final=True,
+        fecha_actualizacion__date=hoy
+    ).select_related('tipo_movimiento', 'estado', 'planta').order_by('-fecha_actualizacion')
+
+    if planta_usuario is not None:
+        qs_hoy = qs_hoy.filter(planta=planta_usuario)
+
+    tickets_hoy = qs_hoy[:10]
+
+    context = {
+        'tickets_abiertos': tickets_abiertos,
+        'tickets_hoy': tickets_hoy,
+        'total_abiertos': tickets_abiertos.count(),
+        'planta_usuario': planta_usuario,
+    }
+    return render(request, 'tickets/balanza/lista.html', context)
+
+
+@login_required
+def ticket_balanza_nuevo(request, tipo):
+    """
+    Crear nuevo ticket de balanza (tipo='entrada' o 'salida').
+    - ENTRADA: primera pesada = BRUTO (camión llega cargado)
+    - SALIDA:  primera pesada = TARA  (camión sale vacío y vuelve cargado)
+    """
+    from .forms import TicketBalanzaForm
+    from transportes.models import Camion
+    from mercaderias.models import Grano
+    from cuentas.models import cuenta as Cuenta
+    from usuarios.decorators import get_planta_usuario
+
+    if tipo not in ('entrada', 'salida'):
+        messages.error(request, 'Tipo de ticket inválido.')
+        return redirect('tickets:balanza_lista')
+
+    es_entrada = (tipo == 'entrada')
+    planta_usuario = get_planta_usuario(request.user)
+
+    # Código del movimiento
+    codigo_movimiento = 'REC' if es_entrada else 'ENV'
+    try:
+        tipo_movimiento = TipoMovimiento.objects.get(codigo=codigo_movimiento, activo=True)
+    except TipoMovimiento.DoesNotExist:
+        messages.error(request, f'No existe el tipo de movimiento "{codigo_movimiento}". Contacte al administrador.')
+        return redirect('tickets:balanza_lista')
+
+    # Estado inicial
+    try:
+        estado_inicial = EstadoTicket.objects.get(es_inicial=True, activo=True)
+    except EstadoTicket.DoesNotExist:
+        messages.error(request, 'No hay estado inicial configurado. Contacte al administrador.')
+        return redirect('tickets:balanza_lista')
+
+    if request.method == 'POST':
+        form = TicketBalanzaForm(request.POST)
+        if form.is_valid():
+            cd = form.cleaned_data
+            patente = cd['patente_camion']
+            grano = cd['grano']
+            primer_pesaje = cd['primer_pesaje_kg']
+            cuenta_cliente = cd.get('cuenta_cliente')
+            chofer = cd.get('chofer')
+            obs_base = cd.get('observaciones', '')
+
+            # Acoplados en observaciones si se ingresaron
+            acoplado_info = ''
+            if cd.get('patente_acoplado_1'):
+                acoplado_info += f" | Acoplado: {cd['patente_acoplado_1']}"
+            if cd.get('patente_acoplado_2'):
+                acoplado_info += f" | Acoplado 2: {cd['patente_acoplado_2']}"
+
+            observaciones = obs_base + acoplado_info
+
+            # Asignar pesos según tipo
+            peso_bruto = primer_pesaje if es_entrada else None
+            peso_tara = primer_pesaje if not es_entrada else None
+
+            # Origen/Destino según tipo
+            origen = cuenta_cliente if es_entrada else None
+            destinatario = cuenta_cliente if not es_entrada else None
+
+            ticket = Ticket.objects.create(
+                tipo_movimiento=tipo_movimiento,
+                estado=estado_inicial,
+                patente_camion=patente,
+                chofer=chofer,
+                cuenta_transporte=cuenta_cliente,
+                origen=origen,
+                destinatario=destinatario,
+                peso_bruto=peso_bruto,
+                peso_tara=peso_tara,
+                observaciones=observaciones,
+                creado_por=request.user,
+                planta=planta_usuario,  # Asignar planta del encargado automáticamente
+            )
+
+            # Crear detalle de mercadería con el grano seleccionado
+            # Buscamos la primera Mercaderia activa del grano o la creamos
+            from mercaderias.models import Mercaderia
+            from decimal import Decimal
+            mercaderia_obj = Mercaderia.objects.filter(grano=grano).first()
+            if mercaderia_obj:
+                DetalleMercaderia.objects.create(
+                    ticket=ticket,
+                    mercaderia=mercaderia_obj,
+                    cantidad_kg=Decimal('0'),  # Se calcula al cerrar
+                    observaciones=f'Grano: {grano.nombre}',
+                )
+
+            messages.success(
+                request,
+                f'✅ Ticket {ticket.numero_ticket} creado. '
+                f'{"Bruto" if es_entrada else "Tara"}: {primer_pesaje:,.0f} kg. '
+                f'Queda abierto para segunda pesada.'
+            )
+            return redirect('tickets:balanza_lista')
+    else:
+        form = TicketBalanzaForm()
+
+    # Autocompletar por patente (AJAX helper data)
+    camiones_json = {}
+    try:
+        from transportes.models import Camion
+        import json
+        for c in Camion.objects.filter(activo=True).select_related('cuenta_asociada'):
+            camiones_json[c.patente.upper()] = {
+                'acoplado_1': c.acoplado_1 or '',
+                'acoplado_2': c.acoplado_2 or '',
+                'cuenta': c.cuenta_asociada_id,
+                'cuenta_nombre': str(c.cuenta_asociada),
+            }
+        camiones_data = json.dumps(camiones_json)
+    except Exception:
+        camiones_data = '{}'
+
+    context = {
+        'form': form,
+        'tipo': tipo,
+        'es_entrada': es_entrada,
+        'label_primer_pesaje': 'Peso BRUTO (camión cargado)' if es_entrada else 'Peso TARA (camión vacío)',
+        'camiones_data': camiones_data,
+    }
+    return render(request, 'tickets/balanza/nuevo.html', context)
+
+
+@login_required
+def ticket_balanza_segunda_pesada(request, pk):
+    """Completar la segunda pesada de un ticket abierto."""
+    from .forms import SegundaPesadaForm
+
+    ticket = get_object_or_404(
+        Ticket.objects.select_related(
+            'tipo_movimiento', 'estado',
+            'origen', 'destinatario', 'chofer'
+        ).prefetch_related('detalle_mercaderias__mercaderia__grano'),
+        pk=pk
+    )
+
+    if ticket.estado.es_final:
+        messages.warning(request, f'El ticket {ticket.numero_ticket} ya está cerrado.')
+        return redirect('tickets:balanza_lista')
+
+    es_entrada = ticket.tipo_movimiento.codigo == 'REC'
+
+    if request.method == 'POST':
+        form = SegundaPesadaForm(request.POST)
+        if form.is_valid():
+            cd = form.cleaned_data
+            segundo_pesaje = cd['segundo_pesaje_kg']
+            obs_extra = cd.get('observaciones', '')
+
+            if es_entrada:
+                # Entrada: primera pesada fue BRUTO, ahora registramos TARA
+                if ticket.peso_bruto and segundo_pesaje >= ticket.peso_bruto:
+                    form.add_error('segundo_pesaje_kg', 'La tara no puede ser mayor o igual al bruto.')
+                else:
+                    ticket.peso_tara = segundo_pesaje
+            else:
+                # Salida: primera pesada fue TARA, ahora registramos BRUTO
+                if ticket.peso_tara and segundo_pesaje <= ticket.peso_tara:
+                    form.add_error('segundo_pesaje_kg', 'El bruto debe ser mayor que la tara.')
+                else:
+                    ticket.peso_bruto = segundo_pesaje
+
+            if form.is_valid() and not form.errors:
+                # Obtener estado final
+                try:
+                    estado_final = EstadoTicket.objects.get(es_final=True, activo=True)
+                except EstadoTicket.DoesNotExist:
+                    estado_final = ticket.estado
+
+                ticket.estado = estado_final
+                ticket.fecha_salida = timezone.now()
+                if obs_extra:
+                    ticket.observaciones = (ticket.observaciones or '') + f' | Cierre: {obs_extra}'
+
+                # Actualizar cantidad_kg en detalles con el peso neto
+                ticket.save()
+
+                # Actualizar detalle con el neto calculado
+                if ticket.peso_neto:
+                    from decimal import Decimal
+                    for detalle in ticket.detalle_mercaderias.all():
+                        if detalle.cantidad_kg == Decimal('0'):
+                            detalle.cantidad_kg = ticket.peso_neto
+                            detalle.save()
+
+                messages.success(
+                    request,
+                    f'✅ Ticket {ticket.numero_ticket} CERRADO. '
+                    f'Neto: {ticket.peso_neto:,.0f} kg.' if ticket.peso_neto else
+                    f'✅ Ticket {ticket.numero_ticket} cerrado correctamente.'
+                )
+                return redirect('tickets:balanza_lista')
+    else:
+        form = SegundaPesadaForm()
+
+    context = {
+        'form': form,
+        'ticket': ticket,
+        'es_entrada': es_entrada,
+        'label_segunda_pesada': 'Peso TARA (camión vacío)' if es_entrada else 'Peso BRUTO (camión cargado)',
+        'primera_pesada_valor': ticket.peso_bruto if es_entrada else ticket.peso_tara,
+        'primera_pesada_label': 'BRUTO registrado' if es_entrada else 'TARA registrada',
+    }
+    return render(request, 'tickets/balanza/segunda_pesada.html', context)

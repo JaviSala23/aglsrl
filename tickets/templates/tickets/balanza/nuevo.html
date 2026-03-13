@@ -1,0 +1,540 @@
+{% extends 'tickets/base.html' %}
+{% load static %}
+
+{% block title %}
+  {% if es_entrada %}Nueva Entrada{% else %}Nueva Salida{% endif %} — Balanza
+{% endblock %}
+
+{% block extra_css %}
+<style>
+  body { background: #f0f2f5; }
+
+  /* ── Header de tipo ── */
+  .tipo-header {
+    padding: 1.2rem 2rem;
+    color: #fff;
+    border-radius: 0 0 1.2rem 1.2rem;
+    margin-bottom: 2rem;
+    {% if es_entrada %}
+    background: linear-gradient(135deg, #1b5e20, #2e7d32);
+    {% else %}
+    background: linear-gradient(135deg, #b71c1c, #c62828);
+    {% endif %}
+  }
+
+  /* ── Zona de carga CPE ── */
+  .cpe-zone {
+    border: 3px dashed {% if es_entrada %}#2e7d32{% else %}#c62828{% endif %};
+    border-radius: 1rem;
+    background: {% if es_entrada %}#f1f8e9{% else %}#fce4ec{% endif %};
+    padding: 1.5rem;
+    text-align: center;
+    cursor: pointer;
+    transition: background .2s;
+  }
+  .cpe-zone:hover { background: {% if es_entrada %}#dcedc8{% else %}#f8bbd0{% endif %}; }
+  .cpe-zone.dragover { background: {% if es_entrada %}#c5e1a5{% else %}#f48fb1{% endif %}; }
+  .cpe-zone .cpe-icon { font-size: 3rem; opacity: .6; }
+
+  /* ── Resultado de CPE parseada ── */
+  #cpe-resultado {
+    display: none;
+    border-radius: .75rem;
+    border-left: 5px solid {% if es_entrada %}#2e7d32{% else %}#c62828{% endif %};
+    background: #fff;
+    animation: fadeIn .3s;
+  }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:none; } }
+
+  .cpe-field-ok { color: #2e7d32; font-size:.85rem; }
+  .cpe-field-warn { color: #e65100; font-size:.85rem; }
+
+  /* ── Campos grandes del formulario ── */
+  .campo-grande label {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #37474f;
+    margin-bottom: .35rem;
+    display: block;
+  }
+  .campo-grande .form-control,
+  .campo-grande .form-select {
+    font-size: 1.2rem;
+    padding: .75rem 1rem;
+    border-radius: .6rem;
+    border: 2px solid #cfd8dc;
+  }
+  .campo-grande .form-control:focus,
+  .campo-grande .form-select:focus {
+    border-color: {% if es_entrada %}#2e7d32{% else %}#c62828{% endif %};
+    box-shadow: 0 0 0 3px {% if es_entrada %}rgba(46,125,50,.15){% else %}rgba(198,40,40,.15){% endif %};
+  }
+
+  /* ── Campo de kg gigante ── */
+  .kg-input {
+    font-size: 3rem !important;
+    font-weight: 900 !important;
+    text-align: center;
+    letter-spacing: 4px;
+    color: #1a237e;
+    border: 3px solid {% if es_entrada %}#2e7d32{% else %}#c62828{% endif %} !important;
+    border-radius: .8rem !important;
+    background: #f8f9ff;
+  }
+  .kg-input:focus {
+    background: #fff !important;
+  }
+  .kg-label {
+    font-size: 1.3rem;
+    font-weight: 800;
+    text-align: center;
+    color: {% if es_entrada %}#1b5e20{% else %}#b71c1c{% endif %};
+    text-transform: uppercase;
+    letter-spacing: 2px;
+  }
+
+  /* ── Patente ── */
+  .patente-input {
+    font-size: 1.8rem !important;
+    font-weight: 900 !important;
+    letter-spacing: 6px !important;
+    text-align: center;
+    text-transform: uppercase;
+    background: #e8eaf6;
+    border: 2px solid #3949ab !important;
+    border-radius: .7rem !important;
+    color: #1a237e;
+  }
+
+  /* ── Badges informativos ── */
+  .dato-cpe {
+    display: inline-block;
+    background: #e8f5e9;
+    color: #1b5e20;
+    border-radius: .4rem;
+    padding: .15rem .5rem;
+    font-size: .82rem;
+    font-weight: 600;
+    margin-left: .4rem;
+    vertical-align: middle;
+  }
+  .dato-cpe-warn {
+    background: #fff3e0;
+    color: #e65100;
+  }
+
+  /* ── Botón submit ── */
+  .btn-guardar {
+    background: {% if es_entrada %}linear-gradient(135deg,#1b5e20,#388e3c){% else %}linear-gradient(135deg,#b71c1c,#d32f2f){% endif %};
+    color: #fff;
+    border: none;
+    font-size: 1.4rem;
+    font-weight: 800;
+    padding: 1rem 3rem;
+    border-radius: 1rem;
+    letter-spacing: 1px;
+    box-shadow: 0 4px 15px rgba(0,0,0,.25);
+    transition: transform .15s;
+  }
+  .btn-guardar:hover { transform: translateY(-2px); color: #fff; }
+
+  /* ── Spinner ── */
+  #cpe-spinner { display: none; }
+
+  .section-title {
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: #607d8b;
+    border-bottom: 2px solid #eceff1;
+    padding-bottom: .4rem;
+    margin-bottom: 1.2rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+{% load static %}
+
+<!-- ── Header de tipo ── -->
+<div class="tipo-header d-flex align-items-center gap-3">
+  <i class="fas fa-{% if es_entrada %}truck-loading{% else %}shipping-fast{% endif %} fa-2x opacity-80"></i>
+  <div>
+    <h2 class="mb-0 fw-bold">
+      {% if es_entrada %}TICKET DE ENTRADA{% else %}TICKET DE SALIDA{% endif %}
+    </h2>
+    <small class="opacity-75">
+      {% if es_entrada %}
+        Primera pesada = BRUTO (camión llega cargado, luego se descarga y se toma la tara)
+      {% else %}
+        Primera pesada = TARA (camión sale vacío, se carga y se toma el bruto)
+      {% endif %}
+    </small>
+  </div>
+  <div class="ms-auto">
+    <a href="{% url 'tickets:balanza_lista' %}" class="btn btn-outline-light">
+      <i class="fas fa-arrow-left me-1"></i>Volver
+    </a>
+  </div>
+</div>
+
+<div class="container-fluid px-4">
+
+  {% for msg in messages %}
+  <div class="alert alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show">
+    {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endfor %}
+
+  <div class="row g-4">
+
+    <!-- ═══════════════════════════════════════════════
+         COLUMNA IZQUIERDA — Carga de CPE
+    ═══════════════════════════════════════════════ -->
+    {% if es_entrada %}
+    <div class="col-12 col-xl-5">
+      <div class="card shadow-sm h-100">
+        <div class="card-header bg-white border-0 pt-3">
+          <h5 class="fw-bold mb-0">
+            <i class="fas fa-file-pdf me-2 text-danger"></i>Carta de Porte (CPE)
+            <small class="text-muted fw-normal ms-2" style="font-size:.8rem;">Opcional — prellenado automático</small>
+          </h5>
+        </div>
+        <div class="card-body">
+
+          <!-- Zona drag & drop -->
+          <div class="cpe-zone mb-3" id="cpe-zone" onclick="document.getElementById('cpe-file').click()">
+            <input type="file" id="cpe-file" accept=".pdf,.jpg,.jpeg,.png,.tiff,.tif,.webp" style="display:none">
+            <div class="cpe-icon">
+              <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+            <p class="mt-2 mb-1 fw-bold" style="font-size:1.1rem;">
+              Arrastrá la CPE aquí o tocá para cargar
+            </p>
+            <p class="text-muted small mb-0">PDF, JPG o PNG — máx. 10 MB</p>
+          </div>
+
+          <!-- Spinner de carga -->
+          <div id="cpe-spinner" class="text-center py-3">
+            <div class="spinner-border text-success" role="status"></div>
+            <p class="mt-2 text-muted">Leyendo carta de porte...</p>
+          </div>
+
+          <!-- Resultado del parseo -->
+          <div id="cpe-resultado" class="p-3">
+            <div class="d-flex align-items-center gap-2 mb-3">
+              <i class="fas fa-check-circle fa-lg text-success"></i>
+              <strong>CPE leída correctamente</strong>
+              <span id="cpe-nro" class="dato-cpe ms-auto"></span>
+            </div>
+
+            <table class="table table-sm table-borderless mb-0" style="font-size:.9rem;">
+              <tr>
+                <td class="text-muted pe-2">CTG</td>
+                <td><strong id="rd-ctg">—</strong></td>
+              </tr>
+              <tr>
+                <td class="text-muted pe-2">Patente</td>
+                <td><strong id="rd-patente">—</strong></td>
+              </tr>
+              <tr>
+                <td class="text-muted pe-2">Acoplado</td>
+                <td><strong id="rd-acoplado">—</strong></td>
+              </tr>
+              <tr>
+                <td class="text-muted pe-2">Grano</td>
+                <td><strong id="rd-grano">—</strong></td>
+              </tr>
+              <tr>
+                <td class="text-muted pe-2">Remitente</td>
+                <td><strong id="rd-remitente">—</strong></td>
+              </tr>
+              <tr>
+                <td class="text-muted pe-2">Transportista</td>
+                <td><strong id="rd-transportista">—</strong></td>
+              </tr>
+              <tr>
+                <td class="text-muted pe-2">Chofer</td>
+                <td><strong id="rd-chofer">—</strong></td>
+              </tr>
+              <tr>
+                <td class="text-muted pe-2">Origen</td>
+                <td><strong id="rd-origen">—</strong></td>
+              </tr>
+              <tr class="table-warning">
+                <td class="pe-2 fw-bold">Kg CPE (declarado)</td>
+                <td><strong id="rd-neto-cpe" style="color:#e65100;">—</strong></td>
+              </tr>
+            </table>
+
+            <p class="text-muted mt-2 mb-0" style="font-size:.78rem;">
+              <i class="fas fa-info-circle me-1"></i>
+              Los kg de la CPE son los <em>declarados</em>. Los kg reales los ingresás abajo en la balanza.
+            </p>
+          </div>
+
+          <!-- Error de parseo -->
+          <div id="cpe-error" class="alert alert-danger mt-2" style="display:none;"></div>
+
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- ═══════════════════════════════════════════════
+         COLUMNA DERECHA — Formulario de ticket
+    ═══════════════════════════════════════════════ -->
+    <div class="col-12 col-xl-{% if es_entrada %}7{% else %}12{% endif %}">
+      <div class="card shadow-sm">
+        <div class="card-body p-4">
+          <form method="post" id="form-balanza" autocomplete="off">
+            {% csrf_token %}
+            <input type="hidden" name="tipo" value="{{ tipo }}">
+            <!-- Datos extra de la CPE que se van a guardar en observaciones -->
+            <input type="hidden" id="h-nro-cpe" name="nro_cpe" value="">
+            <input type="hidden" id="h-ctg" name="ctg" value="">
+            <input type="hidden" id="h-peso-bruto-cpe" name="peso_bruto_cpe" value="">
+            <input type="hidden" id="h-peso-neto-cpe" name="peso_neto_cpe" value="">
+            <input type="hidden" id="h-peso-tara-cpe" name="peso_tara_cpe" value="">
+
+            <!-- ── PATENTES ── -->
+            <div class="section-title mb-3">
+              <i class="fas fa-id-card me-2"></i>Datos del camión
+            </div>
+            <div class="row g-3 mb-4">
+              <div class="col-12 col-md-5 campo-grande">
+                <label for="id_patente_camion">
+                  Patente <span class="text-danger">*</span>
+                </label>
+                {{ form.patente_camion }}
+              </div>
+              <div class="col-12 col-md-4 campo-grande">
+                <label>Acoplado 1</label>
+                {{ form.patente_acoplado_1 }}
+              </div>
+              <div class="col-12 col-md-3 campo-grande">
+                <label>Acoplado 2</label>
+                {{ form.patente_acoplado_2 }}
+              </div>
+            </div>
+
+            <!-- ── CHOFER + CUENTA ── -->
+            <div class="row g-3 mb-4">
+              <div class="col-12 col-md-6 campo-grande">
+                <label>
+                  {% if es_entrada %}Proveedor / Remitente{% else %}Cliente / Destinatario{% endif %}
+                  <span class="text-muted fw-normal small ms-1">(puede dejarse vacío)</span>
+                </label>
+                {{ form.cuenta_cliente }}
+              </div>
+              <div class="col-12 col-md-6 campo-grande">
+                <label>Chofer <span class="text-muted fw-normal small ms-1">(puede dejarse vacío)</span></label>
+                {{ form.chofer }}
+              </div>
+            </div>
+
+            <!-- ── MERCADERÍA ── -->
+            <div class="section-title mb-3">
+              <i class="fas fa-seedling me-2"></i>Mercadería
+            </div>
+            <div class="mb-4 campo-grande">
+              <label>
+                Tipo de mercadería <span class="text-danger">*</span>
+              </label>
+              {{ form.grano }}
+            </div>
+
+            <!-- ── PRIMERA PESADA ── -->
+            <div class="section-title mb-3">
+              <i class="fas fa-weight me-2"></i>{{ label_primer_pesaje }}
+            </div>
+            <div class="mb-4">
+              <div class="kg-label mb-2">{{ label_primer_pesaje }}</div>
+              {{ form.primer_pesaje_kg }}
+              {% if es_entrada %}
+              <div id="kg-cpe-ref" class="text-center mt-2" style="display:none;">
+                <span class="dato-cpe dato-cpe-warn">
+                  <i class="fas fa-exclamation-circle me-1"></i>
+                  CPE declara: <strong id="kg-cpe-val">—</strong> kg neto
+                </span>
+              </div>
+              {% endif %}
+            </div>
+
+            <!-- ── OBSERVACIONES ── -->
+            <div class="mb-4 campo-grande">
+              <label>Observaciones</label>
+              {{ form.observaciones }}
+            </div>
+
+            <!-- ── SUBMIT ── -->
+            <div class="d-grid">
+              <button type="submit" class="btn-guardar">
+                <i class="fas fa-save me-2"></i>
+                GUARDAR TICKET DE {% if es_entrada %}ENTRADA{% else %}SALIDA{% endif %}
+              </button>
+            </div>
+
+            {% if form.errors %}
+            <div class="alert alert-danger mt-3">
+              {% for field, errors in form.errors.items %}
+                {% for error in errors %}
+                <div><strong>{{ field }}:</strong> {{ error }}</div>
+                {% endfor %}
+              {% endfor %}
+            </div>
+            {% endif %}
+
+          </form>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /row -->
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const CSRF = '{{ csrf_token }}';
+const URL_CPE = '{% url "tickets:cargar_cpe" %}';
+const CAMIONES = {{ camiones_data|safe }};
+
+// ─── Autocompletado de patente desde datos de BD ───
+document.getElementById('id_patente_camion').addEventListener('input', function() {
+  const val = this.value.toUpperCase().trim();
+  this.value = val;
+  if (CAMIONES[val]) {
+    const d = CAMIONES[val];
+    setField('id_patente_acoplado_1', d.acoplado_1);
+    setField('id_patente_acoplado_2', d.acoplado_2);
+    if (d.cuenta) setSelectById('id_cuenta_cliente', d.cuenta);
+  }
+});
+
+function setField(id, val) {
+  const el = document.getElementById(id);
+  if (el && val) el.value = val;
+}
+function setSelectById(id, pk) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  for (const opt of el.options) {
+    if (opt.value == pk) { el.value = pk; break; }
+  }
+}
+function setSelectByText(id, texto) {
+  if (!texto) return;
+  const el = document.getElementById(id);
+  if (!el) return;
+  const upper = texto.toUpperCase();
+  for (const opt of el.options) {
+    if (opt.text.toUpperCase().includes(upper)) { el.value = opt.value; return; }
+  }
+}
+
+// ─── Drag & drop + carga de CPE ───
+{% if es_entrada %}
+const zone = document.getElementById('cpe-zone');
+const fileInput = document.getElementById('cpe-file');
+
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+zone.addEventListener('drop', e => {
+  e.preventDefault();
+  zone.classList.remove('dragover');
+  procesarArchivo(e.dataTransfer.files[0]);
+});
+fileInput.addEventListener('change', () => procesarArchivo(fileInput.files[0]));
+
+async function procesarArchivo(file) {
+  if (!file) return;
+  document.getElementById('cpe-spinner').style.display = 'block';
+  document.getElementById('cpe-resultado').style.display = 'none';
+  document.getElementById('cpe-error').style.display = 'none';
+
+  const fd = new FormData();
+  fd.append('cpe_archivo', file);
+  fd.append('csrfmiddlewaretoken', CSRF);
+
+  try {
+    const resp = await fetch(URL_CPE, { method: 'POST', body: fd });
+    const data = await resp.json();
+
+    document.getElementById('cpe-spinner').style.display = 'none';
+
+    if (!data.success) {
+      mostrarError(data.error || 'Error desconocido.');
+      return;
+    }
+
+    rellenarFormulario(data.datos);
+  } catch(e) {
+    document.getElementById('cpe-spinner').style.display = 'none';
+    mostrarError('Error de conexión al procesar el archivo.');
+  }
+}
+
+function mostrarError(msg) {
+  const el = document.getElementById('cpe-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+function rellenarFormulario(d) {
+  // Patentes
+  setField('id_patente_camion', d.patente_camion);
+  setField('id_patente_acoplado_1', d.patente_acoplado_1);
+  setField('id_patente_acoplado_2', d.patente_acoplado_2);
+
+  // Grano (busca por ID o por nombre)
+  if (d.grano_id) setSelectById('id_grano', d.grano_id);
+  else if (d.grano_nombre) setSelectByText('id_grano', d.grano_nombre);
+
+  // Cuenta cliente (remitente)
+  if (d.cuenta_origen_id) setSelectById('id_cuenta_cliente', d.cuenta_origen_id);
+
+  // Chofer
+  if (d.chofer_id) setSelectById('id_chofer', d.chofer_id);
+
+  // Campos ocultos (CPE metadata)
+  setField('h-nro-cpe', d.nro_cpe || '');
+  setField('h-ctg', d.ctg || '');
+  setField('h-peso-bruto-cpe', d.peso_bruto_cpe || '');
+  setField('h-peso-neto-cpe', d.peso_neto_cpe || '');
+  setField('h-peso-tara-cpe', d.peso_tara_cpe || '');
+
+  // Mostrar resumen
+  document.getElementById('cpe-nro').textContent = d.nro_cpe ? `CPE ${d.nro_cpe}` : '';
+  document.getElementById('rd-ctg').textContent = d.ctg || '—';
+  document.getElementById('rd-patente').textContent = d.patente_camion || '—';
+  document.getElementById('rd-acoplado').textContent = [d.patente_acoplado_1, d.patente_acoplado_2].filter(Boolean).join(' + ') || '—';
+  document.getElementById('rd-grano').textContent = d.grano_display || d.grano_nombre || '—';
+  document.getElementById('rd-remitente').textContent = d.cuenta_origen_display || (d.titular ? d.titular.nombre : '—');
+  document.getElementById('rd-transportista').textContent = d.cuenta_transporte_display || (d.transportista ? d.transportista.nombre : '—');
+  document.getElementById('rd-chofer').textContent = d.chofer_display || (d.chofer ? d.chofer.nombre : '—');
+  document.getElementById('rd-origen').textContent = [d.localidad_origen, d.provincia_origen].filter(Boolean).join(', ') || '—';
+
+  if (d.peso_neto_cpe) {
+    document.getElementById('rd-neto-cpe').textContent = Number(d.peso_neto_cpe).toLocaleString('es-AR') + ' kg';
+    const ref = document.getElementById('kg-cpe-ref');
+    if (ref) {
+      document.getElementById('kg-cpe-val').textContent = Number(d.peso_neto_cpe).toLocaleString('es-AR');
+      ref.style.display = 'block';
+    }
+  }
+
+  document.getElementById('cpe-resultado').style.display = 'block';
+  zone.style.borderStyle = 'solid';
+  zone.innerHTML = `<i class='fas fa-check-circle fa-2x text-success'></i><p class='mt-2 mb-0 fw-bold text-success'>CPE cargada</p>`;
+}
+{% endif %}
+
+// ─── Mayúsculas en campos de patente ───
+['id_patente_acoplado_1','id_patente_acoplado_2'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', () => el.value = el.value.toUpperCase());
+});
+</script>
+{% endblock %}

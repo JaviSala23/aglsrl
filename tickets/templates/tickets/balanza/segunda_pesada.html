@@ -1,0 +1,280 @@
+{% extends 'tickets/base.html' %}
+{% load static %}
+
+{% block title %}Segunda Pesada — Ticket {{ ticket.numero_ticket }}{% endblock %}
+
+{% block extra_css %}
+<style>
+  body { background: #f0f2f5; }
+
+  .pesada-header {
+    background: linear-gradient(135deg, #e65100, #f57c00);
+    color: #fff;
+    padding: 1.2rem 2rem;
+    border-radius: 0 0 1.2rem 1.2rem;
+    margin-bottom: 2rem;
+  }
+
+  .ticket-info-card {
+    border-left: 6px solid #f57c00;
+    background: #fff;
+    border-radius: .75rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,.08);
+  }
+
+  .patente-badge {
+    background: #1a237e;
+    color: #fff;
+    font-size: 1.4rem;
+    font-weight: 900;
+    letter-spacing: 4px;
+    padding: .4rem 1.1rem;
+    border-radius: .6rem;
+    font-family: monospace;
+  }
+
+  .peso-card {
+    border-radius: .75rem;
+    text-align: center;
+    padding: 1rem;
+  }
+  .peso-label {
+    font-size: .75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 700;
+    color: #607d8b;
+  }
+  .peso-valor {
+    font-size: 2.2rem;
+    font-weight: 900;
+    color: #1a237e;
+    line-height: 1.1;
+  }
+
+  .kg-input {
+    font-size: 3.5rem !important;
+    font-weight: 900 !important;
+    text-align: center;
+    letter-spacing: 4px;
+    color: #1a237e;
+    border: 3px solid #f57c00 !important;
+    border-radius: .8rem !important;
+    background: #fff8f0;
+  }
+  .kg-input:focus {
+    background: #fff !important;
+    box-shadow: 0 0 0 4px rgba(245,124,0,.2) !important;
+  }
+
+  .btn-cerrar {
+    background: linear-gradient(135deg, #e65100, #f57c00);
+    color: #fff;
+    border: none;
+    font-size: 1.5rem;
+    font-weight: 800;
+    padding: 1.1rem 3rem;
+    border-radius: 1rem;
+    box-shadow: 0 4px 15px rgba(230,81,0,.4);
+    transition: transform .15s;
+    letter-spacing: 1px;
+  }
+  .btn-cerrar:hover { transform: translateY(-2px); color: #fff; }
+
+  .campo-grande label {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #37474f;
+    margin-bottom: .35rem;
+    display: block;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ── Header ── -->
+<div class="pesada-header d-flex align-items-center gap-3">
+  <i class="fas fa-balance-scale fa-2x opacity-80"></i>
+  <div>
+    <h2 class="mb-0 fw-bold">Segunda Pesada</h2>
+    <small class="opacity-75">{{ ticket.numero_ticket }} — {{ label_segunda_pesada }}</small>
+  </div>
+  <div class="ms-auto">
+    <a href="{% url 'tickets:balanza_lista' %}" class="btn btn-outline-light">
+      <i class="fas fa-arrow-left me-1"></i>Volver
+    </a>
+  </div>
+</div>
+
+<div class="container-fluid px-4">
+
+  {% for msg in messages %}
+  <div class="alert alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show">
+    {{ msg }}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  {% endfor %}
+
+  <div class="row g-4">
+
+    <!-- ── Info del ticket ── -->
+    <div class="col-12 col-lg-5">
+      <div class="ticket-info-card p-4">
+        <h5 class="fw-bold mb-3">Datos del ticket</h5>
+
+        <div class="mb-3">
+          <span class="badge {% if ticket.tipo_movimiento.codigo == 'REC' %}bg-success{% else %}bg-danger{% endif %} fs-6 mb-2">
+            {% if ticket.tipo_movimiento.codigo == 'REC' %}⬇ ENTRADA{% else %}⬆ SALIDA{% endif %}
+          </span>
+        </div>
+
+        <div class="mb-3">
+          <div class="text-muted small mb-1">Patente</div>
+          <span class="patente-badge">{{ ticket.patente_camion }}</span>
+        </div>
+
+        {% for dem in ticket.detalle_mercaderias.all %}
+        <div class="mb-2">
+          <div class="text-muted small">Mercadería</div>
+          <strong class="fs-5">
+            <i class="fas fa-seedling text-success me-1"></i>
+            {{ dem.mercaderia.grano.nombre }}
+          </strong>
+        </div>
+        {% endfor %}
+
+        {% if ticket.chofer %}
+        <div class="mb-2">
+          <div class="text-muted small">Chofer</div>
+          <strong>{{ ticket.chofer.nombre_completo }}</strong>
+        </div>
+        {% endif %}
+
+        {% if ticket.origen %}
+        <div class="mb-2">
+          <div class="text-muted small">Origen</div>
+          <strong>{{ ticket.origen.razon_social }}</strong>
+        </div>
+        {% endif %}
+
+        {% if ticket.destinatario %}
+        <div class="mb-2">
+          <div class="text-muted small">Destino</div>
+          <strong>{{ ticket.destinatario.razon_social }}</strong>
+        </div>
+        {% endif %}
+
+        {% if ticket.observaciones %}
+        <div class="mt-3 p-2 bg-light rounded small text-muted">
+          <i class="fas fa-sticky-note me-1"></i>{{ ticket.observaciones }}
+        </div>
+        {% endif %}
+
+        <!-- Primera pesada registrada -->
+        <div class="mt-4">
+          <div class="peso-card bg-light">
+            <div class="peso-label">{{ primera_pesada_label }}</div>
+            <div class="peso-valor text-primary">
+              {{ primera_pesada_valor|floatformat:0 }}
+              <span class="fs-4 fw-normal">kg</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ── Formulario segunda pesada ── -->
+    <div class="col-12 col-lg-7">
+      <div class="card shadow-sm">
+        <div class="card-body p-4">
+
+          <h4 class="fw-bold mb-1" style="color:#e65100;">
+            <i class="fas fa-weight me-2"></i>{{ label_segunda_pesada }}
+          </h4>
+          <p class="text-muted mb-4">
+            Ingresá el peso tal como lo muestra la balanza.
+          </p>
+
+          <form method="post">
+            {% csrf_token %}
+
+            <!-- KG grande -->
+            <div class="mb-4">
+              <div class="text-center fw-bold mb-2" style="font-size:1.2rem;color:#e65100;text-transform:uppercase;letter-spacing:2px;">
+                {{ label_segunda_pesada }}
+              </div>
+              {{ form.segundo_pesaje_kg }}
+              {% if form.segundo_pesaje_kg.errors %}
+              <div class="text-danger mt-2 text-center">{{ form.segundo_pesaje_kg.errors.0 }}</div>
+              {% endif %}
+            </div>
+
+            <!-- Cálculo estimado en tiempo real -->
+            <div id="neto-preview" class="text-center mb-4" style="display:none;">
+              <div class="d-inline-block bg-success text-white rounded-pill px-4 py-2">
+                <span class="me-2">Neto estimado:</span>
+                <strong id="neto-val" style="font-size:1.4rem;">—</strong>
+                <span> kg</span>
+              </div>
+            </div>
+
+            <!-- Observaciones -->
+            <div class="mb-4 campo-grande">
+              <label>Observaciones de cierre</label>
+              {{ form.observaciones }}
+            </div>
+
+            <div class="d-grid">
+              <button type="submit" class="btn-cerrar">
+                <i class="fas fa-lock me-2"></i>CERRAR TICKET
+              </button>
+            </div>
+
+            {% if form.non_field_errors %}
+            <div class="alert alert-danger mt-3">{{ form.non_field_errors }}</div>
+            {% endif %}
+
+          </form>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const PRIMERA_PESADA = {{ primera_pesada_valor|default:0 }};
+const ES_ENTRADA = {{ es_entrada|yesno:'true,false' }};
+
+const inputKg = document.querySelector('[name="segundo_pesaje_kg"]');
+const preview = document.getElementById('neto-preview');
+const netoVal = document.getElementById('neto-val');
+
+inputKg.addEventListener('input', function() {
+  const segunda = parseFloat(this.value) || 0;
+  if (segunda <= 0) { preview.style.display = 'none'; return; }
+
+  let neto;
+  if (ES_ENTRADA) {
+    // Entrada: primera=bruto, segunda=tara → neto = bruto - tara
+    neto = PRIMERA_PESADA - segunda;
+  } else {
+    // Salida: primera=tara, segunda=bruto → neto = bruto - tara
+    neto = segunda - PRIMERA_PESADA;
+  }
+
+  if (neto > 0) {
+    netoVal.textContent = Math.round(neto).toLocaleString('es-AR');
+    preview.style.display = 'block';
+    preview.querySelector('.bg-success').className = 'bg-success text-white rounded-pill d-inline-block px-4 py-2';
+  } else if (neto <= 0) {
+    netoVal.textContent = '⚠ Verifique los valores';
+    preview.style.display = 'block';
+    preview.querySelector('.bg-success').className = 'bg-danger text-white rounded-pill d-inline-block px-4 py-2';
+  }
+});
+</script>
+{% endblock %}

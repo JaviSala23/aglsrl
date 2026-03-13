@@ -111,11 +111,57 @@
                 </div>
                 
                 <div class="card-body">
+
+                    <!-- ========== WIDGET CARGA CPE (solo entrada/salida, no tipo indefinido) ========== -->
+                    {% if tipo_ticket == 'entrada' or tipo_ticket == 'salida' %}
+                    <div class="card mb-4 border-0 bg-light">
+                        <div class="card-body py-3">
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <i class="fas fa-file-pdf text-danger fs-5"></i>
+                                <strong>Cargar Carta de Porte (CPE)</strong>
+                                <span class="badge bg-secondary ms-1">Opcional — Prellenado automático</span>
+                                <button class="btn btn-sm btn-outline-secondary ms-auto" type="button"
+                                        data-bs-toggle="collapse" data-bs-target="#cpe-panel">
+                                    <i class="fas fa-chevron-down" id="cpe-chevron"></i> Mostrar / Ocultar
+                                </button>
+                            </div>
+                            <div class="collapse" id="cpe-panel">
+                                <div id="cpe-drop-zone"
+                                     onclick="document.getElementById('cpe-file-admin').click()"
+                                     style="border: 2px dashed #adb5bd; border-radius:.6rem; background:#fff;
+                                            padding:1.2rem; text-align:center; cursor:pointer; transition:background .2s;">
+                                    <input type="file" id="cpe-file-admin"
+                                           accept=".pdf,.jpg,.jpeg,.png,.tiff,.tif,.webp" style="display:none">
+                                    <i class="fas fa-cloud-upload-alt fa-2x text-muted"></i>
+                                    <p class="mb-0 mt-2 text-muted">
+                                        Arrastrá el PDF/imagen de la CPE aquí o <u>hacé click</u><br>
+                                        <small>{% if tipo_ticket == 'salida' %}
+                                            Podés cargar tanto una CPE <strong>recibida</strong> como una <strong>emitida</strong> por AGL
+                                        {% else %}
+                                            CPE recibida — se prellena el formulario automáticamente
+                                        {% endif %}</small>
+                                    </p>
+                                </div>
+                                <div id="cpe-admin-spinner" class="text-center py-2" style="display:none;">
+                                    <div class="spinner-border spinner-border-sm text-primary"></div>
+                                    <span class="ms-2 text-muted small">Leyendo CPE...</span>
+                                </div>
+                                <div id="cpe-admin-ok" class="alert alert-success py-2 mt-2" style="display:none;font-size:.88rem;"></div>
+                                <div id="cpe-admin-err" class="alert alert-danger py-2 mt-2" style="display:none;font-size:.88rem;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    <!-- ========== FIN WIDGET CPE ========== -->
+
                     <form method="post" id="ticketForm">
                         {% csrf_token %}
                         
                         <input type="hidden" name="tipo_movimiento" id="tipo_movimiento" 
                                value="{% if tipo_ticket == 'entrada' %}1{% elif tipo_ticket == 'salida' %}2{% endif %}">
+                        <!-- Metadatos CPE (se rellenan por JS) -->
+                        <input type="hidden" id="h-cpe-nro" name="nro_cpe" value="">
+                        <input type="hidden" id="h-cpe-ctg" name="ctg" value="">
 
                         <div class="row">
                             <!-- COLUMNA IZQUIERDA: TRANSPORTE -->
@@ -440,6 +486,123 @@ function limpiarFormulario() {
         limpiarPatente();
     }
 }
+
+// ─── Widget CPE (para administradores) ───────────────────────────────────────
+(function() {
+    const fileInput = document.getElementById('cpe-file-admin');
+    const dropZone  = document.getElementById('cpe-drop-zone');
+    if (!fileInput) return;
+
+    const URL_CPE = '{% url "tickets:cargar_cpe" %}';
+    const CSRF    = '{{ csrf_token }}';
+
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.style.background = '#e9ecef'; });
+    dropZone.addEventListener('dragleave', ()=> { dropZone.style.background = '#fff'; });
+    dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.style.background = '#fff'; procesarCpe(e.dataTransfer.files[0]); });
+    fileInput.addEventListener('change', () => procesarCpe(fileInput.files[0]));
+
+    async function procesarCpe(file) {
+        if (!file) return;
+        document.getElementById('cpe-admin-spinner').style.display = 'block';
+        document.getElementById('cpe-admin-ok').style.display = 'none';
+        document.getElementById('cpe-admin-err').style.display = 'none';
+
+        const fd = new FormData();
+        fd.append('cpe_archivo', file);
+        fd.append('csrfmiddlewaretoken', CSRF);
+
+        try {
+            const resp = await fetch(URL_CPE, { method: 'POST', body: fd });
+            const data = await resp.json();
+            document.getElementById('cpe-admin-spinner').style.display = 'none';
+
+            if (!data.success) {
+                mostrarErr(data.error || 'Error al procesar la CPE.');
+                return;
+            }
+            rellenar(data.datos);
+        } catch(e) {
+            document.getElementById('cpe-admin-spinner').style.display = 'none';
+            mostrarErr('Error de conexión.');
+        }
+    }
+
+    function mostrarErr(msg) {
+        const el = document.getElementById('cpe-admin-err');
+        el.textContent = msg; el.style.display = 'block';
+    }
+
+    function setVal(id, val) {
+        const el = document.getElementById(id);
+        if (el && val != null && val !== '') el.value = val;
+    }
+    function setSelect(name, pk) {
+        const el = document.querySelector(`[name="${name}"]`);
+        if (!el || !pk) return;
+        for (const opt of el.options) { if (opt.value == pk) { el.value = pk; return; } }
+    }
+    function setSelectText(name, texto) {
+        if (!texto) return;
+        const el = document.querySelector(`[name="${name}"]`);
+        if (!el) return;
+        const up = texto.toUpperCase();
+        for (const opt of el.options) { if (opt.text.toUpperCase().includes(up)) { el.value = opt.value; return; } }
+    }
+
+    function rellenar(d) {
+        // Patentes
+        setVal('patente_input', d.patente_camion);
+        const patSel = document.getElementById('patente_select');
+        if (patSel && d.patente_camion) {
+            for (const o of patSel.options) { if (o.value === d.patente_camion) { patSel.value = d.patente_camion; break; } }
+        }
+
+        // Chofer
+        if (d.chofer_id) setSelect('chofer', d.chofer_id);
+
+        // Mercadería (por nombre en el select de formulario)
+        if (d.grano_id) {
+            const ms = document.getElementById('mercaderia_select');
+            if (ms) {
+                // Intentar por grano_id (puede coincidir si hay mercadería del mismo grano)
+                for (const o of ms.options) {
+                    if (o.text.toUpperCase().includes((d.grano_nombre||'').toUpperCase().split(' ')[0])) {
+                        ms.value = o.value; break;
+                    }
+                }
+            }
+        }
+
+        // Origen / Destinatario
+        if (d.cuenta_origen_id) setSelect('origen', d.cuenta_origen_id);
+        if (d.cuenta_origen_id) setSelect('destinatario', d.cuenta_origen_id);
+
+        // Campos ocultos de metadata CPE
+        setVal('h-cpe-nro', d.nro_cpe);
+        setVal('h-cpe-ctg', d.ctg);
+
+        // Observaciones: agregar metadata CPE
+        const obs = document.querySelector('[name="observaciones"]');
+        if (obs) {
+            const info = `[CPE: ${d.nro_cpe || '-'} | CTG: ${d.ctg || '-'} | Patente: ${d.patente_camion || '-'}]`;
+            if (!obs.value.includes(info)) obs.value = (obs.value ? obs.value + '\n' : '') + info;
+        }
+
+        // Mostrar resumen
+        const lineas = [
+            d.patente_camion   ? `✅ Patente: ${d.patente_camion}${d.patente_acoplado_1 ? ' + ' + d.patente_acoplado_1 : ''}` : null,
+            d.grano_nombre     ? `✅ Grano: ${d.grano_nombre}` : null,
+            d.cuenta_origen_display ? `✅ Remitente: ${d.cuenta_origen_display}` : null,
+            d.chofer_display   ? `✅ Chofer: ${d.chofer_display}` : null,
+            d.peso_neto_cpe    ? `ℹ️ Kg neto CPE (declarado): ${Number(d.peso_neto_cpe).toLocaleString('es-AR')} kg` : null,
+        ].filter(Boolean).join('<br>');
+
+        const ok = document.getElementById('cpe-admin-ok');
+        ok.innerHTML = `<strong><i class="fas fa-check-circle me-1"></i>CPE leída:</strong> ${d.nro_cpe || ''}<br>${lineas}`;
+        ok.style.display = 'block';
+        dropZone.innerHTML = `<i class="fas fa-check-circle fa-lg text-success me-2"></i><strong class="text-success">CPE cargada correctamente</strong>`;
+    }
+})();
 </script>
 
 {% endblock %}

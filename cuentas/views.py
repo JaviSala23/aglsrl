@@ -12,7 +12,68 @@ from django.db.models import Count, Prefetch, Q
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import TemplateView, ListView, DetailView, CreateView, UpdateView
+from django.views.generic import TemplateView, ListView, DetailView, CreateView, UpdateView, DeleteView
+from .forms import ProvinciaForm, LocalidadForm
+from .models import provincia, localidad
+# ================================
+# CRUD PROVINCIA
+# ================================
+class ProvinciaListView(LoginRequiredMixin, ListView):
+    model = provincia
+    template_name = 'cuentas/provincia_list.html'
+    context_object_name = 'provincias'
+    login_url = 'main:login'
+    paginate_by = 20
+
+class ProvinciaCreateView(LoginRequiredMixin, CreateView):
+    model = provincia
+    form_class = ProvinciaForm
+    template_name = 'cuentas/provincia_form.html'
+    success_url = '/cuentas/provincias/'
+    login_url = 'main:login'
+
+class ProvinciaUpdateView(LoginRequiredMixin, UpdateView):
+    model = provincia
+    form_class = ProvinciaForm
+    template_name = 'cuentas/provincia_form.html'
+    success_url = '/cuentas/provincias/'
+    login_url = 'main:login'
+
+class ProvinciaDeleteView(LoginRequiredMixin, DeleteView):
+    model = provincia
+    template_name = 'cuentas/provincia_confirm_delete.html'
+    success_url = '/cuentas/provincias/'
+    login_url = 'main:login'
+
+# ================================
+# CRUD LOCALIDAD
+# ================================
+class LocalidadListView(LoginRequiredMixin, ListView):
+    model = localidad
+    template_name = 'cuentas/localidad_list.html'
+    context_object_name = 'localidades'
+    login_url = 'main:login'
+    paginate_by = 20
+
+class LocalidadCreateView(LoginRequiredMixin, CreateView):
+    model = localidad
+    form_class = LocalidadForm
+    template_name = 'cuentas/localidad_form.html'
+    success_url = '/cuentas/localidades/'
+    login_url = 'main:login'
+
+class LocalidadUpdateView(LoginRequiredMixin, UpdateView):
+    model = localidad
+    form_class = LocalidadForm
+    template_name = 'cuentas/localidad_form.html'
+    success_url = '/cuentas/localidades/'
+    login_url = 'main:login'
+
+class LocalidadDeleteView(LoginRequiredMixin, DeleteView):
+    model = localidad
+    template_name = 'cuentas/localidad_confirm_delete.html'
+    success_url = '/cuentas/localidades/'
+    login_url = 'main:login'
 from django.contrib import messages
 from django.urls import reverse_lazy
 from django.utils import timezone

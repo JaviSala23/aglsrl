@@ -9,8 +9,8 @@ from decouple import config
 DATABASES_MYSQL = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': config('DB_NAME', default='agl_db'),
-        'USER': config('DB_USER', default='JaviSala23'),
+        'NAME': config('DB_NAME', default='aglsrl'),
+        'USER': config('DB_USER', default='admin'),
         'PASSWORD': config('DB_PASSWORD', default='Celeste14'),
         'HOST': config('DB_HOST', default='localhost'),
         'PORT': config('DB_PORT', default='3306'),

@@ -51,7 +51,7 @@ INSTALLED_APPS = [
     'tickets',
     'almacenamiento',
     'procesamiento',
-    # 'usuarios',  # Comentado temporalmente hasta arreglar modelos
+    'usuarios',
 ]
 
 # Custom User Model (comentado temporalmente)
