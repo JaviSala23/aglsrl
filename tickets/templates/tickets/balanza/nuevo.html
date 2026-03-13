@@ -471,10 +471,25 @@ async function procesarArchivo(file) {
   fd.append('csrfmiddlewaretoken', CSRF);
 
   try {
-    const resp = await fetch(URL_CPE, { method: 'POST', body: fd });
-    const data = await resp.json();
+    const resp = await fetch(URL_CPE, {
+      method: 'POST',
+      headers: { 'X-CSRFToken': CSRF },
+      credentials: 'same-origin',
+      body: fd
+    });
 
     document.getElementById('cpe-spinner').style.display = 'none';
+
+    // Si el servidor devolvió una respuesta no-JSON (500, 403, redirect) mostrar error útil
+    if (!resp.ok) {
+      const texto = await resp.text();
+      const match = texto.match(/<pre[^>]*>([\s\S]*?)<\/pre>/i);
+      const detalle = match ? match[1].trim().substring(0, 300) : `HTTP ${resp.status}`;
+      mostrarError(`Error del servidor (${resp.status}). Detalle: ${detalle}`);
+      return;
+    }
+
+    const data = await resp.json();
 
     if (!data.success) {
       mostrarError(data.error || 'Error desconocido.');
@@ -497,7 +512,8 @@ async function procesarArchivo(file) {
     rellenarFormulario(data.datos);
   } catch(e) {
     document.getElementById('cpe-spinner').style.display = 'none';
-    mostrarError('Error de conexión al procesar el archivo.');
+    mostrarError('Error al procesar la respuesta: ' + (e.message || e));
+    console.error('CPE error:', e);
   }
 }
 
@@ -507,59 +523,93 @@ function mostrarError(msg) {
   el.style.display = 'block';
 }
 
+/* Helper null-safe para textContent */
+function txt(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
 function rellenarFormulario(d) {
-  // Patentes
+  // ── Patentes ──
   setField('id_patente_camion', d.patente_camion);
   setField('id_patente_acoplado_1', d.patente_acoplado_1);
   setField('id_patente_acoplado_2', d.patente_acoplado_2);
 
-  // Grano (busca por ID; si fue recién creado, inyecta la opción)
+  // ── Grano: inyectar si tiene ID (existe o fue creado), si no buscar por texto ──
+  let granoOk = false;
   if (d.grano_id) {
-    inyectarOpcionEnSelect('id_grano', d.grano_id, d.grano_display || d.grano_nombre);
+    inyectarOpcionEnSelect('id_grano', d.grano_id, d.grano_display || d.grano_nombre || '');
+    granoOk = true;
   } else if (d.grano_nombre) {
-    setSelectByText('id_grano', d.grano_nombre);
+    // Intentar match por texto en el select existente
+    const sel = document.getElementById('id_grano');
+    if (sel) {
+      const upper = d.grano_nombre.toUpperCase();
+      for (const opt of sel.options) {
+        const optUpper = opt.text.toUpperCase();
+        if (optUpper.includes(upper) || upper.includes(optUpper.replace(/[^A-Z]/g,''))) {
+          sel.value = opt.value;
+          granoOk = true;
+          break;
+        }
+      }
+    }
+  }
+  // Aviso si el grano no pudo resolverse
+  if (!granoOk && d.grano_nombre) {
+    const sel = document.getElementById('id_grano');
+    if (sel) {
+      // Inyectar como opción temporal para que el usuario vea qué dice la CPE
+      const opt = new Option('⚠ ' + d.grano_nombre + ' (seleccionar manualmente)', '', true, true);
+      opt.style.color = '#e65100';
+      sel.insertBefore(opt, sel.options[0]);
+    }
   }
 
-  // Cuenta cliente (remitente) — puede ser recién creada
+  // ── Cuenta cliente ──
   if (d.cuenta_origen_id) {
     inyectarOpcionEnSelect('id_cuenta_cliente', d.cuenta_origen_id, d.cuenta_origen_display || '');
   }
 
-  // Chofer — puede ser recién creado
+  // ── Chofer ──
   if (d.chofer_id) {
     inyectarOpcionEnSelect('id_chofer', d.chofer_id, d.chofer_display || '');
   }
 
-  // Campos ocultos (CPE metadata)
+  // ── Campos ocultos CPE ──
   setField('h-nro-cpe', d.nro_cpe || '');
   setField('h-ctg', d.ctg || '');
   setField('h-peso-bruto-cpe', d.peso_bruto_cpe || '');
   setField('h-peso-neto-cpe', d.peso_neto_cpe || '');
   setField('h-peso-tara-cpe', d.peso_tara_cpe || '');
 
-  // Mostrar resumen
-  document.getElementById('cpe-nro').textContent = d.nro_cpe ? `CPE ${d.nro_cpe}` : '';
-  document.getElementById('rd-ctg').textContent = d.ctg || '—';
-  document.getElementById('rd-patente').textContent = d.patente_camion || '—';
-  document.getElementById('rd-acoplado').textContent = [d.patente_acoplado_1, d.patente_acoplado_2].filter(Boolean).join(' + ') || '—';
-  document.getElementById('rd-grano').textContent = d.grano_display || d.grano_nombre || '—';
-  document.getElementById('rd-remitente').textContent = d.cuenta_origen_display || (d.titular ? d.titular.nombre : '—');
-  document.getElementById('rd-transportista').textContent = d.cuenta_transporte_display || (d.transportista ? d.transportista.nombre : '—');
-  document.getElementById('rd-chofer').textContent = d.chofer_display || (d.chofer ? d.chofer.nombre : '—');
-  document.getElementById('rd-origen').textContent = [d.localidad_origen, d.provincia_origen].filter(Boolean).join(', ') || '—';
+  // ── Mostrar resumen ──
+  txt('cpe-nro', d.nro_cpe ? `CPE ${d.nro_cpe}` : '');
+  txt('rd-ctg', d.ctg || '—');
+  txt('rd-patente', d.patente_camion || '—');
+  txt('rd-acoplado', [d.patente_acoplado_1, d.patente_acoplado_2].filter(Boolean).join(' + ') || '—');
+  txt('rd-grano', d.grano_display || d.grano_nombre || '—');
+  txt('rd-remitente', d.cuenta_origen_display || (d.titular ? d.titular.nombre : '—'));
+  txt('rd-transportista', d.cuenta_transporte_display || (d.transportista ? d.transportista.nombre : '—'));
+  txt('rd-chofer', d.chofer_display || (d.chofer ? d.chofer.nombre : '—'));
+  txt('rd-origen', [d.localidad_origen, d.provincia_origen].filter(Boolean).join(', ') || '—');
 
   if (d.peso_neto_cpe) {
-    document.getElementById('rd-neto-cpe').textContent = Number(d.peso_neto_cpe).toLocaleString('es-AR') + ' kg';
+    txt('rd-neto-cpe', Number(d.peso_neto_cpe).toLocaleString('es-AR') + ' kg');
     const ref = document.getElementById('kg-cpe-ref');
     if (ref) {
-      document.getElementById('kg-cpe-val').textContent = Number(d.peso_neto_cpe).toLocaleString('es-AR');
+      txt('kg-cpe-val', Number(d.peso_neto_cpe).toLocaleString('es-AR'));
       ref.style.display = 'block';
     }
   }
 
-  document.getElementById('cpe-resultado').style.display = 'block';
-  zone.style.borderStyle = 'solid';
-  zone.innerHTML = `<i class='fas fa-check-circle fa-2x text-success'></i><p class='mt-2 mb-0 fw-bold text-success'>CPE cargada</p>`;
+  const resultado = document.getElementById('cpe-resultado');
+  if (resultado) resultado.style.display = 'block';
+  const z = document.getElementById('cpe-zone');
+  if (z) {
+    z.style.borderStyle = 'solid';
+    z.innerHTML = `<i class='fas fa-check-circle fa-2x text-success'></i><p class='mt-2 mb-0 fw-bold text-success'>CPE cargada</p>`;
+  }
 }
 {% endif %}
 

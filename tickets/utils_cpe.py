@@ -96,8 +96,14 @@ def _extraer_campos(texto: str) -> dict:
     dominios_raw = buscar(r'Dominios?[:\s]*([\w]+(?:\s*[-–]\s*[\w]+)*)')
     patentes = [p.strip() for p in re.split(r'\s*[-–]\s*', dominios_raw)] if dominios_raw else []
 
-    # ── Grano/especie ──
-    grano_raw = buscar(r'Tipo[:\s]+([^\n\(]+)')
+    # ── Grano/especie ── (varios formatos de CPE)
+    grano_raw = (
+        buscar(r'Tipo\s+de\s+Grano[:\s]+([^\n\(]+)') or
+        buscar(r'Tipo\s+Grano[:\s]+([^\n\(]+)') or
+        buscar(r'Especie[:\s]+([^\n\(]+)') or
+        buscar(r'Grano[:\s]+([^\n\(,]+)') or
+        buscar(r'Tipo[:\s]+([^\n\(]+)')
+    )
     grano = grano_raw.strip() if grano_raw else None
 
     # ── Pesos declarados en la CPE ──
@@ -236,17 +242,19 @@ def buscar_o_sugerir_en_bd(datos_cpe: dict) -> dict:
             resultado['chofer_id'] = None
             resultado['chofer_display'] = chofer.get('nombre', '')
 
-    # ── Buscar grano ──
+    # ── Buscar grano (solo activos, para que coincida con el queryset del form) ──
     grano_nombre = datos_cpe.get('grano_nombre')
     if grano_nombre:
-        # Buscar por nombre aproximado (ej: "POROTO COLORADO" → busca "poroto")
         palabras = grano_nombre.upper().split()
         grano_obj = None
-        for palabra in palabras:
-            if len(palabra) > 3:
-                grano_obj = Grano.objects.filter(nombre__icontains=palabra).first()
-                if grano_obj:
-                    break
+        # Primero buscar exacto
+        grano_obj = Grano.objects.filter(nombre__iexact=grano_nombre.strip(), activo=True).first()
+        if not grano_obj:
+            for palabra in palabras:
+                if len(palabra) > 3:
+                    grano_obj = Grano.objects.filter(nombre__icontains=palabra, activo=True).first()
+                    if grano_obj:
+                        break
         resultado['grano_id'] = grano_obj.pk if grano_obj else None
         resultado['grano_display'] = str(grano_obj) if grano_obj else f"{grano_nombre} (no registrado)"
 

@@ -623,8 +623,10 @@ def cargar_cpe(request):
         datos_enriquecidos = buscar_o_sugerir_en_bd(datos)
         # Auto-registrar lo que no se encontró en la BD
         nuevos = auto_registrar_desde_cpe(datos_enriquecidos, request.user)
-        # Fusionar: los nuevos valores tienen precedencia (contienen IDs recién creados)
+        # Fusionar: solo sobreescribir si el valor nuevo no es None
         for k, v in nuevos.items():
+            if k == 'acciones':
+                continue
             if v is not None:
                 datos_enriquecidos[k] = v
         return JsonResponse({'success': True, 'datos': datos_enriquecidos, 'registrados': nuevos.get('acciones', [])})
@@ -634,9 +636,11 @@ def cargar_cpe(request):
             'error': f'Dependencia faltante: {e}. Instalar con pip.'
         })
     except Exception as e:
+        import traceback
         return JsonResponse({
             'success': False,
-            'error': f'Error al procesar el archivo: {str(e)}'
+            'error': f'Error al procesar el archivo: {str(e)}',
+            'detalle': traceback.format_exc()[-500:],
         })
 
 
