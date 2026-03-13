@@ -1,4 +1,3 @@
-
 """
 Carga masiva de tablas de configuración:
 - Tipos de cuenta (tipo_cuenta)
