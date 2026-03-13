@@ -251,3 +251,172 @@ def buscar_o_sugerir_en_bd(datos_cpe: dict) -> dict:
         resultado['grano_display'] = str(grano_obj) if grano_obj else f"{grano_nombre} (no registrado)"
 
     return resultado
+
+
+# ─────────────────────────────────────────────
+# AUTO-REGISTRO DESDE CPE
+# ─────────────────────────────────────────────
+
+def _formatear_cuit(cuit_raw: str) -> str:
+    """Convierte 11 dígitos → XX-XXXXXXXX-X (formato Chofer)."""
+    digits = re.sub(r'[^0-9]', '', cuit_raw)
+    if len(digits) == 11:
+        return f"{digits[:2]}-{digits[2:10]}-{digits[10]}"
+    return digits
+
+
+def _get_o_crear_cuenta(cuit_digits: str, nombre: str) -> object:
+    """Busca o crea una Cuenta por CUIT."""
+    from cuentas.models import cuenta as Cuenta
+    c = Cuenta.objects.filter(numero_documento=cuit_digits).first()
+    if c:
+        return c, False
+    return Cuenta.objects.create(
+        razon_social=(nombre or cuit_digits)[:150],
+        numero_documento=cuit_digits,
+        direccion_cuenta='-',
+        activo=True,
+    ), True
+
+
+def auto_registrar_desde_cpe(datos_cpe: dict, user) -> dict:
+    """
+    Registra automáticamente en la BD los datos de la CPE que no existen aún:
+      - Grano / especie
+      - Cuenta del titular (remitente)
+      - Cuenta del transportista + Camión + Chofer
+
+    Retorna un dict con los IDs reales (creados o encontrados) y flags `_creado`.
+    Diseñado para ser llamado desde la vista cargar_cpe con request.user.
+    """
+    from mercaderias.models import Grano
+    from transportes.models import Chofer, Camion
+
+    resultado = {}
+    acciones = []
+
+    # ── Grano ──────────────────────────────────────────────────────────────
+    grano_nombre = datos_cpe.get('grano_nombre')
+    if grano_nombre and not datos_cpe.get('grano_id'):
+        try:
+            nombre_normalizado = grano_nombre.strip().upper()
+            # Exacto primero
+            grano_obj = Grano.objects.filter(nombre__iexact=nombre_normalizado).first()
+            creado = False
+            if not grano_obj:
+                grano_obj, creado = Grano.objects.get_or_create(
+                    nombre=nombre_normalizado,
+                    defaults={'activo': True},
+                )
+            resultado['grano_id'] = grano_obj.pk
+            resultado['grano_display'] = grano_obj.nombre
+            if creado:
+                acciones.append(f'Grano "{grano_obj.nombre}" registrado')
+        except Exception as e:
+            resultado['grano_error'] = str(e)
+
+    # ── Cuenta del titular (remitente) ──────────────────────────────────────
+    titular = datos_cpe.get('titular')
+    if titular and titular.get('cuit') and not datos_cpe.get('cuenta_origen_id'):
+        try:
+            cuit_d = re.sub(r'[^0-9]', '', titular['cuit'])
+            c, creado = _get_o_crear_cuenta(cuit_d, titular.get('nombre', ''))
+            resultado['cuenta_origen_id'] = c.pk
+            resultado['cuenta_origen_display'] = str(c)
+            if creado:
+                acciones.append(f'Cuenta "{c.razon_social}" registrada')
+        except Exception as e:
+            resultado['cuenta_origen_error'] = str(e)
+
+    # ── Cuenta del transportista ────────────────────────────────────────────
+    transportista = datos_cpe.get('transportista')
+    transportista_cuenta = None
+    if transportista and transportista.get('cuit'):
+        try:
+            cuit_d = re.sub(r'[^0-9]', '', transportista['cuit'])
+            c, creado = _get_o_crear_cuenta(cuit_d, transportista.get('nombre', ''))
+            transportista_cuenta = c
+            resultado['cuenta_transporte_id'] = c.pk
+            resultado['cuenta_transporte_display'] = str(c)
+            if creado:
+                acciones.append(f'Transportista "{c.razon_social}" registrado')
+        except Exception as e:
+            resultado['cuenta_transporte_error'] = str(e)
+
+    # ── Camión ──────────────────────────────────────────────────────────────
+    patente_camion = datos_cpe.get('patente_camion')
+    camion_obj = None
+    if patente_camion:
+        patente_up = patente_camion.upper()
+        if transportista_cuenta:
+            try:
+                cam, creado = Camion.objects.get_or_create(
+                    patente=patente_up,
+                    defaults={
+                        'cuenta_asociada': transportista_cuenta,
+                        'creado_por': user,
+                        'activo': True,
+                    }
+                )
+                camion_obj = cam
+                # Actualizar acoplados si el camion existía pero no tenía
+                ac1 = (datos_cpe.get('patente_acoplado_1') or '').upper()
+                ac2 = (datos_cpe.get('patente_acoplado_2') or '').upper()
+                cambio = False
+                if ac1 and not cam.acoplado_1:
+                    cam.acoplado_1 = ac1
+                    cambio = True
+                if ac2 and not cam.acoplado_2:
+                    cam.acoplado_2 = ac2
+                    cambio = True
+                if cambio:
+                    cam.save()
+                resultado['camion_id'] = cam.pk
+                if creado:
+                    acciones.append(f'Camión {cam.patente} registrado')
+            except Exception as e:
+                resultado['camion_error'] = str(e)
+        else:
+            # Transportista no identificado — igual buscar el camion por patente
+            cam = Camion.objects.filter(patente=patente_up).first()
+            if cam:
+                resultado['camion_id'] = cam.pk
+                camion_obj = cam
+
+    # ── Chofer ──────────────────────────────────────────────────────────────
+    chofer_datos = datos_cpe.get('chofer')
+    if chofer_datos and chofer_datos.get('cuit') and not datos_cpe.get('chofer_id'):
+        if transportista_cuenta:  # cuenta_asociada es requerida
+            try:
+                cuit_d = re.sub(r'[^0-9]', '', chofer_datos['cuit'])
+                cuit_fmt = _formatear_cuit(cuit_d)
+                nombre_completo = (chofer_datos.get('nombre') or '').strip()
+                # CPE trae el nombre al revés: "APELLIDO NOMBRE" en muchos casos
+                partes = nombre_completo.split()
+                apellido = partes[0] if partes else 'Sin apellido'
+                nombre = ' '.join(partes[1:]) if len(partes) > 1 else 'Sin nombre'
+
+                ch, creado = Chofer.objects.get_or_create(
+                    cuit=cuit_fmt,
+                    defaults={
+                        'nombre': nombre,
+                        'apellido': apellido,
+                        'cuenta_asociada': transportista_cuenta,
+                        'creado_por': user,
+                        'activo': True,
+                    }
+                )
+                # Actualizar camión asignado si llegó junto al chofer
+                if camion_obj and not ch.camion_asignado:
+                    ch.camion_asignado = camion_obj
+                    ch.save()
+                resultado['chofer_id'] = ch.pk
+                resultado['chofer_display'] = str(ch)
+                if creado:
+                    acciones.append(f'Chofer "{ch.apellido} {ch.nombre}" registrado (CUIT {cuit_fmt})')
+            except Exception as e:
+                resultado['chofer_error'] = str(e)
+
+    resultado['acciones'] = acciones
+    return resultado
+

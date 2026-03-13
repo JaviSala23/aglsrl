@@ -618,10 +618,16 @@ def cargar_cpe(request):
         return JsonResponse({'success': False, 'error': 'Formato no soportado. Use PDF o imagen (jpg, png, tiff).'})
 
     try:
-        from .utils_cpe import parsear_cpe_auto, buscar_o_sugerir_en_bd
+        from .utils_cpe import parsear_cpe_auto, buscar_o_sugerir_en_bd, auto_registrar_desde_cpe
         datos = parsear_cpe_auto(archivo, archivo.name)
         datos_enriquecidos = buscar_o_sugerir_en_bd(datos)
-        return JsonResponse({'success': True, 'datos': datos_enriquecidos})
+        # Auto-registrar lo que no se encontró en la BD
+        nuevos = auto_registrar_desde_cpe(datos_enriquecidos, request.user)
+        # Fusionar: los nuevos valores tienen precedencia (contienen IDs recién creados)
+        for k, v in nuevos.items():
+            if v is not None:
+                datos_enriquecidos[k] = v
+        return JsonResponse({'success': True, 'datos': datos_enriquecidos, 'registrados': nuevos.get('acciones', [])})
     except ImportError as e:
         return JsonResponse({
             'success': False,
@@ -736,14 +742,9 @@ def ticket_balanza_nuevo(request, tipo):
             chofer = cd.get('chofer')
             obs_base = cd.get('observaciones', '')
 
-            # Acoplados en observaciones si se ingresaron
-            acoplado_info = ''
-            if cd.get('patente_acoplado_1'):
-                acoplado_info += f" | Acoplado: {cd['patente_acoplado_1']}"
-            if cd.get('patente_acoplado_2'):
-                acoplado_info += f" | Acoplado 2: {cd['patente_acoplado_2']}"
-
-            observaciones = obs_base + acoplado_info
+            observaciones = obs_base
+            patente_ac1 = (cd.get('patente_acoplado_1') or '').strip().upper()
+            patente_ac2 = (cd.get('patente_acoplado_2') or '').strip().upper()
 
             # Asignar pesos según tipo
             peso_bruto = primer_pesaje if es_entrada else None
@@ -757,6 +758,8 @@ def ticket_balanza_nuevo(request, tipo):
                 tipo_movimiento=tipo_movimiento,
                 estado=estado_inicial,
                 patente_camion=patente,
+                patente_acoplado_1=patente_ac1,
+                patente_acoplado_2=patente_ac2,
                 chofer=chofer,
                 cuenta_transporte=cuenta_cliente,
                 origen=origen,
@@ -765,7 +768,7 @@ def ticket_balanza_nuevo(request, tipo):
                 peso_tara=peso_tara,
                 observaciones=observaciones,
                 creado_por=request.user,
-                planta=planta_usuario,  # Asignar planta del encargado automáticamente
+                planta=planta_usuario,
             )
 
             # Crear detalle de mercadería con el grano seleccionado

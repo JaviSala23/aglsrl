@@ -131,6 +131,12 @@
         <div class="mb-3">
           <div class="text-muted small mb-1">Patente</div>
           <span class="patente-badge">{{ ticket.patente_camion }}</span>
+          {% if ticket.patente_acoplado_1 %}
+          <span class="badge bg-secondary ms-2" title="Acoplado 1">{{ ticket.patente_acoplado_1 }}</span>
+          {% endif %}
+          {% if ticket.patente_acoplado_2 %}
+          <span class="badge bg-secondary ms-1" title="Acoplado 2">{{ ticket.patente_acoplado_2 }}</span>
+          {% endif %}
         </div>
 
         {% for dem in ticket.detalle_mercaderias.all %}
@@ -146,7 +152,7 @@
         {% if ticket.chofer %}
         <div class="mb-2">
           <div class="text-muted small">Chofer</div>
-          <strong>{{ ticket.chofer.nombre_completo }}</strong>
+          <strong>{{ ticket.chofer.apellido }} {{ ticket.chofer.nombre }}</strong>
         </div>
         {% endif %}
 

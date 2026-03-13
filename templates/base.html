@@ -58,27 +58,53 @@
             <!-- Navigation items -->
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
-                    <!-- Panel Principal -->
+
+                {% if perfil and perfil.es_encargado %}
+                    {# ——— MENÚ ENCARGADO: solo balanza y almacenamiento de su planta ——— #}
                     <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'panel' %}active{% endif %}" 
-                           href="{% url 'main:panel' %}">
-                            <i class="fas fa-home me-1"></i>Panel Principal
+                        <a class="nav-link {% if request.resolver_match.namespace == 'tickets' %}active{% endif %}"
+                           href="{% url 'tickets:balanza_lista' %}">
+                            <i class="fas fa-weight me-1"></i>Balanza
                         </a>
                     </li>
-                    
-                    <!-- Tickets de Transporte - Menú Principal -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.namespace == 'almacenamiento' %}active{% endif %}"
+                           href="{% url 'almacenamiento:dashboard' %}">
+                            <i class="fas fa-warehouse me-1"></i>Almacenamiento
+                        </a>
+                    </li>
+
+                {% else %}
+                    {# ——— MENÚ ADMINISTRADOR / GERENCIA / SUPERUSER: menú completo ——— #}
+
+                    <!-- Panel Principal -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'panel' %}active{% endif %}"
+                           href="{% url 'main:panel' %}">
+                            <i class="fas fa-home me-1"></i>Panel
+                        </a>
+                    </li>
+
+                    <!-- Balanza rápida -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.namespace == 'tickets' and 'balanz' in request.path %}active{% endif %}"
+                           href="{% url 'tickets:balanza_lista' %}">
+                            <i class="fas fa-weight me-1"></i>Balanza
+                        </a>
+                    </li>
+
+                    <!-- Tickets de Transporte -->
                     <li class="nav-item dropdown">
-                        <a class="nav-link dropdown-toggle {% if request.resolver_match.namespace == 'tickets' %}active{% endif %}" 
+                        <a class="nav-link dropdown-toggle {% if request.resolver_match.namespace == 'tickets' %}active{% endif %}"
                            href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false"
                            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; padding: 8px 12px; margin-right: 8px;">
-                            <i class="fas fa-ticket-alt me-1"></i>Tickets de Transporte
+                            <i class="fas fa-ticket-alt me-1"></i>Tickets
                         </a>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" href="{% url 'tickets:dashboard' %}">
                                 <i class="fas fa-tachometer-alt me-2" style="color: #667eea;"></i>Dashboard
                             </a></li>
                             <li><hr class="dropdown-divider"></li>
-                            
                             <li class="dropdown-header">Gestión de Tickets</li>
                             <li><a class="dropdown-item" href="{% url 'tickets:lista_tickets' %}">
                                 <i class="fas fa-list me-2" style="color: #667eea;"></i>Ver Todos los Tickets
@@ -87,19 +113,27 @@
                                 <i class="fas fa-plus-circle me-2" style="color: #28a745;"></i>Crear Nuevo Ticket
                             </a></li>
                             <li><hr class="dropdown-divider"></li>
-                            
                             <li class="dropdown-header">Análisis y Reportes</li>
                             <li><a class="dropdown-item" href="{% url 'tickets:estadisticas' %}">
                                 <i class="fas fa-chart-bar me-2" style="color: #fd7e14;"></i>Estadísticas Avanzadas
                             </a></li>
                             <li><hr class="dropdown-divider"></li>
-                            
                             <li class="dropdown-header">Administración</li>
                             <li><a class="dropdown-item" href="{% url 'admin:tickets_ticket_changelist' %}" target="_blank">
                                 <i class="fas fa-cog me-2" style="color: #6c757d;"></i>Admin Tickets
                             </a></li>
                         </ul>
                     </li>
+
+                    <!-- Almacenamiento -->
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.namespace == 'almacenamiento' %}active{% endif %}"
+                           href="{% url 'almacenamiento:dashboard' %}">
+                            <i class="fas fa-warehouse me-1"></i>Almacenamiento
+                        </a>
+                    </li>
+
+                {% endif %}
                 </ul>
                 
                 <!-- User menu -->
@@ -109,12 +143,22 @@
                            data-bs-toggle="dropdown">
                             <i class="bi bi-person-circle me-1"></i>
                             {{ user.username }}
+                            {% if perfil %}
+                                <span class="badge ms-2
+                                    {% if perfil.es_administrador %}bg-danger
+                                    {% elif perfil.es_encargado %}bg-warning text-dark
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ perfil.get_tipo_usuario_display }}
+                                </span>
+                            {% endif %}
                         </a>
                         <ul class="dropdown-menu dropdown-menu-end">
+                            {% if user.is_superuser or perfil.es_administrador %}
                             <li><a class="dropdown-item" href="{% url 'admin:index' %}" target="_blank">
                                 <i class="bi bi-gear-fill me-1"></i>Admin Django
                             </a></li>
                             <li><hr class="dropdown-divider"></li>
+                            {% endif %}
                             <li><a class="dropdown-item text-danger" href="#" onclick="confirmarLogout()">
                                 <i class="bi bi-box-arrow-right me-1"></i>Cerrar Sesión
                             </a></li>

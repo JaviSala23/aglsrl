@@ -421,8 +421,20 @@ function setSelectById(id, pk) {
   const el = document.getElementById(id);
   if (!el) return;
   for (const opt of el.options) {
-    if (opt.value == pk) { el.value = pk; break; }
+    if (opt.value == pk) { el.value = pk; return; }
   }
+}
+function inyectarOpcionEnSelect(selectId, pk, texto) {
+  /* Agrega la opción al select si no existe y la selecciona */
+  if (!pk) return;
+  const el = document.getElementById(selectId);
+  if (!el) return;
+  for (const opt of el.options) {
+    if (opt.value == pk) { el.value = pk; return; }
+  }
+  const opt = new Option(texto, pk, true, true);
+  el.add(opt);
+  el.value = pk;
 }
 function setSelectByText(id, texto) {
   if (!texto) return;
@@ -469,6 +481,19 @@ async function procesarArchivo(file) {
       return;
     }
 
+    // Mostrar toast de datos auto-registrados
+    if (data.registrados && data.registrados.length > 0) {
+      Swal.fire({
+        icon: 'success',
+        title: 'Datos nuevos registrados',
+        html: '<ul class="text-start mb-0">' + data.registrados.map(a => `<li>${a}</li>`).join('') + '</ul>',
+        toast: false,
+        timer: 6000,
+        showConfirmButton: true,
+        confirmButtonText: 'OK',
+      });
+    }
+
     rellenarFormulario(data.datos);
   } catch(e) {
     document.getElementById('cpe-spinner').style.display = 'none';
@@ -488,15 +513,22 @@ function rellenarFormulario(d) {
   setField('id_patente_acoplado_1', d.patente_acoplado_1);
   setField('id_patente_acoplado_2', d.patente_acoplado_2);
 
-  // Grano (busca por ID o por nombre)
-  if (d.grano_id) setSelectById('id_grano', d.grano_id);
-  else if (d.grano_nombre) setSelectByText('id_grano', d.grano_nombre);
+  // Grano (busca por ID; si fue recién creado, inyecta la opción)
+  if (d.grano_id) {
+    inyectarOpcionEnSelect('id_grano', d.grano_id, d.grano_display || d.grano_nombre);
+  } else if (d.grano_nombre) {
+    setSelectByText('id_grano', d.grano_nombre);
+  }
 
-  // Cuenta cliente (remitente)
-  if (d.cuenta_origen_id) setSelectById('id_cuenta_cliente', d.cuenta_origen_id);
+  // Cuenta cliente (remitente) — puede ser recién creada
+  if (d.cuenta_origen_id) {
+    inyectarOpcionEnSelect('id_cuenta_cliente', d.cuenta_origen_id, d.cuenta_origen_display || '');
+  }
 
-  // Chofer
-  if (d.chofer_id) setSelectById('id_chofer', d.chofer_id);
+  // Chofer — puede ser recién creado
+  if (d.chofer_id) {
+    inyectarOpcionEnSelect('id_chofer', d.chofer_id, d.chofer_display || '');
+  }
 
   // Campos ocultos (CPE metadata)
   setField('h-nro-cpe', d.nro_cpe || '');

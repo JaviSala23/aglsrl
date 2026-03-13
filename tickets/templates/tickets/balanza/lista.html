@@ -156,10 +156,17 @@
           <span class="text-muted small">{{ t.fecha_creacion|date:"d/m H:i" }}</span>
         </div>
 
+        <!-- Información de transporte -->
         <div class="my-2">
           <span class="patente-badge">{{ t.patente_camion }}</span>
+          {% if t.patente_acoplado_1 %}
+          <span class="badge bg-secondary ms-1" title="Acoplado 1">AC: {{ t.patente_acoplado_1 }}</span>
+          {% endif %}
+          {% if t.patente_acoplado_2 %}
+          <span class="badge bg-secondary ms-1" title="Acoplado 2">AC2: {{ t.patente_acoplado_2 }}</span>
+          {% endif %}
           {% if t.chofer %}
-          <span class="ms-2 text-muted small"><i class="fas fa-user me-1"></i>{{ t.chofer.nombre_completo }}</span>
+          <span class="ms-2 text-muted small"><i class="fas fa-user me-1"></i>{{ t.chofer.apellido }} {{ t.chofer.nombre }}</span>
           {% endif %}
         </div>
 
@@ -237,6 +244,12 @@
         </div>
         <div class="my-1">
           <span class="patente-badge" style="font-size:.9rem;">{{ t.patente_camion }}</span>
+          {% if t.patente_acoplado_1 %}
+          <span class="badge bg-secondary ms-1" style="font-size:.75rem;">{{ t.patente_acoplado_1 }}</span>
+          {% endif %}
+          {% if t.patente_acoplado_2 %}
+          <span class="badge bg-secondary ms-1" style="font-size:.75rem;">{{ t.patente_acoplado_2 }}</span>
+          {% endif %}
         </div>
         {% if t.peso_neto %}
         <div class="text-success fw-bold">Neto: {{ t.peso_neto|floatformat:0 }} kg</div>

@@ -171,6 +171,16 @@ class Ticket(models.Model):
         help_text='Planta donde se registra el pesaje',
     )
 
+    # Acoplados del camión
+    patente_acoplado_1 = models.CharField(
+        max_length=20, blank=True, default='',
+        help_text='Patente del primer acoplado/semirremolque',
+    )
+    patente_acoplado_2 = models.CharField(
+        max_length=20, blank=True, default='',
+        help_text='Patente del segundo acoplado',
+    )
+
     # Observaciones generales
     observaciones = models.TextField(blank=True, help_text='Observaciones generales del ticket')
 
