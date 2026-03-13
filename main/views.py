@@ -9,7 +9,7 @@ from django.contrib.auth.models import User
 from django.views.generic import TemplateView
 from django.contrib import messages
 from django.db.models import Q
-from .forms import RegistroUsuarioForm, EditarUsuarioForm
+from .forms import RegistroUsuarioForm, EditarUsuarioForm, PerfilUsuarioForm
 
 
 def landing_page_view(request):
@@ -164,7 +164,7 @@ def detalle_usuario(request, user_id):
     
     # Estadísticas del usuario
     tareas_asignadas = usuario.tareas_asignadas.count()
-    tareas_creadas = usuario.tarea_set.count()
+    tareas_creadas = usuario.tareas_creadas.count()
     
     context = {
         'usuario': usuario,
@@ -178,18 +178,24 @@ def detalle_usuario(request, user_id):
 def editar_usuario(request, user_id):
     """Vista para editar un usuario."""
     usuario = get_object_or_404(User, id=user_id)
-    
+    from usuarios.models import PerfilUsuario
+    perfil, _ = PerfilUsuario.objects.get_or_create(user=usuario)
+
     if request.method == 'POST':
         form = EditarUsuarioForm(request.POST, instance=usuario)
-        if form.is_valid():
+        perfil_form = PerfilUsuarioForm(request.POST, instance=perfil)
+        if form.is_valid() and perfil_form.is_valid():
             form.save()
+            perfil_form.save()
             messages.success(request, f'Usuario {usuario.username} actualizado exitosamente.')
             return redirect('main:detalle_usuario', user_id=usuario.id)
     else:
         form = EditarUsuarioForm(instance=usuario)
-    
+        perfil_form = PerfilUsuarioForm(instance=perfil)
+
     context = {
         'form': form,
+        'perfil_form': perfil_form,
         'usuario': usuario,
     }
     return render(request, 'main/usuarios/editar.html', context)

@@ -4,6 +4,7 @@ Formularios para registro de usuarios.
 from django import forms
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserCreationForm
+from usuarios.models import PerfilUsuario
 
 
 class RegistroUsuarioForm(UserCreationForm):
@@ -90,4 +91,22 @@ class EditarUsuarioForm(forms.ModelForm):
             'email': forms.EmailInput(attrs={'class': 'form-control'}),
             'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
             'is_staff': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+        }
+
+
+class PerfilUsuarioForm(forms.ModelForm):
+    """Formulario para editar el perfil del usuario (rol y planta)."""
+
+    class Meta:
+        model = PerfilUsuario
+        fields = ['tipo_usuario', 'planta', 'telefono']
+        labels = {
+            'tipo_usuario': 'Rol en el sistema',
+            'planta': 'Planta asignada',
+            'telefono': 'Teléfono',
+        }
+        widgets = {
+            'tipo_usuario': forms.Select(attrs={'class': 'form-select'}),
+            'planta': forms.Select(attrs={'class': 'form-select'}),
+            'telefono': forms.TextInput(attrs={'class': 'form-control'}),
         }

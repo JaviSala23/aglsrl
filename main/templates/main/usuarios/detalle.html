@@ -211,6 +211,22 @@
                             {% endif %}
                         </div>
                     </div>
+                    <div class="info-item">
+                        <div class="info-label">Rol en el sistema</div>
+                        <div class="info-value">
+                            {% with p=usuario.perfil %}
+                                <span class="badge
+                                    {% if p.es_administrador %}bg-danger
+                                    {% elif p.es_encargado %}bg-warning text-dark
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ p.get_tipo_usuario_display }}
+                                </span>
+                                {% if p.planta %}
+                                    <span class="ms-2 text-muted small"><i class="bi bi-building me-1"></i>{{ p.planta }}</span>
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
